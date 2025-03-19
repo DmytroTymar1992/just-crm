@@ -146,70 +146,69 @@
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
-  const currentRoomId = "{{ room_id|default_if_none:'' }}";
+  const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/'); // Змінити URL на ваш WebSocket для чату
   const notification = document.getElementById('notification');
-  let timeoutId = null; // Зберігаємо ID таймера для очищення
+  let timeoutId = null;
 
-  roomListSocket.onopen = function() {
-    console.log('Room list WebSocket connection opened');
+  chatSocket.onopen = function() {
+    console.log('Chat WebSocket connection opened');
   };
 
-  roomListSocket.onmessage = function(e) {
-    console.log('Room list WebSocket message received:', e.data);
+  chatSocket.onmessage = function(e) {
+    console.log('Chat WebSocket message received:', e.data);
     const data = JSON.parse(e.data);
-    if (data.type === 'room_list') {
-      console.log('Updating room list with:', data.rooms);
-      updateRoomListUI(data.rooms);
 
-      // Ховаємо повідомлення, якщо воно вже видно, перед новою перевіркою
-      if (notification.style.display === 'flex') {
-        notification.style.display = 'none';
-      }
+    // Припускаємо, що сервер надсилає повідомлення в такому форматі:
+    // {"type": "chat_message", "room_id": 1, "first_name": "Іван", "last_name": "Петров", "message": "Привіт!"}
+    if (data.type === 'chat_message') {
+      // Очищаємо попередній таймер, якщо він є
       if (timeoutId) {
-        clearTimeout(timeoutId); // Очищаємо попередній таймер
+        clearTimeout(timeoutId);
       }
 
-      const unreadRooms = data.rooms.filter(room => room.unread_count > 0);
-      if (unreadRooms.length > 0) {
-        const firstUnreadRoom = unreadRooms[0];
-        notification.innerHTML = `<i class="bi bi-bell-fill mb-2"></i><br>Нове повідомлення від ${firstUnreadRoom.first_name} ${firstUnreadRoom.last_name || ''}`;
+      // Оновлюємо вміст пуш-повідомлення
+      notification.innerHTML = `<i class="bi bi-bell-fill mb-2"></i><br>Нове повідомлення від ${data.first_name} ${data.last_name || ''}`;
 
-        // Показуємо повідомлення
-        notification.style.display = 'flex';
+      // Показуємо пуш
+      notification.style.display = 'flex';
 
-        // Обробник кліку
-        notification.onclick = function() {
-          window.open(`/sales/${firstUnreadRoom.room_id}/`, '_blank');
-          notification.style.display = 'none';
-          if (timeoutId) {
-            clearTimeout(timeoutId); // Очищаємо таймер при кліку
-          }
-        };
+      // Обробник кліку
+      notification.onclick = function() {
+        window.open(`/sales/${data.room_id}/`, '_blank');
+        notification.style.display = 'none';
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
 
-        // Ховаємо через 10 секунд
-        timeoutId = setTimeout(() => {
-          notification.style.display = 'none';
-          timeoutId = null; // Скидаємо ID після завершення
-        }, 10000);
-      }
+      // Ховаємо через 10 секунд
+      timeoutId = setTimeout(() => {
+        notification.style.display = 'none';
+        timeoutId = null;
+      }, 10000);
     }
   };
 
-  roomListSocket.onclose = function(e) {
-    console.log('Room list socket closed unexpectedly:', e);
+  chatSocket.onclose = function(e) {
+    console.log('Chat socket closed unexpectedly:', e);
   };
 
-  roomListSocket.onerror = function(e) {
-    console.error('Room list socket error:', e);
+  chatSocket.onerror = function(e) {
+    console.error('Chat socket error:', e);
+  };
+
+  // Залишаємо функцію updateRoomListUI для оновлення списку чатів, якщо вона потрібна
+  const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
+  roomListSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    if (data.type === 'room_list') {
+      updateRoomListUI(data.rooms);
+    }
   };
 
   function updateRoomListUI(rooms) {
     const roomListUl = document.getElementById("room-list");
-    if (!roomListUl) {
-      console.error('Element with id "room-list" not found');
-      return;
-    }
+    if (!roomListUl) return;
 
     roomListUl.innerHTML = "";
     if (rooms.length === 0) {
@@ -227,7 +226,7 @@
       let a = document.createElement("a");
       a.href = `/sales/${r.room_id}/`;
       a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
-      if (r.room_id == currentRoomId) {
+      if (r.room_id == "{{ room_id|default_if_none:'' }}") {
         li.classList.add("bg-primary-subtle");
         a.classList.add("fw-semibold");
       }
@@ -238,9 +237,7 @@
         small.classList.add("text-muted");
         small.textContent = r.company_name;
         div.appendChild(small);
-
-        let br = document.createElement("br");
-        div.appendChild(br);
+        div.appendChild(document.createElement("br"));
       }
 
       let span = document.createElement("span");
@@ -259,8 +256,6 @@
 
       roomListUl.appendChild(li);
     });
-
-    console.log('Room list UI updated successfully');
   }
 </script>
   {% block extra_js %}{% endblock %}
