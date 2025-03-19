@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just CRM | {% block title %}Базова сторінка{% endblock %}</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Кастомні стилі -->
+  <link rel="stylesheet" href="{% static 'main/css/sales.css' %}">
+  <style>
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: #f5f6f8;
+    }
+    .container-fluid {
+      height: 100%;
+      padding: 0;
+    }
+    .sidebar {
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 70px;
+      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+      transition: width 0.3s ease;
+      z-index: 1000;
+    }
+    .sidebar:hover {
+      width: 200px;
+    }
+    .sidebar .nav-link {
+      color: #bdc3c7;
+      padding: 15px 0;
+      text-align: center;
+      white-space: nowrap;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .sidebar .nav-link:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sidebar .nav-link img {
+      width: 28px;
+      height: 28px;
+      filter: invert(80%);
+    }
+    .sidebar .nav-link:hover img {
+      filter: invert(100%);
+    }
+    .sidebar .nav-link div {
+      display: none;
+      margin-top: 5px;
+      font-size: 0.85rem;
+    }
+    .sidebar:hover .nav-link div {
+      display: block;
+    }
+    .main-content {
+      margin-left: 70px;
+      height: 100vh;
+      max-width: calc(100vw - 70px); /* Обмежуємо ширину вмісту */
+      overflow-y: auto; /* Додаємо вертикальну прокрутку */
+      overflow-x: hidden; /* Ховаємо горизонтальну */
+      transition: margin-left 0.3s ease, max-width 0.3s ease;
+    }
+    .sidebar:hover ~ .main-content {
+      margin-left: 200px;
+      max-width: calc(100vw - 200px); /* Адаптуємо при наведенні */
+    }
+    #notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 1050;
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row g-0">
+      <!-- Бокове меню -->
+      <nav class="sidebar">
+        <div class="position-sticky pt-4">
+          <ul class="nav flex-column text-center">
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="{% url 'company_list' %}" title="Компанії">
+                <img src="{% static 'main/images/companies.svg' %}" alt="Компанії">
+                <div>Компанії</div>
+              </a>
+            </li>
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="{% url 'contact_list' %}" title="Контакти">
+                <img src="{% static 'main/images/contacts.svg' %}" alt="Контакти">
+                <div>Контакти</div>
+              </a>
+            </li>
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="{% url 'chat_room' room_id=1 %}" title="Робочий процес">
+                <img src="{% static 'main/images/workflow.svg' %}" alt="Робочий процес">
+                <div>Робочий процес</div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Основний контент -->
+      <main class="main-content">
+        {% block content %}
+        <!-- Тут розміщується вміст конкретної сторінки -->
+        {% endblock %}
+      </main>
+
+      <!-- Повідомлення -->
+      <div id="notification">
+        <i class="bi bi-bell-fill me-2"></i> Новий вхідний лист!
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
+    const currentRoomId = "{{ room_id|default_if_none:'' }}";
+
+    roomListSocket.onopen = function() {
+      console.log('Room list WebSocket connection opened');
+    };
+
+    roomListSocket.onmessage = function(e) {
+      console.log('Room list WebSocket message received:', e.data);
+      const data = JSON.parse(e.data);
+      if (data.type === 'room_list') {
+        console.log('Updating room list with:', data.rooms);
+        updateRoomListUI(data.rooms);
+        if (data.rooms.some(room => room.unread_count > 0)) {
+          const notification = document.getElementById('notification');
+          notification.style.display = 'block';
+          setTimeout(() => notification.style.display = 'none', 3000);
+        }
+      }
+    };
+
+    roomListSocket.onclose = function(e) {
+      console.log('Room list socket closed unexpectedly:', e);
+    };
+
+    roomListSocket.onerror = function(e) {
+      console.error('Room list socket error:', e);
+    };
+
+    function updateRoomListUI(rooms) {
+      const roomListUl = document.getElementById("room-list");
+      if (!roomListUl) {
+        console.error('Element with id "room-list" not found');
+        return;
+      }
+
+      roomListUl.innerHTML = "";
+      if (rooms.length === 0) {
+        let li = document.createElement("li");
+        li.classList.add("list-group-item", "text-muted", "text-center", "py-3", "border-0");
+        li.textContent = "Немає листів";
+        roomListUl.appendChild(li);
+        return;
+      }
+
+      rooms.forEach(r => {
+        let li = document.createElement("li");
+        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "px-3", "py-2", "border-bottom");
+
+        let a = document.createElement("a");
+        a.href = `/sales/${r.room_id}/`;
+        a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
+        if (r.room_id == currentRoomId) {
+          li.classList.add("bg-primary-subtle");
+          a.classList.add("fw-semibold");
+        }
+
+        let div = document.createElement("div");
+        if (r.company_name) {
+          let small = document.createElement("small");
+          small.classList.add("text-muted");
+          small.textContent = r.company_name;
+          div.appendChild(small);
+
+          let br = document.createElement("br");
+          div.appendChild(br);
+        }
+
+        let span = document.createElement("span");
+        span.textContent = `${r.first_name} ${r.last_name || ''}`;
+        div.appendChild(span);
+
+        a.appendChild(div);
+        li.appendChild(a);
+
+        if (r.unread_count > 0) {
+          let badge = document.createElement("span");
+          badge.classList.add("badge", "bg-primary", "rounded-pill");
+          badge.textContent = r.unread_count;
+          li.appendChild(badge);
+        }
+
+        roomListUl.appendChild(li);
+      });
+
+      console.log('Room list UI updated successfully');
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

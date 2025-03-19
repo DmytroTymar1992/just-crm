@@ -1,0 +1,362 @@
+{% extends "sales/base-sales.html" %}
+{% load static %}
+{% block content %}
+<div class="d-flex h-100">
+  <!-- Ліва колонка: Контакти -->
+  <div class="d-flex flex-column h-100 shadow-sm" style="width: 250px; flex-shrink: 0; background: #ffffff;">
+    <div class="p-3 border-bottom bg-primary text-white">
+      <h5 class="mb-0 fw-bold">Контакти</h5>
+    </div>
+    <div class="flex-grow-1 overflow-auto" id="contacts-container">
+      {% include "sales/room_list.html" %}
+    </div>
+  </div>
+
+  <!-- Центральна колонка: Чат -->
+  <div class="d-flex flex-column flex-grow-1">
+    <!-- Заголовок діалогу -->
+    <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <span class="fw-bold text-dark">{{ room.contact.first_name }} {{ room.contact.last_name }}</span>
+        {% if room.contact.company %}
+          <small class="text-muted d-block">{{ room.contact.company.name }}</small>
+        {% endif %}
+      </h5>
+        <a href="sip:380501234567">Подзвонити</a>
+      <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal">
+        <i class="bi bi-envelope me-1"></i> Написати Email
+      </button>
+    </div>
+
+    <!-- Кнопка "Завантажити ще" (старіші повідомлення) -->
+    <button id="load-more-btn"
+            class="btn btn-outline-secondary btn-sm w-100 text-center border-0"
+            style="display: none; border-radius: 0;"
+    >
+      Завантажити ще
+    </button>
+
+    <!-- Лог чату -->
+    <div id="chat-log" class="flex-grow-1 overflow-auto p-3" style="background: #f8f9fa;">
+        {% if page_obj %}
+      {% include "sales/partials/chat_messages.html" with interactions=page_obj.object_list %}
+        {% else %}
+        <div class="p-3 text-muted">
+        Повідомлень ще немає
+      </div>
+        {% endif %}
+    </div>
+
+    <!-- Форма для відправки -->
+    <div class="p-3 bg-white border-top shadow-sm">
+      <div class="input-group">
+        <input id="chat-message-input" type="text" class="form-control" placeholder="Введіть текст (Telegram)...">
+        <button id="chat-message-submit" class="btn btn-primary" type="button">
+          <i class="bi bi-send me-1"></i> Надіслати
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Права колонка -->
+  <div class="d-flex flex-column h-100 shadow-sm" style="width: 350px; flex-shrink: 0; background: #ffffff;">
+    <div class="p-3 border-bottom bg-primary text-white">
+      <h5 class="mb-0 fw-bold">Додаткові функції</h5>
+    </div>
+    <div class="p-3 flex-grow-1">
+      <p class="text-muted">Тут може бути щось інше.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно (для Email) -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Надіслати Email</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <textarea id="email-message-input" class="form-control" rows="4" placeholder="Введіть текст листа..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary" id="email-message-submit">
+          <i class="bi bi-envelope me-1"></i> Надіслати
+        </button>
+        <button type="button" class="btn btn-success" id="email-template-submit">
+        <i class="bi bi-envelope-check me-1"></i> Надіслати шаблон листа
+      </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  #chat-log, #contacts-container {
+    background: #f8f9fa;
+  }
+  #chat-log::-webkit-scrollbar, #contacts-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  #chat-log::-webkit-scrollbar-thumb, #contacts-container::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 3px;
+  }
+  #chat-log::-webkit-scrollbar-track, #contacts-container::-webkit-scrollbar-track {
+    background: #e9ecef;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const currentUser = "{{ request.user.username }}";
+  const roomId = "{{ room_id }}";
+  const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + roomId + '/');
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const username = data.username || 'User';
+    const payload = data.payload || {};
+    handleIncomingPayload(username, payload);
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('WebSocket закрито', e);
+  };
+
+  function handleIncomingPayload(username, payload) {
+    const msgType = payload.msg_type || '';
+    if (msgType === 'email') renderEmailMessage(payload);
+    else if (msgType === 'telegram') renderTelegramMessage(payload);
+    else if (msgType === 'call') renderCallMessage(payload);
+    else renderUnknownMessage(payload);
+  }
+
+  document.querySelector('#chat-message-submit').onclick = sendTelegram;
+  document.querySelector('#chat-message-input').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') sendTelegram();
+  });
+
+  function sendTelegram() {
+    const input = document.querySelector('#chat-message-input');
+    const message = input.value.trim();
+    if (!message) return;
+    chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'telegram' }));
+    input.value = '';
+  }
+
+  document.querySelector('#email-message-submit').onclick = sendEmail;
+  function sendEmail() {
+    const input = document.querySelector('#email-message-input');
+    const message = input.value.trim();
+    if (!message) return;
+    chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'email' }));
+    bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
+    input.value = '';
+  }
+
+  function renderEmailMessage(payload) {
+    const tpl = document.getElementById('emailMessageTpl').innerHTML;
+    let html = tpl
+      .replace('__SUBJECT__', payload.subject || '')
+      .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
+      .replace('__TIME__', payload.created_at || '')
+      .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
+      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e9f7ef')
+      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #28a745' : 'border-right: 4px solid #28a745')
+      .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
+    appendMessage(html);
+  }
+
+  function renderTelegramMessage(payload) {
+    const tpl = document.getElementById('telegramMessageTpl').innerHTML;
+    let html = tpl
+      .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
+      .replace('__TIME__', payload.created_at || '')
+      .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
+      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e6f0fa')
+      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #007bff' : 'border-right: 4px solid #007bff')
+      .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
+    appendMessage(html);
+  }
+
+  function renderCallMessage(payload) {
+    const tpl = document.getElementById('callMessageTpl').innerHTML;
+    let html = tpl
+      .replace('__IS_INCOMING__', payload.sender_type === 'contact' ? '(Вхідний)' : '(Вихідний)')
+      .replace('__CLIENT_PHONE__', payload.client_phone || '')
+      .replace('__DIAL_AT__', payload.dial_at || '')
+      .replace('__BRIDGE_AT__', payload.bridge_at || '')
+      .replace('__HANGUP_AT__', payload.hangup_at || '')
+      .replace('__TIME__', payload.created_at || '')
+      .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
+      .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
+    appendMessage(html);
+  }
+
+  function renderUnknownMessage(payload) {
+    const chatLog = document.getElementById('chat-log');
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('mb-3', 'd-flex', 'justify-content-end');
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('p-3', 'rounded-3', 'shadow-sm', 'bg-warning', 'text-dark');
+    msgDiv.style.maxWidth = '70%';
+    msgDiv.innerHTML = `UNKNOWN type message: <pre>${JSON.stringify(payload, null, 2)}</pre>`;
+    wrapper.appendChild(msgDiv);
+    chatLog.appendChild(wrapper);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function appendMessage(html) {
+    const chatLog = document.getElementById('chat-log');
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    chatLog.appendChild(wrapper);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const chatLog = document.getElementById("chat-log");
+    if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+  });
+</script>
+
+<script type="text/x-template" id="emailMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+      <div class="text-success fw-semibold mb-1">Email</div>
+      <div class="bg-warning-subtle p-2 rounded mb-2"><strong>Тема:</strong> __SUBJECT__</div>
+      <p class="text-dark mb-0">__BODY__</p>
+      <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>
+
+<script type="text/x-template" id="telegramMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+      <div class="text-primary fw-semibold mb-1">Telegram</div>
+      <p class="text-dark mb-0">__BODY__</p>
+      <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>
+
+<script type="text/x-template" id="callMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+      <div class="fw-semibold">[CALL] __IS_INCOMING__</div>
+      <div class="mt-1">
+        Телефон клієнта: __CLIENT_PHONE__<br>
+        Початок: __DIAL_AT__<br>
+        Підняття слухавки: __BRIDGE_AT__<br>
+        Завершення: __HANGUP_AT__
+      </div>
+      <small class="d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>
+    <script>
+  const currentUser = "{{ request.user.username }}";
+  const roomId = "{{ room_id }}";
+  const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + roomId + '/');
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const username = data.username || 'User';
+    const payload = data.payload || {};
+    handleIncomingPayload(username, payload);
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('WebSocket закрито', e);
+  };
+
+  function handleIncomingPayload(username, payload) {
+    ...
+  }
+
+  // При натисканні Enter або кнопки "Надіслати" відправляємо повідомлення
+  ...
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const chatLog = document.getElementById("chat-log");
+    if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+  });
+</script>
+
+{% if page_obj %}
+  <script>
+    // 1) Номер поточної сторінки
+    let currentPage = {{ page_obj.number }};
+    // 2) Чи є попередня сторінка
+    let hasPrevious = {{ page_obj.has_previous|yesno:"true,false" }};
+    // 3) Якщо hasPrevious — тоді page_obj.number > 1, і можна safely currentPage - 1
+    let prevPageNumber = hasPrevious ? (currentPage - 1) : null;
+  </script>
+{% else %}
+  <script>
+    // Якщо сторінок узагалі немає (page_obj = None)
+    let currentPage = 1;
+    let hasPrevious = false;
+    let prevPageNumber = null;
+  </script>
+{% endif %}
+
+<script>
+  // Кнопка "Завантажити ще"
+  const loadMoreBtn = document.getElementById('load-more-btn');
+
+  // Показати кнопку, якщо hasPrevious = true
+  if (hasPrevious) {
+    loadMoreBtn.style.display = 'block';
+  }
+
+  loadMoreBtn.addEventListener('click', function() {
+    loadOlderMessages();
+  });
+
+  function loadOlderMessages() {
+    // Якщо prevPageNumber = null, нічого не робимо.
+    if (!prevPageNumber) return;
+
+    const url = `/sales/{{ room_id }}/load_more_interactions/?page=${prevPageNumber}`;
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const chatLog = document.getElementById('chat-log');
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.messages_html;
+        // Додаємо "зверху" (prepenд)
+        chatLog.insertBefore(tempDiv, chatLog.firstChild);
+
+        hasPrevious = data.has_previous;
+        // Якщо `has_previous` = true, значить ще існує сторінка (prevPageNumber - 1).
+        // У load_more_interactions – ми рухаємось назад.
+        // Тобто на бекенді, якщо було page=5, воно підтягує 5-ту сторінку і поверне prev_page_number=4, якщо 4 > 0.
+        prevPageNumber = hasPrevious ? data.prev_page_number : null;
+
+        if (!hasPrevious) {
+          loadMoreBtn.style.display = 'none';
+        }
+      })
+      .catch(err => console.error("Помилка при завантаженні старіших повідомлень:", err));
+  }
+</script>
+<script>
+document.querySelector('#email-template-submit').onclick = sendEmailTemplate;
+
+function sendEmailTemplate() {
+// Приклад: можна взяти тему з input або використати стандартну
+const subject = document.querySelector('#email-subject-input')?.value || 'Ласкаво просимо!';
+// Тут message може бути порожнім, бо на сервері буде сформовано шаблон
+chatSocket.send(JSON.stringify({ 'message': '', 'subject': subject, 'channel_type': 'email_template' }));
+bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
+}
+</script>
+{% endblock %}

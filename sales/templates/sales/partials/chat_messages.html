@@ -1,0 +1,74 @@
+{# sales/partials/chat_messages.html #}
+{% for item in interactions %}
+  {% if item.interaction_type == "email" %}
+    {% if item.sender == "contact" %}
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #28a745;">
+          <div class="text-success fw-semibold mb-1">Email</div>
+          <div class="bg-warning-subtle p-2 rounded mb-2">
+            <strong>Тема:</strong> {{ item.email_message.subject }}
+          </div>
+          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
+          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% else %}
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e9f7ef; border-right: 4px solid #28a745;">
+          <div class="text-success fw-semibold mb-1">Email</div>
+          <div class="bg-warning-subtle p-2 rounded mb-2">
+            <strong>Тема:</strong> {{ item.email_message.subject }}
+          </div>
+          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
+          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% endif %}
+  {% elif item.interaction_type == "telegram" %}
+    {% if item.sender == "contact" %}
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #007bff;">
+          <div class="text-primary fw-semibold mb-1">Telegram</div>
+          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% else %}
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e6f0fa; border-right: 4px solid #007bff;">
+          <div class="text-primary fw-semibold mb-1">Telegram</div>
+          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% endif %}
+  {% elif item.interaction_type == "call" %}
+    {% if item.sender == "contact" %}
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+          <div class="fw-semibold">[CALL] (Вхідний)</div>
+          <div class="mt-1">
+            Телефон клієнта: {{ item.call_message.client_phone }}<br>
+            Початок: {{ item.call_message.dial_at|date:"H:i:s" }}<br>
+            Підняття слухавки: {{ item.call_message.bridge_at|date:"H:i:s" }}<br>
+            Завершення: {{ item.call_message.hangup_at|date:"H:i:s" }}
+          </div>
+          <small class="d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% else %}
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+          <div class="fw-semibold">[CALL] (Вихідний)</div>
+          <div class="mt-1">
+            Телефон клієнта: {{ item.call_message.client_phone }}<br>
+            Початок: {{ item.call_message.dial_at|date:"H:i:s" }}<br>
+            Підняття слухавки: {{ item.call_message.bridge_at|date:"H:i:s" }}<br>
+            Завершення: {{ item.call_message.hangup_at|date:"H:i:s" }}
+          </div>
+          <small class="d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+{% endfor %}

@@ -1,0 +1,17 @@
+<ul class="list-group list-group-flush" id="room-list">
+  {% for r in rooms_for_user %}
+    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-bottom {% if r.id == room.id %}bg-primary-subtle{% endif %}">
+      <a href="{% url 'chat_room' r.id %}" class="text-decoration-none text-dark d-flex flex-column">
+        {% if r.contact.company %}
+          <small class="text-muted">{{ r.contact.company.name }}</small>
+        {% endif %}
+        <span class="{% if r.id == room.id %}fw-semibold{% endif %}">{{ r.contact.first_name }} {{ r.contact.last_name }}</span>
+      </a>
+      {% if r.unread_count > 0 %}
+        <span class="badge bg-primary rounded-pill">{{ r.unread_count }}</span>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="list-group-item text-muted text-center py-3 border-0">Немає листів</li>
+  {% endfor %}
+</ul>
