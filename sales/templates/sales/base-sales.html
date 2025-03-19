@@ -148,6 +148,8 @@
   <script>
   const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
   const currentRoomId = "{{ room_id|default_if_none:'' }}";
+  const notification = document.getElementById('notification');
+  let timeoutId = null; // Зберігаємо ID таймера для очищення
 
   roomListSocket.onopen = function() {
     console.log('Room list WebSocket connection opened');
@@ -160,26 +162,36 @@
       console.log('Updating room list with:', data.rooms);
       updateRoomListUI(data.rooms);
 
+      // Ховаємо повідомлення, якщо воно вже видно, перед новою перевіркою
+      if (notification.style.display === 'flex') {
+        notification.style.display = 'none';
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId); // Очищаємо попередній таймер
+      }
+
       const unreadRooms = data.rooms.filter(room => room.unread_count > 0);
       if (unreadRooms.length > 0) {
-        const notification = document.getElementById('notification');
-        // Динамічний текст із ім'ям першого відправника
         const firstUnreadRoom = unreadRooms[0];
         notification.innerHTML = `<i class="bi bi-bell-fill mb-2"></i><br>Нове повідомлення від ${firstUnreadRoom.first_name} ${firstUnreadRoom.last_name || ''}`;
 
         // Показуємо повідомлення
-        notification.style.display = 'flex'; // Використовуємо flex для центрування
-        // Додаємо обробник кліку
+        notification.style.display = 'flex';
+
+        // Обробник кліку
         notification.onclick = function() {
-          window.open(`/sales/${firstUnreadRoom.room_id}/`, '_blank'); // Відкриваємо в новій вкладці
-          notification.style.display = 'none'; // Ховаємо після кліку
-        };
-        // Ховаємо через 10 секунд, якщо не клікнули
-        setTimeout(() => {
-          if (notification.style.display === 'flex') {
-            notification.style.display = 'none';
+          window.open(`/sales/${firstUnreadRoom.room_id}/`, '_blank');
+          notification.style.display = 'none';
+          if (timeoutId) {
+            clearTimeout(timeoutId); // Очищаємо таймер при кліку
           }
-        }, 10000); // 10 секунд
+        };
+
+        // Ховаємо через 10 секунд
+        timeoutId = setTimeout(() => {
+          notification.style.display = 'none';
+          timeoutId = null; // Скидаємо ID після завершення
+        }, 10000);
       }
     }
   };
