@@ -19,6 +19,7 @@ import json
 from django.utils import timezone
 from datetime import timedelta, date
 import datetime
+from django.utils.dateparse import parse_datetime
 
 
 logger = logging.getLogger(__name__)
@@ -240,12 +241,12 @@ def create_task(request):
         # Отримуємо дані з запиту
         room_id = data.get('room_id')
         task_type = data.get('task_type')
-        task_date = data.get('task_date')
-        target = data.get('target')  # Змінено з subject на target
+        task_date_str = data.get('task_date')  # Отримуємо task_date як рядок
+        target = data.get('target')
         description = data.get('description')
 
         # Перевірка обов’язкових полів
-        if not all([room_id, task_type, task_date, target]):
+        if not all([room_id, task_type, task_date_str, target]):
             return JsonResponse({'success': False, 'error': 'Не всі обов’язкові поля заповнені'}, status=400)
 
         # Перевірка коректності task_type
@@ -263,13 +264,18 @@ def create_task(request):
         if not request.user.is_authenticated:
             return JsonResponse({'success': False, 'error': 'Користувач не авторизований'}, status=403)
 
+        # Конвертуємо task_date із рядка в datetime
+        task_date = parse_datetime(task_date_str)
+        if task_date is None:
+            return JsonResponse({'success': False, 'error': 'Невірний формат дати'}, status=400)
+
         # Створюємо задачу
         task = Task.objects.create(
-            task_date=task_date,
+            task_date=task_date,  # Передаємо об’єкт datetime
             contact=room.contact,
             user=request.user,
             task_type=task_type,
-            target=target,  # Змінено з subject на target
+            target=target,
             description=description or '',
         )
 
@@ -277,8 +283,8 @@ def create_task(request):
             'success': True,
             'task_id': task.id,
             'task_type': task.task_type,
-            'target': task.target,  # Змінено з subject на target
-            'task_date': task.task_date.isoformat(),
+            'target': task.target,
+            'task_date': task.task_date.isoformat(),  # Тепер це точно datetime
         })
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Невірний формат JSON'}, status=400)
@@ -331,25 +337,16 @@ def kanban_board(request):
 
 @csrf_exempt
 @require_POST
-def update_task_status(request):
+def complete_task(request):
     try:
         data = json.loads(request.body)
         task_id = data.get('task_id')
-        new_status = data.get('status')
 
         task = Task.objects.get(id=task_id, user=request.user)
-
-        if new_status == 'new':
-            task.is_completed = False
-            task.completed_at = None
-        elif new_status == 'in_progress':
-            task.is_completed = False
-            task.completed_at = timezone.now()
-        elif new_status == 'completed':
-            task.is_completed = True
-            task.completed_at = timezone.now()
-
+        task.is_completed = True
+        task.completed_at = timezone.now()
         task.save()
+
         return JsonResponse({'success': True})
     except Task.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)

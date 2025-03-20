@@ -13,6 +13,6 @@ urlpatterns = [
     path('<int:room_id>/load_more_interactions/', load_more_interactions, name='load_more_interactions'),
     path('create_task/', create_task, name='create_task'),
     path('kanban/', kanban_board, name='kanban_board'),  # Новий маршрут
-    path('update_task_status/', update_task_status, name='update_task_status'),
+    path('update_task_status/', complete_task, name='complete_task'),
 
 ]
