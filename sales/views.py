@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Room, Interaction, Contact, Vacancy, ContactLink
+from .models import Room, Interaction, Contact, Vacancy, ContactLink, Task
 from django.db.models import Max, Count, Q, F, Subquery, OuterRef, IntegerField
 from main.models import Company
 from django.core.paginator import Paginator
@@ -13,6 +13,10 @@ from django.core.management import call_command
 import logging
 from django.template.loader import render_to_string
 from django.utils.text import slugify
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -218,3 +222,32 @@ def company_create(request):
         form = CompanyForm()
 
     return render(request, 'sales/company_create.html', {'form': form})
+
+
+@csrf_exempt
+@require_POST
+def create_task(request):
+    try:
+        data = json.loads(request.body)
+        room_id = data.get('room_id')
+        task_type = data.get('task_type')
+        task_date = data.get('task_date')
+        subject = data.get('subject')
+        description = data.get('description')
+
+        # Отримуємо кімнату
+        room = Room.objects.get(id=room_id)
+
+        # Створюємо задачу
+        task = Task.objects.create(
+            task_date=task_date,
+            contact=room.contact,
+            user=request.user,
+            task_type=task_type,
+            subject=subject,
+            description=description,
+        )
+
+        return JsonResponse({'success': True, 'task_id': task.id})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

@@ -23,6 +23,9 @@
         {% endif %}
       </h5>
         <a href="sip:380501234567">Подзвонити</a>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#taskModal">
+          <i class="bi bi-plus-circle me-1"></i> Створити задачу
+        </button>
       <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal">
         <i class="bi bi-envelope me-1"></i> Написати Email
       </button>
@@ -414,6 +417,55 @@ bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
   this.style.height = 'auto'; // Скидаємо висоту
   this.style.height = `${this.scrollHeight}px`; // Встановлюємо висоту відповідно до вмісту
 });
+    </script>
+    <script>
+    //Скрипт створення нової задачі
+    document.querySelector('#task-submit').onclick = createTask;
+
+function createTask() {
+  const taskType = document.querySelector('#task-type').value;
+  const taskDate = document.querySelector('#task-date').value;
+  const taskSubject = document.querySelector('#task-subject').value;
+  const taskDescription = document.querySelector('#task-description').value;
+
+  // Перевірка, чи заповнені обов'язкові поля
+  if (!taskType || !taskDate || !taskSubject) {
+    alert('Будь ласка, заповніть усі обов’язкові поля!');
+    return;
+  }
+
+  // Відправка запиту на сервер
+  fetch('/sales/create_task/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(), // Функція для отримання CSRF-токена
+    },
+    body: JSON.stringify({
+      room_id: roomId, // roomId уже визначений у вашому коді
+      task_type: taskType,
+      task_date: taskDate,
+      subject: taskSubject,
+      description: taskDescription,
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Задачу створено!');
+      bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+      document.querySelector('#task-form').reset();
+    } else {
+      alert('Помилка: ' + data.error);
+    }
+  })
+  .catch(err => console.error('Помилка при створенні задачі:', err));
+}
+
+// Функція для отримання CSRF-токена
+function getCsrfToken() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
     </script>
 
 {% endblock %}
