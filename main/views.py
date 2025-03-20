@@ -13,7 +13,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('chat_room', room_id=1)  # Перенаправлення на чат після входу (можете змінити room_id)
+            return redirect('main')
         else:
             return render(request, 'main/login.html', {'form': {'errors': True}})
     return render(request, 'main/login.html')

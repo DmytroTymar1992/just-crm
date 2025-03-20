@@ -164,12 +164,31 @@ def contact_list(request):
             models.Q(company__name__icontains=query)
         )
 
-    paginator = Paginator(contacts, 36)  # 12 контактів на сторінку
-    page_number = request.GET.get('page')
+    paginator = Paginator(contacts, 36)  # 36 контактів на сторінку
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
     companies = Company.objects.all()
 
+    # Якщо це AJAX-запит, повертаємо JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Рендеримо HTML для контактів
+        contacts_html = render_to_string('sales/partials/contact_cards.html', {
+            'contacts': page_obj,
+        }, request=request)
+
+        # Рендеримо HTML для пагінації
+        pagination_html = render_to_string('sales/partials/pagination.html', {
+            'page_obj': page_obj,
+            'request': request,
+        }, request=request)
+
+        return JsonResponse({
+            'contacts_html': contacts_html,
+            'pagination_html': pagination_html,
+        })
+
+    # Якщо це звичайний запит, повертаємо повну сторінку
     return render(request, 'sales/contact_list.html', {
         'contacts': page_obj,
         'page_obj': page_obj,

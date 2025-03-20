@@ -18,13 +18,13 @@
       </div>
       <a href="#" class="btn btn-primary shadow-sm" id="add-contact-btn" data-contact-id="0">
           <i class="bi bi-person-plus-fill me-1"></i> Додати контакт
-        </a>
+      </a>
     </div>
   </div>
   <div id="contacts-container" class="flex-grow-1 overflow-auto px-4 pb-4">
     <div class="row g-3" id="contacts-list">
       {% for contact in contacts %}
-        <div class="col-12 col-md-6 col-lg-4 contact-card" data-name="{{ contact.first_name }} {{ contact.last_name|default_if_none:'' }}" data-phone="{{ contact.phone|default_if_none:'' }}" data-company="{{ contact.company.name|default_if_none:'' }}">
+        <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="{{ contact.id }}">
           <div class="card shadow-sm border-0 h-100 transition-hover">
             <div class="card-body p-3">
               <div class="d-flex align-items-center mb-2">
@@ -89,39 +89,41 @@
       {% endfor %}
     </div>
     <!-- Пагінація -->
-    {% if page_obj.has_other_pages %}
-      <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-          {% if page_obj.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
-                <span aria-hidden="true">«</span>
-              </a>
-            </li>
-          {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">«</span>
-            </li>
-          {% endif %}
-          {% for num in page_obj.paginator.page_range %}
-            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-              <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
-            </li>
-          {% endfor %}
-          {% if page_obj.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
-                <span aria-hidden="true">»</span>
-              </a>
-            </li>
-          {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">»</span>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
+    <div id="pagination-container">
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
+                  <span aria-hidden="true">«</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">«</span>
+              </li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
+                  <span aria-hidden="true">»</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">»</span>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </div>
   </div>
 </div>
 
@@ -311,7 +313,8 @@
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("contacts-container");
     const searchInput = document.getElementById("contact-search");
-    const contactCards = document.querySelectorAll(".contact-card");
+    const contactsList = document.getElementById("contacts-list");
+    const paginationContainer = document.getElementById("pagination-container");
 
     // -------- Модалка та форма --------
     const editModal = document.getElementById("editContactModal");
@@ -328,21 +331,112 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // -------- Пошук контактів --------
+    // -------- Пошук контактів через AJAX --------
     if (searchInput) {
       searchInput.addEventListener("input", function(e) {
-        const query = e.target.value.toLowerCase().trim();
-        filterContacts(query);
+        const query = e.target.value.trim();
+        searchContacts(query);
       });
     }
 
-    function filterContacts(query) {
-      contactCards.forEach(card => {
-        const name = card.dataset.name.toLowerCase().trim();
-        const phone = card.dataset.phone.toLowerCase().trim();
-        const company = card.dataset.company.toLowerCase().trim();
-        const isMatch = name.includes(query) || phone.includes(query) || company.includes(query);
-        card.style.display = isMatch ? "block" : "none";
+    function searchContacts(query, page = 1) {
+      const url = new URL(window.location.origin + '/sales/contact_list/');
+      if (query) {
+        url.searchParams.set('q', query);
+      }
+      url.searchParams.set('page', page);
+
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest', // Позначка, що це AJAX-запит
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Оновлюємо список контактів
+        contactsList.innerHTML = data.contacts_html;
+
+        // Оновлюємо пагінацію
+        paginationContainer.innerHTML = data.pagination_html;
+
+        // Додаємо обробники для кнопок редагування на нових картках
+        addEditButtonListeners();
+
+        // Додаємо обробники для пагінації
+        addPaginationListeners(query);
+      })
+      .catch(err => console.error("Помилка при пошуку контактів:", err));
+    }
+
+    // -------- Додаємо обробники для кнопок редагування --------
+    function addEditButtonListeners() {
+      document.querySelectorAll(".edit-contact-btn").forEach(button => {
+        button.addEventListener("click", function() {
+          const contactId = this.dataset.contactId;
+          const card = this.closest(".contact-card");
+
+          // Очищаємо помилки
+          if (formErrors) {
+            formErrors.style.display = "none";
+            formErrors.innerHTML = "";
+          }
+
+          // Змінюємо action, наприклад /sales/contacts/edit/5/
+          editForm.action = `/sales/contacts/edit/${contactId}/`;
+          editForm.dataset.contactId = contactId;
+
+          // Заповнюємо поля
+          editForm.querySelector("#first_name").value = card.dataset.name.split(" ")[0] || "";
+          editForm.querySelector("#last_name").value = card.dataset.name.split(" ").slice(1).join(" ") || "";
+
+          // Посада
+          const positionEl = card.querySelector(".text-muted");
+          editForm.querySelector("#position").value = positionEl ? positionEl.textContent : "";
+
+          editForm.querySelector("#phone").value = card.dataset.phone || "";
+
+          // Email
+          const emailEl = card.querySelector("a[href^='mailto:']");
+          editForm.querySelector("#email").value = emailEl ? emailEl.textContent : "";
+
+          // Telegram
+          const telegramUsernameEl = card.querySelector("a[href^='https://t.me/']");
+          editForm.querySelector("#telegram_username").value = telegramUsernameEl
+            ? telegramUsernameEl.textContent.replace("@", "")
+            : "";
+          const telegramIdText = Array.from(card.querySelectorAll(".contact-details p")).find(p => p.textContent.includes("ID:"));
+          editForm.querySelector("#telegram_id").value = telegramIdText
+            ? telegramIdText.textContent.split("ID:")[1].trim()
+            : "";
+
+          // Компанія
+          const companyName = card.dataset.company || "";
+          Array.from(companySelect.options).forEach(option => {
+            option.selected = (option.dataset.name === companyName);
+          });
+          companySearch.value = companyName;
+
+          // Відкрити модалку
+          const modalInstance = new bootstrap.Modal(editModal);
+          modalInstance.show();
+        });
+      });
+    }
+
+    // -------- Додаємо обробники для пагінації --------
+    function addPaginationListeners(query) {
+      const paginationLinks = paginationContainer.querySelectorAll(".page-link");
+      paginationLinks.forEach(link => {
+        link.addEventListener("click", function(e) {
+          e.preventDefault();
+          const href = this.getAttribute("href");
+          if (href && !this.parentElement.classList.contains("disabled")) {
+            const urlParams = new URLSearchParams(href.split('?')[1]);
+            const page = urlParams.get('page') || 1;
+            searchContacts(query, page);
+          }
+        });
       });
     }
 
@@ -380,59 +474,6 @@
         modalInstance.show();
       });
     }
-
-    // -------- Обробка кліку "Редагувати" --------
-    document.querySelectorAll(".edit-contact-btn").forEach(button => {
-      button.addEventListener("click", function() {
-        const contactId = this.dataset.contactId;
-        const card = this.closest(".contact-card");
-
-        // Очищаємо помилки
-        if (formErrors) {
-          formErrors.style.display = "none";
-          formErrors.innerHTML = "";
-        }
-
-        // Змінюємо action, наприклад /sales/contacts/edit/5/
-        editForm.action = `/sales/contacts/edit/${contactId}/`;
-        editForm.dataset.contactId = contactId;
-
-        // Заповнюємо поля
-        editForm.querySelector("#first_name").value = card.dataset.name.split(" ")[0] || "";
-        editForm.querySelector("#last_name").value = card.dataset.name.split(" ").slice(1).join(" ") || "";
-
-        // Посада (беремо перший .text-muted? Можливо, уточніть селектор)
-        const positionEl = card.querySelector(".text-muted");
-        editForm.querySelector("#position").value = positionEl ? positionEl.textContent : "";
-
-        editForm.querySelector("#phone").value = card.dataset.phone || "";
-
-        // Email
-        const emailEl = card.querySelector("a[href^='mailto:']");
-        editForm.querySelector("#email").value = emailEl ? emailEl.textContent : "";
-
-        // Telegram
-        const telegramUsernameEl = card.querySelector("a[href^='https://t.me/']");
-        editForm.querySelector("#telegram_username").value = telegramUsernameEl
-          ? telegramUsernameEl.textContent.replace("@", "")
-          : "";
-        const telegramIdText = Array.from(card.querySelectorAll(".contact-details p")).find(p => p.textContent.includes("ID:"));
-        editForm.querySelector("#telegram_id").value = telegramIdText
-          ? telegramIdText.textContent.split("ID:")[1].trim()
-          : "";
-
-        // Компанія
-        const companyName = card.dataset.company || "";
-        Array.from(companySelect.options).forEach(option => {
-          option.selected = (option.dataset.name === companyName);
-        });
-        companySearch.value = companyName;
-
-        // Відкрити модалку
-        const modalInstance = new bootstrap.Modal(editModal);
-        modalInstance.show();
-      });
-    });
 
     // -------- Пошук компанії --------
     companySearch.addEventListener("input", function(e) {
@@ -530,13 +571,12 @@
       // Створюємо новий div
       const newCard = document.createElement("div");
       newCard.classList.add("col-12", "col-md-6", "col-lg-4", "contact-card");
-      // Проставимо data-атрибути
       newCard.dataset.contactId = data.id;
       newCard.dataset.name = `${data.first_name} ${data.last_name || ''}`.trim();
       newCard.dataset.phone = data.phone || '';
       newCard.dataset.company = data.company_name || '';
 
-      // Вставляємо вміст (спрощений приклад — підставте свою розмітку)
+      // Вставляємо вміст
       newCard.innerHTML = `
         <div class="card shadow-sm border-0 h-100 transition-hover">
           <div class="card-body p-3">
@@ -551,7 +591,6 @@
                 <small class="text-muted">${data.position || ''}</small>
               </div>
               <div class="flex-shrink-0">
-                <!-- Кнопка редагування -->
                 <button class="btn btn-link p-0 text-muted edit-contact-btn" data-bs-toggle="modal"
                         data-bs-target="#editContactModal" data-contact-id="${data.id}">
                   <i class="bi bi-pencil" style="font-size: 0.9rem;"></i>
@@ -580,8 +619,7 @@
               ${ data.telegram_username
                 ? `<p class="mb-1 text-muted small">
                      <i class="bi bi-telegram me-1"></i>
-                     <a href="https://t.me/${data.telegram_username}" class="text-muted text-decoration-none"
-                        target="_blank">@${data.telegram_username}</a>
+                     <a href="https://t.me/${data.telegram_username}" class="text-muted text-decoration-none" target="_blank">@${data.telegram_username}</a>
                    </p>`
                 : data.telegram_id
                   ? `<p class="mb-1 text-muted small">
@@ -590,22 +628,20 @@
                   : ''
               }
               <small class="text-muted d-block mt-2">
-                <i class="bi bi-clock me-1"></i> Створено щойно
+                <i class="bi bi-clock me-1"></i> Створено: ${new Date().toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </small>
             </div>
           </div>
         </div>
       `;
 
-      // Додаємо на початок списку (або .append, якщо хочете в кінець)
-      const contactsList = document.getElementById("contacts-list");
+      // Додаємо на початок списку
       contactsList.prepend(newCard);
 
-      // Додамо обробник для кнопки редагування, щоб працював без перезавантаження
+      // Додамо обробник для кнопки редагування
       const editBtn = newCard.querySelector(".edit-contact-btn");
       if (editBtn) {
         editBtn.addEventListener("click", function() {
-          // Повторюємо логіку, яка в нас була вище
           const contactId = data.id.toString();
           editForm.action = `/sales/contacts/edit/${contactId}/`;
           editForm.dataset.contactId = contactId;
@@ -623,13 +659,11 @@
           editForm.querySelector("#telegram_username").value = data.telegram_username || "";
           editForm.querySelector("#telegram_id").value = data.telegram_id || "";
 
-          // З компанією складніше, бо треба звірятись із options
           Array.from(companySelect.options).forEach(option => {
             option.selected = (option.dataset.name === data.company_name);
           });
           companySearch.value = data.company_name;
 
-          // Відкрити модалку
           const modalInstance = new bootstrap.Modal(editModal);
           modalInstance.show();
         });
@@ -638,37 +672,30 @@
 
     // -------- Оновити існуючу картку --------
     function updateExistingCard(data) {
-      // Знаходимо картку за data-id
       const card = document.querySelector(`.contact-card[data-contact-id="${data.id}"]`);
       if (!card) {
         console.warn("Не знайдено картку для контакту з id=", data.id, ". Створюємо нову.");
-        // Якщо немає, створимо нову
         addNewContactCard(data);
         return;
       }
-      // Якщо знайшли, оновлюємо data-атрибути
       card.dataset.name = `${data.first_name} ${data.last_name || ''}`.trim();
       card.dataset.phone = data.phone || '';
       card.dataset.company = data.company_name || '';
 
-      // Тепер оновимо HTML усередині:
       const contactNameEl = card.querySelector(".contact-name");
       if (contactNameEl) {
         contactNameEl.textContent = `${data.first_name} ${data.last_name || ''}`.trim();
       }
-      // Посада
       const positionEl = card.querySelector(".text-muted");
       if (positionEl) {
         positionEl.textContent = data.position || "";
       }
-      // Телефон
       const phoneEl = card.querySelector("p:has(.bi-telephone-fill)");
       if (phoneEl) {
         phoneEl.innerHTML = data.phone
           ? `<i class="bi bi-telephone-fill me-1"></i> ${data.phone}`
           : "";
       }
-      // Email
       const emailEl = card.querySelector("p:has(.bi-envelope-fill) a");
       if (emailEl) {
         if (data.email) {
@@ -678,8 +705,7 @@
           emailEl.closest("p").innerHTML = "";
         }
       }
-      // Telegram
-      const telegramContainer = card.querySelector("p:has(.bi-telegram)"); // може бути <p>
+      const telegramContainer = card.querySelector("p:has(.bi-telegram)");
       if (telegramContainer) {
         if (data.telegram_username) {
           telegramContainer.innerHTML = `<i class="bi bi-telegram me-1"></i>
@@ -690,7 +716,6 @@
           telegramContainer.innerHTML = "";
         }
       }
-      // Компанія
       const companyEl = card.querySelector("p:has(.bi-building) a");
       if (companyEl) {
         companyEl.textContent = data.company_name || "";
@@ -703,7 +728,6 @@
       formErrors.style.display = "block";
       let errorMessages = "<strong>Помилки:</strong><br>";
 
-      // Якщо error — це JSON-рядок
       try {
         const parsed = typeof error === "string" ? JSON.parse(error) : error;
         if (parsed && typeof parsed === "object") {
@@ -714,17 +738,20 @@
             });
           }
         } else {
-          // Якщо не об'єкт помилок, просто додамо як текст
           errorMessages += `<i class="bi bi-exclamation-circle-fill text-danger me-1"></i> ${parsed}<br>`;
         }
       } catch(e) {
-        // Якщо парсинг не вдався, виведемо як рядок
         errorMessages += `<i class="bi bi-exclamation-circle-fill text-danger me-1"></i> ${error}<br>`;
       }
 
       formErrors.innerHTML = errorMessages;
     }
 
+    // Додаємо обробники для початкових кнопок редагування
+    addEditButtonListeners();
+
+    // Додаємо обробники для початкової пагінації
+    addPaginationListeners(searchInput.value.trim());
   });
 </script>
 {% endblock %}
