@@ -244,6 +244,13 @@ def create_contact(request):
             # 3. Створюємо запис Link, прив’язаний до контакту
             ContactLink.objects.create(contact=new_contact, url=link_url)
 
+            # 4. Створюємо чат (Room) із контактом
+            room = Room.objects.create(
+                user=request.user,  # Поточний авторизований користувач
+                contact=new_contact,  # Новий контакт
+            )
+
+            # Оновлюємо відповідь JSON із даними чату
             return JsonResponse({
                 'success': True,
                 'id': new_contact.id,
@@ -255,6 +262,8 @@ def create_contact(request):
                 'email': new_contact.email or '',
                 'telegram_username': new_contact.telegram_username or '',
                 'telegram_id': new_contact.telegram_id or '',
+                'room_id': room.id,  # ID створеного чату
+                'room_url': f"/sales/{room.id}/"  # URL для переходу в чат (залежить від твоєї маршрутизації)
             })
         else:
             return JsonResponse({'success': False, 'error': form.errors.as_json()}, status=400)
