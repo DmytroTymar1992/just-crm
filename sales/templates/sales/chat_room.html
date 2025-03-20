@@ -224,7 +224,16 @@
       .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
+
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
+      <p class="message-text">Телефон: ${payload.client_phone || ''}</p>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('call', notificationContent);
   }
+}
 
   function renderUnknownMessage(payload) {
     const chatLog = document.getElementById('chat-log');
