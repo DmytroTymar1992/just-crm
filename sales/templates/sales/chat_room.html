@@ -109,6 +109,12 @@
   #chat-log::-webkit-scrollbar-track, #contacts-container::-webkit-scrollbar-track {
     background: #e9ecef;
   }
+  #chat-message-input {
+  resize: vertical; /* Дозволяє змінювати висоту, але не ширину */
+  min-height: 40px; /* Мінімальна висота */
+  max-height: 150px; /* Максимальна висота */
+  overflow-y: auto; /* Додає прокрутку, якщо текст перевищує max-height */
+}
 </style>
 {% endblock %}
 
@@ -144,17 +150,25 @@
   }
 
   document.querySelector('#chat-message-submit').onclick = sendTelegram;
-  document.querySelector('#chat-message-input').addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') sendTelegram();
-  });
 
-  function sendTelegram() {
-    const input = document.querySelector('#chat-message-input');
-    const message = input.value.trim();
-    if (!message) return;
-    chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'telegram' }));
-    input.value = '';
-  }
+    // Обробка натискання клавіш у textarea
+    document.querySelector('#chat-message-input').addEventListener('keydown', function(e) {
+      // Відправка повідомлення при натисканні Ctrl+Enter або Cmd+Enter
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); // Запобігаємо додаванню нового рядка
+        sendTelegram();
+      }
+      // Звичайний Enter додає новий рядок
+    });
+
+    function sendTelegram() {
+      const textarea = document.querySelector('#chat-message-input');
+      const message = textarea.value.trim();
+      if (!message) return;
+      chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'telegram' }));
+      textarea.value = ''; // Очищаємо поле після відправки
+      textarea.style.height = 'auto'; // Скидаємо висоту, якщо textarea була розширена
+    }
 
   document.querySelector('#email-message-submit').onclick = sendEmail;
   function sendEmail() {
