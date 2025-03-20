@@ -61,6 +61,25 @@ def chat_room(request, room_id):
     })
 
 
+def chats_view(request):
+    # Список кімнат для користувача
+    rooms_for_user = (
+        request.user.rooms
+        .annotate(
+            latest_interaction=Max('interactions__created_at'),
+            unread_count=Count(
+                'interactions',
+                filter=Q(interactions__is_read=False, interactions__sender='contact')
+            )
+        )
+        .order_by('-latest_interaction')
+    )
+
+    return render(request, 'sales/chat_room.html', {
+        'rooms_for_user': rooms_for_user,
+    })
+
+
 def load_more_interactions(request, room_id):
     """
     Повертає старіші повідомлення (HTML), щоб додати їх зверху у чаті.
@@ -299,6 +318,7 @@ def kanban_board(request):
     # Поточна дата і час
     now = timezone.now()
     today = now.date()
+    yesterday = today - timedelta(days=1)  # Вчора
     tomorrow = today + timedelta(days=1)
 
     # Визначаємо початок і кінець тижня
@@ -306,25 +326,29 @@ def kanban_board(request):
     end_of_week = start_of_week + timedelta(days=6)  # Неділя
 
     # Розділяємо задачі за критеріями
+    # Протерміновані: задачі, дата виконання яких була вчора або раніше
     overdue_tasks = tasks.filter(
         is_completed=False,
-        task_date__lt=now
+        task_date__date__lte=yesterday  # Задачі, які прострочені (до вчора включно)
     )
 
+    # Сьогодні: задачі, які мають дату виконання сьогодні
     today_tasks = tasks.filter(
-        task_date__date=today,
-        is_completed=False
+        is_completed=False,
+        task_date__date=today
     )
 
+    # Завтра: задачі, які мають дату виконання завтра
     tomorrow_tasks = tasks.filter(
-        task_date__date=tomorrow,
-        is_completed=False
+        is_completed=False,
+        task_date__date=tomorrow
     )
 
+    # На цьому тижні: задачі, які мають дату виконання до кінця тижня, але не сьогодні і не завтра
     this_week_tasks = tasks.filter(
+        is_completed=False,
         task_date__date__gt=tomorrow,
-        task_date__date__lte=end_of_week,
-        is_completed=False
+        task_date__date__lte=end_of_week
     )
 
     context = {
