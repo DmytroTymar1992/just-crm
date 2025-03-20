@@ -151,16 +151,14 @@
             <label for="position" class="form-label">Посада</label>
             <input type="text" class="form-control" id="position" name="position">
           </div>
-          <div class="mb-3 position-relative">
+          <div class="mb-3">
             <label for="company" class="form-label">Компанія</label>
-            <input type="text" class="form-control" id="company-search" placeholder="Пошук компанії...">
-            <select class="form-select" id="company" name="company" style="display: none;">
+            <select class="form-select" id="company" name="company">
               <option value="">— Без компанії —</option>
               {% for company in companies %}
                 <option value="{{ company.id }}" data-name="{{ company.name }}">{{ company.name }}</option>
               {% endfor %}
             </select>
-            <div id="company-suggestions" class="dropdown-menu w-100 shadow-sm" style="max-height: 200px; overflow-y: auto;"></div>
           </div>
           <div class="mb-3">
             <label for="phone" class="form-label">Телефон</label>
@@ -283,33 +281,11 @@
     color: #6c757d;
     background: transparent;
   }
-
-  /* Пошук компанії */
-  #company-suggestions {
-    border: none;
-    border-top: 1px solid #ced4da;
-    border-radius: 0 0 8px 8px;
-    background: #ffffff;
-    padding: 0;
-  }
-  #company-suggestions .dropdown-item {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    color: #495057;
-    transition: background 0.2s ease;
-  }
-  #company-suggestions .dropdown-item:hover {
-    background: #f8f9fa;
-    color: #007bff;
-  }
-  #company-suggestions.show {
-    display: block;
-  }
 </style>
 {% endblock %}
 
-
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("contacts-container");
@@ -319,8 +295,16 @@
     const editForm = document.getElementById("edit-contact-form");
     const formErrors = document.getElementById("form-errors");
     const addContactBtn = document.getElementById("add-contact-btn");
-    const companySearch = document.getElementById("company-search");
     const companySelect = document.getElementById("company");
+
+    // Ініціалізація Choices.js для компанії
+    const companyChoices = new Choices(companySelect, {
+      searchEnabled: true,
+      searchPlaceholderValue: "Пошук компанії...",
+      noResultsText: "Компаній не знайдено",
+      itemSelectText: "",
+      shouldSort: false,
+    });
 
     // Якщо є контейнер, прокрутимо вниз
     if (container) {
@@ -489,8 +473,7 @@
         editForm.querySelector("#email").value = "";
         editForm.querySelector("#telegram_username").value = "";
         editForm.querySelector("#telegram_id").value = "";
-        companySelect.value = "";
-        companySearch.value = "";
+        companyChoices.setChoiceByValue(""); // Очищаємо вибір компанії
 
         // Ховаємо помилки
         if (formErrors) {
@@ -554,12 +537,11 @@
             editForm.querySelector("#telegram_id").value = "";
           }
 
+          // Встановлюємо компанію
           const companyEl = card.querySelector("p:has(.bi-building) a");
           const companyName = companyEl ? companyEl.textContent : "";
-          Array.from(companySelect.options).forEach(option => {
-            option.selected = (option.dataset.name === companyName);
-          });
-          companySearch.value = companyName;
+          const selectedOption = Array.from(companySelect.options).find(option => option.dataset.name === companyName);
+          companyChoices.setChoiceByValue(selectedOption ? selectedOption.value : "");
 
           // Відкриваємо модалку
           const modalInstance = new bootstrap.Modal(editModal);
@@ -589,11 +571,9 @@
       .then(data => {
         if (data.success) {
           if (contactId === "0") {
-            // Додаємо новий контакт
-            updateContactsList([data]); // Додаємо до списку
+            updateContactsList([data]); // Додаємо новий контакт
           } else {
-            // Оновлюємо існуючий контакт
-            updateContactsList([data]); // Оновлюємо список (можна оптимізувати)
+            updateContactsList([data]); // Оновлюємо (можна оптимізувати)
           }
           bootstrap.Modal.getInstance(editModal).hide();
         } else {
@@ -631,4 +611,3 @@
   });
 </script>
 {% endblock %}
-
