@@ -172,14 +172,16 @@
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
 
-    // Додаємо сповіщення
-  const notificationContent = `
-    <strong>Email</strong><br>
-    <strong>Тема:</strong> ${payload.subject || ''}<br>
-    ${payload.body || ''}<br>
-    <small>${payload.created_at || ''}</small>
-  `;
-  showNotification('email', notificationContent);
+    // Показуємо сповіщення лише якщо відправник — контакт
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>Email</strong><br>
+      <strong>Тема:</strong> ${payload.subject || ''}<br>
+      ${payload.body || ''}<br>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('email', notificationContent);
+  }
   }
 
   function renderTelegramMessage(payload) {
@@ -193,13 +195,15 @@
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
 
-    // Додаємо сповіщення
-  const notificationContent = `
-    <strong>Telegram</strong><br>
-    ${payload.body || ''}<br>
-    <small>${payload.created_at || ''}</small>
-  `;
-  showNotification('telegram', notificationContent);
+    // Показуємо сповіщення лише якщо відправник — контакт
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>Telegram</strong><br>
+      ${payload.body || ''}<br>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('telegram', notificationContent);
+  }
   }
 
   function renderCallMessage(payload) {
