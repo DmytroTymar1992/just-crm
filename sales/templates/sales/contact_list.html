@@ -309,6 +309,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% block extra_js %}
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("contacts-container");
@@ -349,7 +350,7 @@
 
     // -------- Пошук контактів через AJAX --------
     if (searchInput) {
-      // Динамічний пошук після введення
+      // Динамічний пошук після введення (з затримкою)
       searchInput.addEventListener("input", function(e) {
         const query = e.target.value.trim();
         console.log("Input event triggered, query:", query);
@@ -417,8 +418,11 @@
 
     // -------- Додаємо обробники для кнопок редагування --------
     function addEditButtonListeners() {
-      document.querySelectorAll(".edit-contact-btn").forEach(button => {
+      const editButtons = document.querySelectorAll(".edit-contact-btn");
+      console.log("Adding edit button listeners, found buttons:", editButtons.length);
+      editButtons.forEach(button => {
         button.addEventListener("click", function() {
+          console.log("Edit button clicked, contactId:", this.dataset.contactId);
           const contactId = this.dataset.contactId;
           const card = this.closest(".contact-card");
 
@@ -473,10 +477,12 @@
     // -------- Додаємо обробники для пагінації --------
     function addPaginationListeners(query) {
       const paginationLinks = paginationContainer.querySelectorAll(".page-link");
+      console.log("Adding pagination listeners, found links:", paginationLinks.length);
       paginationLinks.forEach(link => {
         link.addEventListener("click", function(e) {
           e.preventDefault();
           const href = this.getAttribute("href");
+          console.log("Pagination link clicked, href:", href);
           if (href && !this.parentElement.classList.contains("disabled")) {
             const urlParams = new URLSearchParams(href.split('?')[1]);
             const page = urlParams.get('page') || 1;
@@ -491,6 +497,7 @@
     if (addContactBtn) {
       addContactBtn.addEventListener("click", function(e) {
         e.preventDefault();
+        console.log("Add contact button clicked");
 
         // Ставимо action на create_contact
         editForm.action = "/sales/contacts/create/";
@@ -574,35 +581,28 @@
         }
       })
       .then(response => {
+        console.log("Form submission response status:", response.status);
         if (!response.ok) {
-          // Якщо помилка валідації чи інша — повертаємо JSON
           return response.json().then(data => {
-            throw data; // Зручно "пробросити" data як помилку
+            throw data;
           });
         }
         return response.json();
       })
       .then(data => {
-        // Якщо все гаразд: data.success = true
+        console.log("Form submission response data:", data);
         if (data.success) {
-          // Перевіряємо, новий контакт чи редагування
           if (contactId === "0") {
-            // Новий контакт => додаємо нову картку в DOM
             addNewContactCard(data);
           } else {
-            // Оновити існуючу картку
             updateExistingCard(data);
           }
-
-          // Закриваємо модалку
           bootstrap.Modal.getInstance(editModal).hide();
         } else {
-          // Якщо success=false => виводимо помилки
           showFormErrors(data.error);
         }
       })
       .catch(errData => {
-        // Якщо прилетів об'єкт помилки (errData), обробимо
         if (errData && errData.error) {
           showFormErrors(errData.error);
         } else {
@@ -614,7 +614,6 @@
 
     // -------- Додаємо нову картку в HTML --------
     function addNewContactCard(data) {
-      // Створюємо новий div
       const newCard = document.createElement("div");
       newCard.classList.add("col-12", "col-md-6", "col-lg-4", "contact-card");
       newCard.dataset.contactId = data.id;
@@ -622,7 +621,6 @@
       newCard.dataset.phone = data.phone || '';
       newCard.dataset.company = data.company_name || '';
 
-      // Вставляємо вміст
       newCard.innerHTML = `
         <div class="card shadow-sm border-0 h-100 transition-hover">
           <div class="card-body p-3">
@@ -681,10 +679,8 @@
         </div>
       `;
 
-      // Додаємо на початок списку
       contactsList.prepend(newCard);
 
-      // Додамо обробник для кнопки редагування
       const editBtn = newCard.querySelector(".edit-contact-btn");
       if (editBtn) {
         editBtn.addEventListener("click", function() {
@@ -801,3 +797,4 @@
   });
 </script>
 {% endblock %}
+

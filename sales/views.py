@@ -183,6 +183,13 @@ def contact_list(request):
             'request': request,
         }, request=request)
 
+        # Дебагування
+        print("AJAX request received")
+        print("Query:", query)
+        print("Page number:", page_number)
+        print("Contacts HTML length:", len(contacts_html))
+        print("Pagination HTML length:", len(pagination_html))
+
         return JsonResponse({
             'contacts_html': contacts_html,
             'pagination_html': pagination_html,
