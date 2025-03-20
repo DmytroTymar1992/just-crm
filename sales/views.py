@@ -186,7 +186,7 @@ def contact_search(request):
         Q(last_name__icontains=query) |
         Q(phone__icontains=query) |
         Q(company__name__icontains=query)
-    ).select_related('company').order_by('id')
+    ).select_related('company').prefetch_related('rooms').order_by('id')
 
     # Пагінація
     paginator = Paginator(contacts, 10)  # 10 контактів на сторінку
@@ -204,7 +204,8 @@ def contact_search(request):
             'telegram_username': contact.telegram_username or '',
             'telegram_id': contact.telegram_id or '',
             'company_name': contact.company.name if contact.company else '',
-            'created_at': contact.created_at.strftime('%d.%m.%Y %H:%M')
+            'created_at': contact.created_at.strftime('%d.%m.%Y %H:%M'),
+            'rooms': [{'id': room.id} for room in contact.rooms.all()]  # Додаємо пов’язані rooms
         }
         for contact in page_obj
     ]

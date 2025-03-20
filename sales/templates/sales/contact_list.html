@@ -410,6 +410,7 @@
         }
 
         contacts.forEach(contact => {
+            console.log("Contact data:", contact); // Дебаг: перевір, чи є rooms
             const cardHtml = `
               <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="${contact.id}" data-name="${contact.first_name} ${contact.last_name || ''}" data-phone="${contact.phone || ''}" data-company="${contact.company_name || ''}">
                 <div class="card h-100 shadow-sm border-0 modern-contact-card">
