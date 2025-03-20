@@ -158,23 +158,61 @@ def contact_list(request):
 
     if query:
         contacts = contacts.filter(
-            models.Q(first_name__icontains=query) |
-            models.Q(last_name__icontains=query) |
-            models.Q(phone__icontains=query) |
-            models.Q(company__name__icontains=query)
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(company__name__icontains=query)
         )
 
-    paginator = Paginator(contacts, 36)  # 12 контактів на сторінку
+    paginator = Paginator(contacts, 36)  # 36 контактів на сторінку
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    # Отримуємо поточного користувача
+    current_user = request.user
+
+    # Додаємо інформацію про наявність чату для кожного контакту
+    contacts_with_chat_info = []
+    for contact in page_obj:
+        # Перевіряємо, чи існує Room для цього контакту і користувача
+        room = Room.objects.filter(user=current_user, contact=contact).first()
+        contact_data = {
+            'id': contact.id,
+            'first_name': contact.first_name,
+            'last_name': contact.last_name,
+            'position': contact.position,
+            'company': contact.company,
+            'phone': contact.phone,
+            'email': contact.email,
+            'telegram_username': contact.telegram_username,
+            'telegram_id': contact.telegram_id,
+            'created_at': contact.created_at.strftime('%d.%m.%Y %H:%M'),  # Форматуємо дату
+            'has_chat': bool(room),  # Чи є чат
+            'room_id': room.id if room else None  # ID чату, якщо є
+        }
+        contacts_with_chat_info.append(contact_data)
 
     companies = Company.objects.all()
 
     return render(request, 'sales/contact_list.html', {
-        'contacts': page_obj,
+        'contacts': contacts_with_chat_info,  # Передаємо список із додатковою інформацією
         'page_obj': page_obj,
         'companies': companies,
     })
+
+@login_required
+def create_chat_room(request, contact_id):
+    contact = Contact.objects.get(id=contact_id)
+    user = request.user
+
+    # Перевіряємо, чи чат уже існує
+    room = Room.objects.filter(user=user, contact=contact).first()
+    if room:
+        return redirect('chat_room', room_id=room.id)
+
+    # Створюємо новий чат
+    room = Room.objects.create(user=user, contact=contact)
+    return redirect('chat_room', room_id=room.id)
 
 def contact_search(request):
     query = request.GET.get('q', '')

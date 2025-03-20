@@ -18,5 +18,6 @@ urlpatterns = [
     path('edit_task/', edit_task, name='edit_task'),
     path('chats/', chats_view, name='chats'),
     path('contacts/search/', contact_search, name='contact_search'),
+    path('contacts/create_chat/<int:contact_id>/', create_chat_room, name='create_chat_room'),
 
 ]

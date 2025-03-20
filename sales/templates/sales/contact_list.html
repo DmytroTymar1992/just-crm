@@ -76,11 +76,16 @@
         </div>
         <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center p-2">
           <small class="text-muted">
-            <i class="bi bi-clock me-1"></i> {{ contact.created_at|date:"d.m.Y H:i" }}
+            <i class="bi bi-clock me-1"></i> {{ contact.created_at }}
           </small>
-          {% if contact.rooms.first %}
-            <a href="{% url 'chat_room' room_id=contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
+          <!-- Логіка для іконки чату -->
+          {% if contact.has_chat %}
+            <a href="{% url 'chat_room' room_id=contact.room_id %}" class="chat-btn" title="Перейти в чат">
               <i class="bi bi-chat-dots-fill text-primary"></i>
+            </a>
+          {% else %}
+            <a href="{% url 'create_chat_room' contact_id=contact.id %}" class="chat-btn" title="Створити чат">
+              <i class="bi bi-plus-circle-fill text-success"></i>
             </a>
           {% endif %}
         </div>
@@ -212,25 +217,25 @@
   /* Сучасна картка контакту */
   .modern-contact-card {
     border-radius: 12px;
-    background: #f9fbfd; /* Більш насичений фон із легким блакитним відтінком */
-    border: 1px solid #d8dee5; /* Темніша межа для чіткості */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); /* Ще сильніша базова тінь */
+    background: #f9fbfd;
+    border: 1px solid #d8dee5;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     overflow: hidden;
   }
   .modern-contact-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.14); /* Посилена тінь при наведенні */
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.14);
   }
 
   .card-header {
-    background: linear-gradient(135deg, #e8eef5 0%, #d9e2ec 100%); /* Насиченіший градієнт для заголовка */
-    border-bottom: 1px solid #d1d9e2; /* Темніша межа знизу */
+    background: linear-gradient(135deg, #e8eef5 0%, #d9e2ec 100%);
+    border-bottom: 1px solid #d1d9e2;
   }
   .avatar-circle {
     width: 40px;
     height: 40px;
-    background: #dbe7ff; /* Трохи яскравіший блакитний для аватара */
+    background: #dbe7ff;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -248,7 +253,7 @@
 
   .card-body {
     padding: 1rem 1.5rem;
-    background: #f9fbfd; /* Узгоджуємо з основним фоном картки */
+    background: #f9fbfd;
   }
   .contact-details p {
     margin-bottom: 0.75rem;
@@ -270,8 +275,8 @@
   }
 
   .card-footer {
-    background: #f5f7fa; /* Трохи темніший за картку, але світліший за контейнер */
-    border-top: 1px solid #d8dee5; /* Темніша межа зверху */
+    background: #f5f7fa;
+    border-top: 1px solid #d8dee5;
     font-size: 0.8rem;
   }
   .chat-btn {
@@ -403,102 +408,99 @@
 
     // -------- Оновлення списку контактів --------
     function updateContactsList(contacts) {
-        contactsList.innerHTML = "";
-        if (contacts.length === 0) {
-            contactsList.innerHTML = '<div class="col-12 text-center py-5"><i class="bi bi-person-lines-fill text-muted" style="font-size: 3rem;"></i><p class="text-muted mt-3">Контактів не знайдено</p></div>';
-            return;
-        }
+      contactsList.innerHTML = "";
+      if (contacts.length === 0) {
+        contactsList.innerHTML = '<div class="col-12 text-center py-5"><i class="bi bi-person-lines-fill text-muted" style="font-size: 3rem;"></i><p class="text-muted mt-3">Контактів не знайдено</p></div>';
+        return;
+      }
 
-        contacts.forEach(contact => {
-            console.log("Contact data:", contact); // Дебаг: перевір, чи є rooms
-            const cardHtml = `
-              <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="${contact.id}" data-name="${contact.first_name} ${contact.last_name || ''}" data-phone="${contact.phone || ''}" data-company="${contact.company_name || ''}">
-                <div class="card h-100 shadow-sm border-0 modern-contact-card">
-                  <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
-                    <div class="avatar-circle me-3">
-                      <i class="bi bi-person-fill text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                      <h6 class="mb-0 fw-semibold contact-name">
-                        <a href="#" class="text-dark text-decoration-none">${contact.first_name} ${contact.last_name || ''}</a>
-                      </h6>
-                      ${contact.position ? `<small class="text-muted d-block">${contact.position}</small>` : ''}
-                    </div>
-                    <button class="btn btn-link p-0 ms-2 text-muted edit-contact-btn" data-bs-toggle="modal" data-bs-target="#editContactModal" data-contact-id="${contact.id}">
-                      <i class="bi bi-pencil-fill" style="font-size: 1rem;"></i>
-                    </button>
-                  </div>
-                  <div class="card-body p-3">
-                    <div class="contact-details">
-                      ${contact.company_name ? `<p class="mb-2 text-muted small"><i class="bi bi-building me-2"></i><a href="#" class="text-muted text-decoration-none">${contact.company_name}</a></p>` : ''}
-                      ${contact.phone ? `<p class="mb-2 text-muted small"><i class="bi bi-telephone-fill me-2"></i><a href="tel:${contact.phone}" class="text-muted text-decoration-none">${contact.phone}</a></p>` : ''}
-                      ${contact.email ? `<p class="mb-2 text-muted small"><i class="bi bi-envelope-fill me-2"></i><a href="mailto:${contact.email}" class="text-muted text-decoration-none">${contact.email}</a></p>` : ''}
-                      ${contact.telegram_username || contact.telegram_id ? `
-                        <p class="mb-2 text-muted small">
-                          <i class="bi bi-telegram me-2"></i>
-                          ${contact.telegram_username ? `<a href="https://t.me/${contact.telegram_username}" class="text-muted text-decoration-none" target="_blank">@${contact.telegram_username}</a>` : `ID: ${contact.telegram_id}`}
-                        </p>` : ''}
-                    </div>
-                  </div>
-                  <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center p-2">
-                    <small class="text-muted">
-                      <i class="bi bi-clock me-1"></i> ${contact.created_at}
-                    </small>
-                    ${contact.rooms && contact.rooms.length > 0 ? `
-                      <a href="/sales/${contact.rooms[0].id}/" class="chat-btn" title="Перейти в чат">
-                        <i class="bi bi-chat-dots-fill text-primary"></i>
-                      </a>` : ''}
-                  </div>
+      contacts.forEach(contact => {
+        const cardHtml = `
+          <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="${contact.id}" data-name="${contact.first_name} ${contact.last_name || ''}" data-phone="${contact.phone || ''}" data-company="${contact.company_name || ''}">
+            <div class="card h-100 shadow-sm border-0 modern-contact-card">
+              <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
+                <div class="avatar-circle me-3">
+                  <i class="bi bi-person-fill text-primary"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <h6 class="mb-0 fw-semibold contact-name">
+                    <a href="#" class="text-dark text-decoration-none">${contact.first_name} ${contact.last_name || ''}</a>
+                  </h6>
+                  ${contact.position ? `<small class="text-muted d-block">${contact.position}</small>` : ''}
+                </div>
+                <button class="btn btn-link p-0 ms-2 text-muted edit-contact-btn" data-bs-toggle="modal" data-bs-target="#editContactModal" data-contact-id="${contact.id}">
+                  <i class="bi bi-pencil-fill" style="font-size: 1rem;"></i>
+                </button>
+              </div>
+              <div class="card-body p-3">
+                <div class="contact-details">
+                  ${contact.company_name ? `<p class="mb-2 text-muted small"><i class="bi bi-building me-2"></i><a href="#" class="text-muted text-decoration-none">${contact.company_name}</a></p>` : ''}
+                  ${contact.phone ? `<p class="mb-2 text-muted small"><i class="bi bi-telephone-fill me-2"></i><a href="tel:${contact.phone}" class="text-muted text-decoration-none">${contact.phone}</a></p>` : ''}
+                  ${contact.email ? `<p class="mb-2 text-muted small"><i class="bi bi-envelope-fill me-2"></i><a href="mailto:${contact.email}" class="text-muted text-decoration-none">${contact.email}</a></p>` : ''}
+                  ${contact.telegram_username || contact.telegram_id ? `
+                    <p class="mb-2 text-muted small">
+                      <i class="bi bi-telegram me-2"></i>
+                      ${contact.telegram_username ? `<a href="https://t.me/${contact.telegram_username}" class="text-muted text-decoration-none" target="_blank">@${contact.telegram_username}</a>` : `ID: ${contact.telegram_id}`}
+                    </p>` : ''}
                 </div>
               </div>
-            `;
-            contactsList.insertAdjacentHTML('beforeend', cardHtml);
-        });
+              <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center p-2">
+                <small class="text-muted">
+                  <i class="bi bi-clock me-1"></i> ${contact.created_at}
+                </small>
+                ${contact.has_chat ? `
+                  <a href="/sales/${contact.room_id}/" class="chat-btn" title="Перейти в чат">
+                    <i class="bi bi-chat-dots-fill text-primary"></i>
+                  </a>` : `
+                  <a href="/sales/contacts/create_chat/${contact.id}/" class="chat-btn" title="Створити чат">
+                    <i class="bi bi-plus-circle-fill text-success"></i>
+                  </a>`}
+              </div>
+            </div>
+          </div>
+        `;
+        contactsList.insertAdjacentHTML('beforeend', cardHtml);
+      });
 
-        bindEditButtons();
+      bindEditButtons();
     }
 
     // -------- Оновлення пагінації --------
     function updatePagination(pagination) {
-        const paginationContainer = document.querySelector("#pagination-container .pagination");
+      const paginationContainer = document.querySelector("#pagination-container .pagination");
+      if (!paginationContainer) {
+        console.error("Елемент '#pagination-container .pagination' не знайдено в DOM");
+        return;
+      }
 
-        // Перевірка, чи елемент існує
-        if (!paginationContainer) {
-            console.error("Елемент '#pagination-container .pagination' не знайдено в DOM");
-            return;
-        }
+      if (!pagination || !pagination.has_other_pages) {
+        paginationContainer.style.display = "none";
+        return;
+      }
+      paginationContainer.style.display = "block";
 
-        // Приховуємо або показуємо пагінацію залежно від наявності сторінок
-        if (!pagination || !pagination.has_other_pages) {
-            paginationContainer.style.display = "none";
-            return;
-        }
-        paginationContainer.style.display = "block";
+      let paginationHtml = "";
+      if (pagination.has_previous) {
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.previous_page_number}">«</a></li>`;
+      } else {
+        paginationHtml += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
+      }
 
-        // Формуємо HTML для пагінації
-        let paginationHtml = "";
-        if (pagination.has_previous) {
-            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.previous_page_number}">«</a></li>`;
-        } else {
-            paginationHtml += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
-        }
+      pagination.page_range.forEach(page => {
+        paginationHtml += `
+          <li class="page-item ${pagination.current_page === page ? 'active' : ''}">
+            <a class="page-link" href="#" data-page="${page}">${page}</a>
+          </li>`;
+      });
 
-        pagination.page_range.forEach(page => {
-            paginationHtml += `
-              <li class="page-item ${pagination.current_page === page ? 'active' : ''}">
-                <a class="page-link" href="#" data-page="${page}">${page}</a>
-              </li>`;
-        });
+      if (pagination.has_next) {
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.next_page_number}">»</a></li>`;
+      } else {
+        paginationHtml += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
+      }
 
-        if (pagination.has_next) {
-            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.next_page_number}">»</a></li>`;
-        } else {
-            paginationHtml += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
-        }
-
-        // Оновлюємо вміст пагінації
-        paginationContainer.innerHTML = paginationHtml;
-        bindPaginationLinks();
+      paginationContainer.innerHTML = paginationHtml;
+      bindPaginationLinks();
     }
 
     // -------- Прив'язка обробників для пагінації --------
@@ -538,7 +540,6 @@
         editForm.action = "{% url 'create_contact' %}";
         editForm.dataset.contactId = "0";
 
-        // Очищаємо поля форми
         editForm.querySelector("#first_name").value = "";
         editForm.querySelector("#last_name").value = "";
         editForm.querySelector("#position").value = "";
@@ -546,15 +547,13 @@
         editForm.querySelector("#email").value = "";
         editForm.querySelector("#telegram_username").value = "";
         editForm.querySelector("#telegram_id").value = "";
-        companyChoices.setChoiceByValue(""); // Очищаємо вибір компанії
+        companyChoices.setChoiceByValue("");
 
-        // Ховаємо помилки
         if (formErrors) {
           formErrors.style.display = "none";
           formErrors.innerHTML = "";
         }
 
-        // Відкриваємо модалку
         const modalInstance = new bootstrap.Modal(editModal);
         modalInstance.show();
       });
@@ -567,17 +566,14 @@
           const contactId = this.dataset.contactId;
           const card = this.closest(".contact-card");
 
-          // Оновлюємо action форми
           editForm.action = `/sales/contacts/edit/${contactId}/`;
           editForm.dataset.contactId = contactId;
 
-          // Очищаємо помилки
           if (formErrors) {
             formErrors.style.display = "none";
             formErrors.innerHTML = "";
           }
 
-          // Заповнюємо поля форми
           const nameEl = card.querySelector(".contact-name");
           const nameParts = nameEl.textContent.trim().split(" ");
           editForm.querySelector("#first_name").value = nameParts[0] || "";
@@ -610,13 +606,11 @@
             editForm.querySelector("#telegram_id").value = "";
           }
 
-          // Встановлюємо компанію
           const companyEl = card.querySelector("p:has(.bi-building) a");
           const companyName = companyEl ? companyEl.textContent : "";
           const selectedOption = Array.from(companySelect.options).find(option => option.dataset.name === companyName);
           companyChoices.setChoiceByValue(selectedOption ? selectedOption.value : "");
 
-          // Відкриваємо модалку
           const modalInstance = new bootstrap.Modal(editModal);
           modalInstance.show();
         });
@@ -644,9 +638,9 @@
       .then(data => {
         if (data.success) {
           if (contactId === "0") {
-            updateContactsList([data]); // Додаємо новий контакт
+            updateContactsList([data]);
           } else {
-            updateContactsList([data]); // Оновлюємо (можна оптимізувати)
+            updateContactsList([data]);
           }
           bootstrap.Modal.getInstance(editModal).hide();
         } else {
