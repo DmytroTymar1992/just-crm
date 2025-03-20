@@ -74,7 +74,20 @@
       max-width: calc(100vw - 200px); /* Адаптуємо при наведенні */
     }
 
-    #notification-container .notification {
+    #notification-container .notification .notification-link {
+  color: white;
+  text-decoration: none; /* Прибираємо підкреслення */
+  display: block; /* Робимо посилання блоковим, щоб воно займало весь простір */
+  width: 100%;
+  height: 100%;
+}
+
+#notification-container .notification .notification-link:hover {
+  color: #ddd; /* Легке підсвічування при наведенні */
+}
+
+/* Залишаємо решту стилів без змін */
+#notification-container .notification {
   background-color: #333;
   color: white;
   padding: 15px;
@@ -84,7 +97,7 @@
   max-width: 300px;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
-  position: relative; /* Для позиціонування кнопки закриття */
+  position: relative;
 }
 
 #notification-container .notification.show {
@@ -105,10 +118,10 @@
 
 #notification-container .notification .message-text {
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Обмеження до 2 рядків */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis; /* Додаємо "..." */
+  text-overflow: ellipsis;
   margin: 0;
 }
 
@@ -263,10 +276,12 @@
   const notification = document.createElement('div');
   notification.classList.add('notification', type);
 
-  // Додаємо кнопку закриття та вміст
+  // Обгортаємо вміст у посилання
   notification.innerHTML = `
-    ${content}
-    <button class="close-btn">&times;</button>
+    <a href="${chatUrl}" target="_blank" class="notification-link">
+      ${content}
+    </a>
+    <button class="close-btn">×</button>
   `;
 
   // Додаємо сповіщення в контейнер
@@ -281,8 +296,9 @@
     setTimeout(() => notification.remove(), 500); // Чекаємо завершення анімації
   }, 10000);
 
-  // Додаємо обробник для кнопки закриття
-  notification.querySelector('.close-btn').addEventListener('click', () => {
+  // Обробник для кнопки закриття (зупиняємо подію переходу за посиланням)
+  notification.querySelector('.close-btn').addEventListener('click', (e) => {
+    e.stopPropagation(); // Зупиняємо клік від переходу за посиланням
     clearTimeout(timeoutId); // Зупиняємо автоматичне зникнення
     notification.classList.remove('show');
     setTimeout(() => notification.remove(), 500); // Чекаємо завершення анімації
