@@ -230,15 +230,38 @@ def company_create(request):
 @require_POST
 def create_task(request):
     try:
+        # Перевіряємо, чи є тіло запиту
+        if not request.body:
+            return JsonResponse({'success': False, 'error': 'Тіло запиту порожнє'}, status=400)
+
+        # Парсимо JSON-дані
         data = json.loads(request.body)
+
+        # Отримуємо дані з запиту
         room_id = data.get('room_id')
         task_type = data.get('task_type')
         task_date = data.get('task_date')
-        subject = data.get('subject')
+        target = data.get('target')  # Змінено з subject на target
         description = data.get('description')
 
+        # Перевірка обов’язкових полів
+        if not all([room_id, task_type, task_date, target]):
+            return JsonResponse({'success': False, 'error': 'Не всі обов’язкові поля заповнені'}, status=400)
+
+        # Перевірка коректності task_type
+        valid_task_types = [choice[0] for choice in Task.TASK_TYPE_CHOICES]
+        if task_type not in valid_task_types:
+            return JsonResponse({'success': False, 'error': 'Невірний тип задачі'}, status=400)
+
         # Отримуємо кімнату
-        room = Room.objects.get(id=room_id)
+        try:
+            room = Room.objects.get(id=room_id)
+        except Room.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Кімната не знайдена'}, status=404)
+
+        # Перевірка, чи користувач авторизований
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Користувач не авторизований'}, status=403)
 
         # Створюємо задачу
         task = Task.objects.create(
@@ -246,11 +269,19 @@ def create_task(request):
             contact=room.contact,
             user=request.user,
             task_type=task_type,
-            subject=subject,
-            description=description,
+            target=target,  # Змінено з subject на target
+            description=description or '',
         )
 
-        return JsonResponse({'success': True, 'task_id': task.id})
+        return JsonResponse({
+            'success': True,
+            'task_id': task.id,
+            'task_type': task.task_type,
+            'target': task.target,  # Змінено з subject на target
+            'task_date': task.task_date.isoformat(),
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Невірний формат JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 

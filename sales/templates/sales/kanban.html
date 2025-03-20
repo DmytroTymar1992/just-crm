@@ -16,7 +16,7 @@
           {% for task in overdue_tasks %}
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2">
-                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <h6 class="card-title mb-1">{{ task.target }}</h6>  <!-- Змінено з subject на target -->
                 <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                 <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                 <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
@@ -39,7 +39,7 @@
           {% for task in today_tasks %}
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2">
-                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <h6 class="card-title mb-1">{{ task.target }}</h6>  <!-- Змінено з subject на target -->
                 <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                 <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                 <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
@@ -62,7 +62,7 @@
           {% for task in tomorrow_tasks %}
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2">
-                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <h6 class="card-title mb-1">{{ task.target }}</h6>  <!-- Змінено з subject на target -->
                 <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                 <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                 <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
@@ -85,7 +85,7 @@
           {% for task in this_week_tasks %}
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2">
-                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <h6 class="card-title mb-1">{{ task.target }}</h6>  <!-- Змінено з subject на target -->
                 <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                 <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                 <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
@@ -123,7 +123,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    // Ініціалізація dragula для drag-and-drop
+    const columns = {
+      'overdue-tasks': 'overdue',
+      'today-tasks': 'today',
+      'tomorrow-tasks': 'tomorrow',
+      'this-week-tasks': 'this-week'
+    };
+
     dragula([
       document.getElementById('overdue-tasks'),
       document.getElementById('today-tasks'),
@@ -131,14 +137,8 @@
       document.getElementById('this-week-tasks')
     ]).on('drop', function(el, target) {
       const taskId = el.getAttribute('data-task-id');
-      let newStatus;
+      let newStatus = 'in_progress';
 
-      if (target.id === 'overdue-tasks' || target.id === 'today-tasks' ||
-          target.id === 'tomorrow-tasks' || target.id === 'this-week-tasks') {
-        newStatus = 'in_progress'; // При перетягуванні в будь-яку колонку вважаємо задачу "в процесі"
-      }
-
-      // Оновлення статусу задачі через API
       fetch('/sales/update_task_status/', {
         method: 'POST',
         headers: {

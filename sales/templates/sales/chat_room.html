@@ -120,8 +120,8 @@
             <input type="datetime-local" id="task-date" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label for="task-subject" class="form-label">Тема</label>
-            <input type="text" id="task-subject" class="form-control" required>
+            <label for="task-target" class="form-label">Ціль</label>  <!-- Змінено з "Тема" на "Ціль" -->
+            <input type="text" id="task-target" class="form-control" required>  <!-- Змінено id з task-subject на task-target -->
           </div>
           <div class="mb-3">
             <label for="task-description" class="form-label">Опис</label>
@@ -462,17 +462,17 @@ bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
 });
     </script>
     <script>
-    //Скрипт створення нової задачі
-    document.querySelector('#task-submit').onclick = createTask;
+    // Скрипт створення нової задачі
+document.querySelector('#task-submit').onclick = createTask;
 
 function createTask() {
   const taskType = document.querySelector('#task-type').value;
   const taskDate = document.querySelector('#task-date').value;
-  const taskSubject = document.querySelector('#task-subject').value;
+  const taskTarget = document.querySelector('#task-target').value;  // Змінено з taskSubject на taskTarget
   const taskDescription = document.querySelector('#task-description').value;
 
   // Перевірка, чи заповнені обов'язкові поля
-  if (!taskType || !taskDate || !taskSubject) {
+  if (!taskType || !taskDate || !taskTarget) {
     alert('Будь ласка, заповніть усі обов’язкові поля!');
     return;
   }
@@ -482,13 +482,13 @@ function createTask() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-CSRFToken': getCsrfToken(), // Функція для отримання CSRF-токена
+      'X-CSRFToken': getCsrfToken(),
     },
     body: JSON.stringify({
-      room_id: roomId, // roomId уже визначений у вашому коді
+      room_id: roomId,
       task_type: taskType,
       task_date: taskDate,
-      subject: taskSubject,
+      target: taskTarget,  // Змінено з subject на target
       description: taskDescription,
     }),
   })
