@@ -17,5 +17,6 @@ urlpatterns = [
     path('get_task/<int:task_id>/', get_task, name='get_task'),
     path('edit_task/', edit_task, name='edit_task'),
     path('chats/', chats_view, name='chats'),
+    path('contacts/search/', contact_search, name='contact_search'),
 
 ]

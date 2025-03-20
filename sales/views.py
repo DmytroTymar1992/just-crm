@@ -164,42 +164,65 @@ def contact_list(request):
             models.Q(company__name__icontains=query)
         )
 
-    paginator = Paginator(contacts, 36)  # 36 контактів на сторінку
-    page_number = request.GET.get('page', 1)
+    paginator = Paginator(contacts, 36)  # 12 контактів на сторінку
+    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     companies = Company.objects.all()
 
-    # Якщо це AJAX-запит, повертаємо JSON
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Рендеримо HTML для контактів
-        contacts_html = render_to_string('sales/partials/contact_cards.html', {
-            'contacts': page_obj,
-        }, request=request)
-
-        # Рендеримо HTML для пагінації
-        pagination_html = render_to_string('sales/partials/pagination.html', {
-            'page_obj': page_obj,
-            'request': request,
-        }, request=request)
-
-        # Дебагування
-        print("AJAX request received")
-        print("Query:", query)
-        print("Page number:", page_number)
-        print("Contacts HTML length:", len(contacts_html))
-        print("Pagination HTML length:", len(pagination_html))
-
-        return JsonResponse({
-            'contacts_html': contacts_html,
-            'pagination_html': pagination_html,
-        })
-
-    # Якщо це звичайний запит, повертаємо повну сторінку
     return render(request, 'sales/contact_list.html', {
         'contacts': page_obj,
         'page_obj': page_obj,
         'companies': companies,
+    })
+
+def contact_search(request):
+    query = request.GET.get('q', '')
+    page = request.GET.get('page', 1)
+
+    # Фільтруємо контакти
+    contacts = Contact.objects.filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(phone__icontains=query) |
+        Q(company__name__icontains=query)
+    ).select_related('company').order_by('id')
+
+    # Пагінація
+    paginator = Paginator(contacts, 10)  # 10 контактів на сторінку
+    page_obj = paginator.get_page(page)
+
+    # Формуємо дані для JSON
+    contacts_data = [
+        {
+            'id': contact.id,
+            'first_name': contact.first_name,
+            'last_name': contact.last_name or '',
+            'position': contact.position or '',
+            'phone': contact.phone or '',
+            'email': contact.email or '',
+            'telegram_username': contact.telegram_username or '',
+            'telegram_id': contact.telegram_id or '',
+            'company_name': contact.company.name if contact.company else '',
+            'created_at': contact.created_at.strftime('%d.%m.%Y %H:%M')
+        }
+        for contact in page_obj
+    ]
+
+    pagination_data = {
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+        'previous_page_number': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'next_page_number': page_obj.next_page_number() if page_obj.has_next() else None,
+        'current_page': page_obj.number,
+        'page_range': list(paginator.page_range),
+        'has_other_pages': page_obj.has_other_pages()
+    }
+
+    return JsonResponse({
+        'success': True,
+        'contacts': contacts_data,
+        'pagination': pagination_data
     })
 
 @login_required
