@@ -23,20 +23,17 @@ class Command(BaseCommand):
         max_pages = options['max_pages']
         total_parsed = 0
 
-        # Оскільки тут ми парсимо всі вакансії, компанія може бути невизначеною.
-        # Якщо вам потрібно прив’язувати вакансії до компаній, можна додатково спробувати визначати їх за work_company_id.
-        # Тут для простоти поле company залишається порожнім (None).
         for page in range(1, max_pages + 1):
             url = f"https://www.work.ua/jobs/?page={page}"
             self.stdout.write(f"Парсинг сторінки {page}: {url}")
             response = requests.get(url)
+            time.sleep(1)  # Додаємо затримку 1 секунду між запитами
             if response.status_code != 200:
                 self.stdout.write(self.style.ERROR(f"Не вдалося завантажити сторінку {page}"))
                 break
 
             soup = BeautifulSoup(response.content, "html.parser")
-            # Знаходимо всі посилання, які відповідають вакансіям;
-            # припускаємо, що вакансії мають посилання з URL, що містить "/jobs/<id>/"
+            # Знаходимо всі посилання, які відповідають вакансіям
             vacancy_links = soup.find_all("a", href=re.compile(r"^/jobs/\d+/"))
             if not vacancy_links:
                 self.stdout.write(f"Сторінка {page} не містить вакансій. Завершуємо парсинг.")
@@ -52,10 +49,9 @@ class Command(BaseCommand):
                     continue
                 work_job_id = int(match.group(1))
 
-                # Перевіряємо, чи ця вакансія вже існує (за work_id та placement "work")
+                # Перевіряємо, чи вакансія вже існує
                 try:
                     vacancy = Vacancy.objects.get(work_id=work_job_id, placement="work")
-                    # Якщо вакансія вже існує, спробуємо отримати дату з <time>
                     time_tag = a_tag.find_next("time")
                     if time_tag and time_tag.has_attr("datetime"):
                         try:
@@ -64,8 +60,6 @@ class Command(BaseCommand):
                             parsed_date = None
                     else:
                         parsed_date = None
-                    # Якщо parsed_date доступна і не співпадає з created_at (по даті),
-                    # оновлюємо поле updated_at
                     if parsed_date and vacancy.created_at.date() != parsed_date.date():
                         vacancy.updated_at = parsed_date
                         vacancy.save()
@@ -73,39 +67,42 @@ class Command(BaseCommand):
                         parsed_in_page += 1
                     else:
                         self.stdout.write(f"Вакансія {work_job_id} вже існує; пропускаємо")
-                    continue  # переходимо до наступної вакансії
+                    continue
                 except Vacancy.DoesNotExist:
                     pass
 
                 # Визначаємо місто
                 city = ""
-                # Припускаємо, що місто знаходиться у найближчому div із класом, наприклад, "mt-xs" чи "tw-mt-xs"
                 city_div = a_tag.find_next("div", class_=re.compile(r"mt-xs"))
                 if city_div:
-                    # Шукаємо перший тег <span> з текстом, який містить місто
                     span = city_div.find("span")
                     if span:
                         city = span.get_text(strip=True)
-                        # Припустимо, що місто може бути з комою, тому беремо тільки першу частину
                         city = city.split(",")[0]
 
-                # Перевірка на «гарячу» вакансію:
+                # Перевірка на «гарячу» вакансію
                 is_hot = False
                 hot_el = a_tag.find_next(string=re.compile(r"Гаряча"))
                 if hot_el:
                     is_hot = True
 
-                # Отримуємо work_company_id з логотипу, якщо він є:
-                work_company_id = None
-                logo_img = a_tag.find_next("img", src=re.compile(r"_company_logo_"))
-                if logo_img and logo_img.has_attr("src"):
-                    match_logo = re.search(r"/(\d+)_company_logo_", logo_img["src"])
-                    if match_logo:
-                        work_company_id = int(match_logo.group(1))
+                # Отримуємо work_company_id з логотипу
+                work_company_id = None  # Скидаємо перед кожною вакансією
+                vacancy_block = a_tag.find_parent("div", class_=re.compile(r"card"))
+                if vacancy_block:
+                    logo_img = vacancy_block.find("img", src=re.compile(r"_company_logo_"))
+                    if logo_img and logo_img.has_attr("src"):
+                        match_logo = re.search(r"/(\d+)_company_logo_", logo_img["src"])
+                        if match_logo:
+                            work_company_id = int(match_logo.group(1))
 
+                # Якщо логотипу немає (work_company_id=None), пропускаємо вакансію
+                if work_company_id is None:
+                    self.stdout.write(f"Пропущено вакансію {work_job_id}: логотип відсутній")
+                    continue
+
+                # Логіка дати
                 now = datetime.datetime.now()
-                # Якщо вакансія гаряча, встановлюємо created_at як поточний час,
-                # інакше намагаємося отримати дату з <time>
                 if is_hot:
                     created_date = now
                     updated_date = now
@@ -120,11 +117,12 @@ class Command(BaseCommand):
                         created_date = now
                     updated_date = created_date
 
+                # Створюємо вакансію
                 vacancy = Vacancy.objects.create(
                     title=title,
                     created_at=created_date,
                     updated_at=updated_date,
-                    company=None,  # Якщо компанію хочете зв'язувати, додаткову логіку можна додати
+                    company=None,  # Якщо компанію хочете зв'язувати, додайте логіку
                     placement="work",
                     work_id=work_job_id,
                     work_company_id=work_company_id,
