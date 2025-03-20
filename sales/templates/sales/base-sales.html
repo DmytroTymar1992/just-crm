@@ -57,12 +57,9 @@
 
       chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
+        const username = data.username || 'User';
         const payload = data.payload || {};
-
-        // Якщо room_id не збігається з поточним, показуємо сповіщення
-        if (payload.room_id && payload.room_id !== currentRoomId) {
-          renderNotification(payload);
-        }
+        handleIncomingPayload(username, payload);
       };
 
       chatSocket.onclose = function(e) {
@@ -70,48 +67,100 @@
       };
     }
 
-    function renderNotification(payload) {
-      const container = document.getElementById('notification-container');
-      const notification = document.createElement('div');
-      notification.classList.add('notification', 'p-3', 'rounded-3', 'shadow-sm');
-
-      // Стилі залежно від типу повідомлення (як у чаті)
-      if (payload.msg_type === 'telegram') {
-        notification.style.background = payload.sender_type === 'contact' ? '#ffffff' : '#e6f0fa';
-        notification.style.border = payload.sender_type === 'contact' ? 'border-left: 4px solid #007bff' : 'border-right: 4px solid #007bff';
-      } else if (payload.msg_type === 'email') {
-        notification.style.background = payload.sender_type === 'contact' ? '#ffffff' : '#e9f7ef';
-        notification.style.border = payload.sender_type === 'contact' ? 'border-left: 4px solid #28a745' : 'border-right: 4px solid #28a745';
-      } else {
-        notification.style.background = '#f8f9fa';
+    function handleIncomingPayload(username, payload) {
+      // Додаємо room_id до payload, якщо його немає
+      if (!payload.room_id) {
+        payload.room_id = currentRoomId; // Припускаємо, що сервер не додає room_id
       }
 
-      // Вміст сповіщення
-      const content = `
-        <div class="${payload.msg_type === 'telegram' ? 'text-primary' : 'text-success'} fw-semibold mb-1">${payload.msg_type || 'Повідомлення'}</div>
-        <p class="text-dark mb-0">${(payload.body || "").replace(/\n/g, "<br>")}</p>
-        <small class="text-muted d-block mt-2">${payload.created_at || ''}</small>
-      `;
-      notification.innerHTML = content;
-      notification.style.maxWidth = '70%';
+      // Якщо room_id не збігається з поточним, показуємо сповіщення
+      if (payload.room_id && payload.room_id !== currentRoomId) {
+        const msgType = payload.msg_type || '';
+        if (msgType === 'email') renderEmailNotification(payload);
+        else if (msgType === 'telegram') renderTelegramNotification(payload);
+        else renderUnknownNotification(payload);
+      }
+    }
 
-      // Клік для відкриття чату
+    function renderEmailNotification(payload) {
+      const tpl = document.getElementById('emailNotificationTpl').innerHTML;
+      let html = tpl
+        .replace('__SUBJECT__', payload.subject || '')
+        .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
+        .replace('__TIME__', payload.created_at || '')
+        .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
+        .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e9f7ef')
+        .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #28a745' : 'border-right: 4px solid #28a745')
+        .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
+      appendNotification(html, payload.room_id);
+    }
+
+    function renderTelegramNotification(payload) {
+      const tpl = document.getElementById('telegramNotificationTpl').innerHTML;
+      let html = tpl
+        .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
+        .replace('__TIME__', payload.created_at || '')
+        .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
+        .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e6f0fa')
+        .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #007bff' : 'border-right: 4px solid #007bff')
+        .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
+      appendNotification(html, payload.room_id);
+    }
+
+    function renderUnknownNotification(payload) {
+      const container = document.getElementById('notification-container');
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('notification', 'mb-3', 'd-flex', 'justify-content-end');
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('p-3', 'rounded-3', 'shadow-sm', 'bg-warning', 'text-dark');
+      msgDiv.style.maxWidth = '70%';
+      msgDiv.innerHTML = `UNKNOWN type message: <pre>${JSON.stringify(payload, null, 2)}</pre>`;
+      wrapper.appendChild(msgDiv);
+      appendNotification(wrapper.outerHTML, payload.room_id);
+    }
+
+    function appendNotification(html, roomId) {
+      const container = document.getElementById('notification-container');
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      const notification = wrapper.firstChild;
+
       notification.addEventListener('click', () => {
-        window.open(`/sales/${payload.room_id}/`, '_blank');
+        window.open(`/sales/${roomId}/`, '_blank');
         notification.remove();
       });
 
-      // Додаємо і показуємо з анімацією
       container.appendChild(notification);
       setTimeout(() => notification.classList.add('show'), 10);
-
-      // Прибираємо через 10 секунд
       setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
       }, 10000);
     }
   </script>
+
+  <!-- Шаблони для сповіщень, скопійовані з чату -->
+  <script type="text/x-template" id="emailNotificationTpl">
+    <div class="notification mb-3 d-flex __SENDER_CLASS__">
+      <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+        <div class="text-success fw-semibold mb-1">Email</div>
+        <div class="bg-warning-subtle p-2 rounded mb-2"><strong>Тема:</strong> __SUBJECT__</div>
+        <p class="text-dark mb-0">__BODY__</p>
+        <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="telegramNotificationTpl">
+    <div class="notification mb-3 d-flex __SENDER_CLASS__">
+      <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+        <div class="text-primary fw-semibold mb-1">Telegram</div>
+        <p class="text-dark mb-0">__BODY__</p>
+        <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+      </div>
+    </div>
+  </script>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>
