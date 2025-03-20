@@ -84,6 +84,7 @@
   max-width: 300px;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
+  position: relative; /* Для позиціонування кнопки закриття */
 }
 
 #notification-container .notification.show {
@@ -100,6 +101,32 @@
 
 #notification-container .notification.call {
   border-left: 4px solid #17a2b8;
+}
+
+#notification-container .notification .message-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Обмеження до 2 рядків */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Додаємо "..." */
+  margin: 0;
+}
+
+#notification-container .notification .close-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+#notification-container .notification .close-btn:hover {
+  color: #ccc;
 }
 
   </style>
@@ -234,7 +261,12 @@
   const notificationContainer = document.getElementById('notification-container');
   const notification = document.createElement('div');
   notification.classList.add('notification', type);
-  notification.innerHTML = content;
+
+  // Додаємо кнопку закриття та вміст
+  notification.innerHTML = `
+    ${content}
+    <button class="close-btn">&times;</button>
+  `;
 
   // Додаємо сповіщення в контейнер
   notificationContainer.appendChild(notification);
@@ -242,11 +274,18 @@
   // Показуємо сповіщення з анімацією
   setTimeout(() => notification.classList.add('show'), 10);
 
-  // Ховаємо через 10 секунд
-  setTimeout(() => {
+  // Автоматичне зникнення через 10 секунд
+  const timeoutId = setTimeout(() => {
     notification.classList.remove('show');
     setTimeout(() => notification.remove(), 500); // Чекаємо завершення анімації
   }, 10000);
+
+  // Додаємо обробник для кнопки закриття
+  notification.querySelector('.close-btn').addEventListener('click', () => {
+    clearTimeout(timeoutId); // Зупиняємо автоматичне зникнення
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 500); // Чекаємо завершення анімації
+  });
 }
   </script>
   {% block extra_js %}{% endblock %}
