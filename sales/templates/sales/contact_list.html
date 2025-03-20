@@ -378,7 +378,7 @@
     }
 
     function searchContacts(query, page = 1) {
-      const url = new URL(window.location.origin + '/sales/contact_list/');
+      const url = new URL(window.location.origin + '/contact_list/');
       if (query) {
         url.searchParams.set('q', query);
       }
@@ -433,7 +433,7 @@
           }
 
           // Змінюємо action, наприклад /sales/contacts/edit/5/
-          editForm.action = `/sales/contacts/edit/${contactId}/`;
+          editForm.action = `/contacts/edit/${contactId}/`;
           editForm.dataset.contactId = contactId;
 
           // Заповнюємо поля
@@ -500,7 +500,7 @@
         console.log("Add contact button clicked");
 
         // Ставимо action на create_contact
-        editForm.action = "/sales/contacts/create/";
+        editForm.action = "/contacts/create/";
         editForm.dataset.contactId = 0;
 
         // Очищаємо поля форми
@@ -685,7 +685,7 @@
       if (editBtn) {
         editBtn.addEventListener("click", function() {
           const contactId = data.id.toString();
-          editForm.action = `/sales/contacts/edit/${contactId}/`;
+          editForm.action = `/contacts/edit/${contactId}/`;
           editForm.dataset.contactId = contactId;
 
           if (formErrors) {
