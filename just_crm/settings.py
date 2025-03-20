@@ -80,12 +80,28 @@ WSGI_APPLICATION = 'just_crm.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'crm',         # назва бази даних, яку вам надав провайдер
+#        'USER': 'crm',            # ім'я користувача для підключення до бази
+#        'PASSWORD': 'RHErhe1013',            # пароль для підключення
+#        'HOST': 'prdsv558.mysql.network',         # IP-адреса або домен бази даних (зазвичай щось на кшталт db.provider.com)
+#        'PORT': '10544',                     # порт, за замовчуванням MySQL використовує 3306
+#        # Опціонально, додаткові параметри:
+#        'OPTIONS': {
+#            'charset': 'utf8mb4',
+#            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#        },
+#    }
+#}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'crm',         # назва бази даних, яку вам надав провайдер
-        'USER': 'crm',            # ім'я користувача для підключення до бази
-        'PASSWORD': 'RHErhe1013',            # пароль для підключення
+        'NAME': 'just_crm_by',         # назва бази даних, яку вам надав провайдер
+        'USER': 'just_crm_by',            # ім'я користувача для підключення до бази
+        'PASSWORD': 'zT3HVh6d75',            # пароль для підключення
         'HOST': 'prdsv558.mysql.network',         # IP-адреса або домен бази даних (зазвичай щось на кшталт db.provider.com)
         'PORT': '10544',                     # порт, за замовчуванням MySQL використовує 3306
         # Опціонально, додаткові параметри:
