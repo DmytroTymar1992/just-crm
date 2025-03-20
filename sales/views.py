@@ -352,3 +352,56 @@ def complete_task(request):
         return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+
+def get_task(request, task_id):
+    try:
+        task = Task.objects.get(id=task_id, user=request.user)
+        return JsonResponse({
+            'success': True,
+            'task_type': task.task_type,
+            'task_date': task.task_date.isoformat(),
+            'target': task.target,
+            'description': task.description or '',
+        })
+    except Task.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def edit_task(request):
+    try:
+        data = json.loads(request.body)
+        task_id = data.get('task_id')
+        task_type = data.get('task_type')
+        task_date_str = data.get('task_date')
+        target = data.get('target')
+        description = data.get('description')
+
+        if not all([task_type, task_date_str, target]):
+            return JsonResponse({'success': False, 'error': 'Не всі обов’язкові поля заповнені'}, status=400)
+
+        valid_task_types = [choice[0] for choice in Task.TASK_TYPE_CHOICES]
+        if task_type not in valid_task_types:
+            return JsonResponse({'success': False, 'error': 'Невірний тип задачі'}, status=400)
+
+        task_date = parse_datetime(task_date_str)
+        if task_date is None:
+            return JsonResponse({'success': False, 'error': 'Невірний формат дати'}, status=400)
+
+        task = Task.objects.get(id=task_id, user=request.user)
+        task.task_type = task_type
+        task.task_date = task_date
+        task.target = target
+        task.description = description or ''
+        task.save()
+
+        return JsonResponse({'success': True})
+    except Task.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

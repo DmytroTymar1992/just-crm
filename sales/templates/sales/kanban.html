@@ -17,14 +17,16 @@
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="card-title mb-1">{{ task.target }}</h6>
+                  <h6 class="card-title mb-1">
+                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  </h6>
                   <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                   <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                   <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
                 </div>
                 <div>
-                  <button class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}" title="Закрити задачу">
-                    <i class="bi bi-check-circle"></i>
+                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                    <i class="bi bi-circle"></i>
                   </button>
                   <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
                     <i class="bi bi-chat"></i>
@@ -50,14 +52,16 @@
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="card-title mb-1">{{ task.target }}</h6>
+                  <h6 class="card-title mb-1">
+                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  </h6>
                   <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                   <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                   <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
                 </div>
                 <div>
-                  <button class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}" title="Закрити задачу">
-                    <i class="bi bi-check-circle"></i>
+                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                    <i class="bi bi-circle"></i>
                   </button>
                   <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
                     <i class="bi bi-chat"></i>
@@ -83,14 +87,16 @@
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="card-title mb-1">{{ task.target }}</h6>
+                  <h6 class="card-title mb-1">
+                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  </h6>
                   <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                   <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                   <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
                 </div>
                 <div>
-                  <button class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}" title="Закрити задачу">
-                    <i class="bi bi-check-circle"></i>
+                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                    <i class="bi bi-circle"></i>
                   </button>
                   <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
                     <i class="bi bi-chat"></i>
@@ -116,14 +122,16 @@
             <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
               <div class="card-body p-2 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="card-title mb-1">{{ task.target }}</h6>
+                  <h6 class="card-title mb-1">
+                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  </h6>
                   <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
                   <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
                   <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
                 </div>
                 <div>
-                  <button class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}" title="Закрити задачу">
-                    <i class="bi bi-check-circle"></i>
+                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                    <i class="bi bi-circle"></i>
                   </button>
                   <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
                     <i class="bi bi-chat"></i>
@@ -135,6 +143,49 @@
             <p class="text-muted text-center">Немає задач на цей тиждень</p>
           {% endfor %}
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно для редагування задачі -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Редагувати задачу</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-task-form">
+          <input type="hidden" id="edit-task-id">
+          <div class="mb-3">
+            <label for="edit-task-type" class="form-label">Тип задачі</label>
+            <select id="edit-task-type" class="form-select" required>
+              <option value="call">Дзвінок</option>
+              <option value="email">Лист</option>
+              <option value="message">Повідомлення</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="edit-task-date" class="form-label">Дата задачі</label>
+            <input type="datetime-local" id="edit-task-date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-task-target" class="form-label">Ціль</label>
+            <input type="text" id="edit-task-target" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-task-description" class="form-label">Опис</label>
+            <textarea id="edit-task-description" class="form-control" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary" id="edit-task-submit">
+          <i class="bi bi-save me-1"></i> Зберегти
+        </button>
       </div>
     </div>
   </div>
@@ -155,6 +206,12 @@
   .kanban-card:hover {
     background: #f1f3f5;
   }
+  .edit-task-target {
+    color: #007bff;
+  }
+  .edit-task-target:hover {
+    color: #0056b3;
+  }
 </style>
 {% endblock %}
 
@@ -163,8 +220,10 @@
   document.addEventListener("DOMContentLoaded", function() {
     // Обробка натискання кнопки "Закрити задачу"
     document.querySelectorAll('.complete-task-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
         const taskId = this.getAttribute('data-task-id');
+        const card = this.closest('.kanban-card');
 
         fetch('/sales/complete_task/', {
           method: 'POST',
@@ -180,13 +239,80 @@
         .then(data => {
           if (data.success) {
             alert('Задачу закрито!');
-            location.reload(); // Перезавантажуємо сторінку, щоб оновити колонки
+            card.remove();
           } else {
             alert('Помилка: ' + data.error);
           }
         })
-        .catch(err => console.error('Помилка при закритті задачі:', err));
+        .catch(err => {
+          console.error('Помилка при закритті задачі:', err);
+          alert('Помилка при закритті задачі');
+        });
       });
+    });
+
+    // Обробка кліку на ціль для редагування
+    document.querySelectorAll('.edit-task-target').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const taskId = this.getAttribute('data-task-id');
+
+        // Завантажуємо дані задачі через API
+        fetch(`/sales/get_task/${taskId}/`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              document.querySelector('#edit-task-id').value = taskId;
+              document.querySelector('#edit-task-type').value = data.task_type;
+              document.querySelector('#edit-task-date').value = data.task_date;
+              document.querySelector('#edit-task-target').value = data.target;
+              document.querySelector('#edit-task-description').value = data.description || '';
+            } else {
+              alert('Помилка: ' + data.error);
+            }
+          })
+          .catch(err => console.error('Помилка при завантаженні задачі:', err));
+      });
+    });
+
+    // Обробка збереження змін у задачі
+    document.querySelector('#edit-task-submit').addEventListener('click', function() {
+      const taskId = document.querySelector('#edit-task-id').value;
+      const taskType = document.querySelector('#edit-task-type').value;
+      const taskDate = document.querySelector('#edit-task-date').value;
+      const taskTarget = document.querySelector('#edit-task-target').value;
+      const taskDescription = document.querySelector('#edit-task-description').value;
+
+      if (!taskType || !taskDate || !taskTarget) {
+        alert('Будь ласка, заповніть усі обов’язкові поля!');
+        return;
+      }
+
+      fetch('/sales/edit_task/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({
+          task_id: taskId,
+          task_type: taskType,
+          task_date: taskDate,
+          target: taskTarget,
+          description: taskDescription,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Задачу оновлено!');
+          bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
+          location.reload(); // Перезавантажуємо сторінку для оновлення
+        } else {
+          alert('Помилка: ' + data.error);
+        }
+      })
+      .catch(err => console.error('Помилка при оновленні задачі:', err));
     });
   });
 
