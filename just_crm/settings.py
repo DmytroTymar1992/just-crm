@@ -132,9 +132,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 # Шлях до статичних файлів у вашому проєкті (де лежать ваші файли, наприклад, static/main/images)
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
 
 # Куди Django збереже зібрані статичні файли після виконання collectstatic
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
