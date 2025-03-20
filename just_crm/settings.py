@@ -140,7 +140,7 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # URL, за яким статичні файли будуть доступні в браузері
-STATIC_URL = "/static/"
+STATIC_URL = "/main/static/"
 
 # (Опціонально) Якщо у вас є додаткові джерела статичних файлів (наприклад, від бібліотек)
 STATICFILES_FINDERS = [
