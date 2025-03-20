@@ -313,6 +313,7 @@
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("contacts-container");
     const searchInput = document.getElementById("contact-search");
+    const searchIcon = document.querySelector(".input-group-text .bi-search");
     const contactsList = document.getElementById("contacts-list");
     const paginationContainer = document.getElementById("pagination-container");
 
@@ -331,10 +332,46 @@
       container.scrollTop = container.scrollHeight;
     }
 
+    // -------- Дебагування ініціалізації --------
+    console.log("searchInput:", searchInput);
+    console.log("searchIcon:", searchIcon);
+    console.log("contactsList:", contactsList);
+    console.log("paginationContainer:", paginationContainer);
+
+    // -------- Debounce для пошуку --------
+    let searchTimeout;
+    function debounceSearch(query, page) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchContacts(query, page);
+      }, 300); // Затримка 300 мс
+    }
+
     // -------- Пошук контактів через AJAX --------
     if (searchInput) {
+      // Динамічний пошук після введення
       searchInput.addEventListener("input", function(e) {
         const query = e.target.value.trim();
+        console.log("Input event triggered, query:", query);
+        debounceSearch(query);
+      });
+
+      // Пошук після натискання Enter
+      searchInput.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const query = e.target.value.trim();
+          console.log("Enter pressed, query:", query);
+          searchContacts(query);
+        }
+      });
+    }
+
+    // -------- Пошук після натискання на лупу --------
+    if (searchIcon) {
+      searchIcon.parentElement.addEventListener("click", function() {
+        const query = searchInput.value.trim();
+        console.log("Search icon clicked, query:", query);
         searchContacts(query);
       });
     }
@@ -346,14 +383,23 @@
       }
       url.searchParams.set('page', page);
 
+      console.log("Sending AJAX request to:", url.toString());
+
       fetch(url, {
         method: 'GET',
         headers: {
           'X-Requested-With': 'XMLHttpRequest', // Позначка, що це AJAX-запит
         }
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log("Response status:", response.status);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log("Received data:", data);
         // Оновлюємо список контактів
         contactsList.innerHTML = data.contacts_html;
 
