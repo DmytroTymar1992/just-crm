@@ -73,30 +73,6 @@
       margin-left: 200px;
       max-width: calc(100vw - 200px); /* Адаптуємо при наведенні */
     }
-    #notification {
-      position: fixed;
-      bottom: 20px;
-      left: 20px; /* Змінено з right на left */
-      background: #28a745;
-      color: white;
-      padding: 15px; /* Збільшено для квадратної форми */
-      width: 200px; /* Фіксована ширина */
-      height: 200px; /* Фіксована висота для квадрата */
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 1050;
-      display: none;
-      animation: fadeIn 0.5s ease-in-out;
-      cursor: pointer; /* Додано, щоб вказати на клікабельність */
-      display: flex; /* Для центрування вмісту */
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -135,11 +111,6 @@
         <!-- Тут розміщується вміст конкретної сторінки -->
         {% endblock %}
       </main>
-
-      <!-- Повідомлення -->
-      <div id="notification">
-        <i class="bi bi-bell-fill me-2"></i> Новий вхідний лист!
-      </div>
     </div>
   </div>
 
@@ -159,11 +130,6 @@
       if (data.type === 'room_list') {
         console.log('Updating room list with:', data.rooms);
         updateRoomListUI(data.rooms);
-        if (data.rooms.some(room => room.unread_count > 0)) {
-          const notification = document.getElementById('notification');
-          notification.style.display = 'block';
-          setTimeout(() => notification.style.display = 'none', 3000);
-        }
       }
     };
 
