@@ -11,4 +11,6 @@ urlpatterns = [
     #path('facebook_app/', include('facebook_app.urls')),
     path('sales/', include('sales.urls')),
     #path('chat/', include('chat.urls')),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]# Додаємо обробку статичних файлів (тільки для розробки)
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
