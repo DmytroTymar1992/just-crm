@@ -20,10 +20,11 @@ from django.utils import timezone
 from datetime import timedelta, date
 import datetime
 from django.utils.dateparse import parse_datetime
-
+from django.contrib.auth.decorators import login_required
 
 logger = logging.getLogger(__name__)
 
+@login_required
 def chat_room(request, room_id):
     room = get_object_or_404(Room, pk=room_id)
     interactions_qs = room.interactions.order_by('created_at')
@@ -60,7 +61,7 @@ def chat_room(request, room_id):
         'rooms_for_user': rooms_for_user,
     })
 
-
+@login_required
 def chats_view(request):
     # Список кімнат для користувача
     rooms_for_user = (
@@ -79,7 +80,7 @@ def chats_view(request):
         'rooms_for_user': rooms_for_user,
     })
 
-
+@login_required
 def load_more_interactions(request, room_id):
     """
     Повертає старіші повідомлення (HTML), щоб додати їх зверху у чаті.
@@ -117,7 +118,7 @@ def load_more_interactions(request, room_id):
     }
     return JsonResponse(data)
 
-
+@login_required
 def company_list(request):
     # Підзапит для вакансій Work.ua
     work_vacancies_qs = Vacancy.objects.filter(
@@ -149,6 +150,8 @@ def company_list(request):
         'page_obj': page_obj,
     })
 
+
+@login_required
 def contact_list(request):
     contacts = Contact.objects.all().select_related('company')
     query = request.GET.get('q', '').strip()
@@ -173,7 +176,7 @@ def contact_list(request):
         'companies': companies,
     })
 
-
+@login_required
 def create_contact(request):
     if request.method == "POST":
         form = ContactForm(request.POST)
@@ -208,6 +211,8 @@ def create_contact(request):
             return JsonResponse({'success': False, 'error': form.errors.as_json()}, status=400)
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
+
+@login_required
 def edit_contact(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
     if request.method == "POST":
@@ -230,7 +235,7 @@ def edit_contact(request, contact_id):
             return JsonResponse({'success': False, 'error': form.errors.as_json()}, status=400)
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
-
+@login_required
 def company_create(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
@@ -245,7 +250,7 @@ def company_create(request):
 
     return render(request, 'sales/company_create.html', {'form': form})
 
-
+@login_required
 @csrf_exempt
 @require_POST
 def create_task(request):
@@ -310,7 +315,7 @@ def create_task(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-
+@login_required
 def kanban_board(request):
     # Отримуємо всі задачі для поточного користувача
     tasks = Task.objects.filter(user=request.user).order_by('task_date')
@@ -358,7 +363,7 @@ def kanban_board(request):
         'this_week_tasks': this_week_tasks,
     }
     return render(request, 'sales/kanban.html', context)
-
+@login_required
 @csrf_exempt
 @require_POST
 def complete_task(request):
@@ -378,7 +383,7 @@ def complete_task(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
-
+@login_required
 def get_task(request, task_id):
     try:
         task = Task.objects.get(id=task_id, user=request.user)
@@ -394,7 +399,7 @@ def get_task(request, task_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-
+@login_required
 @csrf_exempt
 @require_POST
 def edit_task(request):

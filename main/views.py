@@ -1,7 +1,10 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 
-# ... решта вашого коду ...
+@login_required
+def main_view(request):
+    return render(request, 'main/main.html')
 
 def login_view(request):
     if request.method == 'POST':

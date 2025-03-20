@@ -1,0 +1,105 @@
+{% extends "sales/main_base.html" %}
+{% load static %}
+
+{% block title %}Головна сторінка{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <!-- ЦУП (Центр управління продажами) -->
+            <div class="col-md-4 mb-4">
+                <a href="{% url 'chats' %}" class="card-link">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">ЦУП</h5>
+                            <p class="card-text">Центр управління продажами</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- ЦУМ (Центр управління маркетингом) -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm inactive">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">ЦУМ</h5>
+                        <p class="card-text">Центр управління маркетингом</p>
+                        <small class="text-muted">Скоро буде доступно</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЦУФ (Центр управління фінансами) -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm inactive">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">ЦУФ</h5>
+                        <p class="card-text">Центр управління фінансами</p>
+                        <small class="text-muted">Скоро буде доступно</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%); /* Світло-сірий градієнт */
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-container {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 8px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .card-link .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a202c;
+        margin-bottom: 8px;
+    }
+
+    .card-text {
+        font-size: 0.9rem;
+        color: #4a5568;
+        margin-bottom: 0;
+    }
+
+    .inactive {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .inactive .card-title,
+    .inactive .card-text {
+        color: #6b7280;
+    }
+</style>
+{% endblock %}
