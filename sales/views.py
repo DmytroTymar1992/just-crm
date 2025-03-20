@@ -4,7 +4,6 @@ from django.db.models import Max, Count, Q, F, Subquery, OuterRef, IntegerField
 from main.models import Company
 from django.core.paginator import Paginator
 from django.db import models
-from django.http import JsonResponse
 from .forms import ContactForm
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
@@ -17,6 +16,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 import json
+from django.utils import timezone
+from datetime import timedelta, date
+import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -249,5 +251,76 @@ def create_task(request):
         )
 
         return JsonResponse({'success': True, 'task_id': task.id})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+def kanban_board(request):
+    # Отримуємо всі задачі для поточного користувача
+    tasks = Task.objects.filter(user=request.user).order_by('task_date')
+
+    # Поточна дата і час
+    now = timezone.now()
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
+
+    # Визначаємо початок і кінець тижня
+    start_of_week = today - timedelta(days=today.weekday())  # Понеділок
+    end_of_week = start_of_week + timedelta(days=6)  # Неділя
+
+    # Розділяємо задачі за критеріями
+    overdue_tasks = tasks.filter(
+        is_completed=False,
+        task_date__lt=now
+    )
+
+    today_tasks = tasks.filter(
+        task_date__date=today,
+        is_completed=False
+    )
+
+    tomorrow_tasks = tasks.filter(
+        task_date__date=tomorrow,
+        is_completed=False
+    )
+
+    this_week_tasks = tasks.filter(
+        task_date__date__gt=tomorrow,
+        task_date__date__lte=end_of_week,
+        is_completed=False
+    )
+
+    context = {
+        'overdue_tasks': overdue_tasks,
+        'today_tasks': today_tasks,
+        'tomorrow_tasks': tomorrow_tasks,
+        'this_week_tasks': this_week_tasks,
+    }
+    return render(request, 'sales/kanban.html', context)
+
+@csrf_exempt
+@require_POST
+def update_task_status(request):
+    try:
+        data = json.loads(request.body)
+        task_id = data.get('task_id')
+        new_status = data.get('status')
+
+        task = Task.objects.get(id=task_id, user=request.user)
+
+        if new_status == 'new':
+            task.is_completed = False
+            task.completed_at = None
+        elif new_status == 'in_progress':
+            task.is_completed = False
+            task.completed_at = timezone.now()
+        elif new_status == 'completed':
+            task.is_completed = True
+            task.completed_at = timezone.now()
+
+        task.save()
+        return JsonResponse({'success': True})
+    except Task.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)

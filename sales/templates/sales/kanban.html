@@ -1,0 +1,170 @@
+{% extends "sales/base-sales.html" %}
+{% load static %}
+
+{% block title %}Канбан-дошка{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100">
+  <div class="row h-100">
+    <!-- Колонка "Протерміновані" -->
+    <div class="col-md-3 h-100">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">Протерміновані</h5>
+        </div>
+        <div class="card-body overflow-auto kanban-column" id="overdue-tasks">
+          {% for task in overdue_tasks %}
+            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
+              <div class="card-body p-2">
+                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
+                <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+                <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted text-center">Немає протермінованих задач</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Колонка "Сьогодні" -->
+    <div class="col-md-3 h-100">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Сьогодні</h5>
+        </div>
+        <div class="card-body overflow-auto kanban-column" id="today-tasks">
+          {% for task in today_tasks %}
+            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
+              <div class="card-body p-2">
+                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
+                <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+                <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted text-center">Немає задач на сьогодні</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Колонка "Завтра" -->
+    <div class="col-md-3 h-100">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-warning text-white">
+          <h5 class="mb-0">Завтра</h5>
+        </div>
+        <div class="card-body overflow-auto kanban-column" id="tomorrow-tasks">
+          {% for task in tomorrow_tasks %}
+            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
+              <div class="card-body p-2">
+                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
+                <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+                <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted text-center">Немає задач на завтра</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Колонка "На цьому тижні" -->
+    <div class="col-md-3 h-100">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">На цьому тижні</h5>
+        </div>
+        <div class="card-body overflow-auto kanban-column" id="this-week-tasks">
+          {% for task in this_week_tasks %}
+            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
+              <div class="card-body p-2">
+                <h6 class="card-title mb-1">{{ task.subject }}</h6>
+                <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
+                <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+                <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted text-center">Немає задач на цей тиждень</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kanban-column {
+    min-height: 200px;
+    background: #f8f9fa;
+  }
+  .kanban-card {
+    cursor: move;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    transition: background 0.2s ease;
+  }
+  .kanban-card:hover {
+    background: #f1f3f5;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Ініціалізація dragula для drag-and-drop
+    dragula([
+      document.getElementById('overdue-tasks'),
+      document.getElementById('today-tasks'),
+      document.getElementById('tomorrow-tasks'),
+      document.getElementById('this-week-tasks')
+    ]).on('drop', function(el, target) {
+      const taskId = el.getAttribute('data-task-id');
+      let newStatus;
+
+      if (target.id === 'overdue-tasks' || target.id === 'today-tasks' ||
+          target.id === 'tomorrow-tasks' || target.id === 'this-week-tasks') {
+        newStatus = 'in_progress'; // При перетягуванні в будь-яку колонку вважаємо задачу "в процесі"
+      }
+
+      // Оновлення статусу задачі через API
+      fetch('/sales/update_task_status/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({
+          task_id: taskId,
+          status: newStatus,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.success) {
+          alert('Помилка при оновленні статусу: ' + data.error);
+        } else {
+          // Оновлюємо сторінку, щоб задача перемістилася в правильну колонку
+          location.reload();
+        }
+      })
+      .catch(err => console.error('Помилка при оновленні статусу:', err));
+    });
+  });
+
+  function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  }
+</script>
+{% endblock %}
