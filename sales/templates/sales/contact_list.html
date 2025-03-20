@@ -194,7 +194,7 @@
 
 {% block extra_css %}
 <style>
-  /* Контейнер контактів */
+  /* Контейнер контактів (залишаємо без змін) */
   #contacts-container {
     background: #f8f9fa;
   }
@@ -212,25 +212,25 @@
   /* Сучасна картка контакту */
   .modern-contact-card {
     border-radius: 12px;
-    background: #ffffff; /* Залишаємо білий фон для картки */
-    border: 1px solid #e2e6ea; /* Додаємо тонку межу для чіткості */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Легка тінь для відокремлення від фону */
+    background: #fefefe; /* Змінено з #ffffff на теплий майже білий */
+    border: 1px solid #e9ecef; /* Трохи темніша межа для контрасту */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* Посилена базова тінь */
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     overflow: hidden;
   }
   .modern-contact-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1); /* Посилена тінь при наведенні */
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12); /* Ще сильніша тінь при наведенні */
   }
 
   .card-header {
-    background: #fdfdfd; /* Трохи темніший за білий для контрасту з фоном контейнера */
-    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%); /* Легкий градієнт для акценту */
+    border-bottom: 1px solid #e2e6ea;
   }
   .avatar-circle {
     width: 40px;
     height: 40px;
-    background: #e6f0ff;
+    background: #e6f0ff; /* Залишаємо легкий блакитний для аватара */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -248,7 +248,7 @@
 
   .card-body {
     padding: 1rem 1.5rem;
-    background: #ffffff; /* Чітко білий для основного контенту */
+    background: #fefefe; /* Узгоджуємо з основним фоном картки */
   }
   .contact-details p {
     margin-bottom: 0.75rem;
@@ -270,8 +270,8 @@
   }
 
   .card-footer {
-    background: #fdfdfd; /* Трохи темніший за білий, як у header */
-    border-top: 1px solid #e9ecef;
+    background: #f9fafb; /* Трохи світліший за контейнер, але темніший за картку */
+    border-top: 1px solid #e2e6ea;
     font-size: 0.8rem;
   }
   .chat-btn {
