@@ -25,7 +25,11 @@
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
               <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small><br>
+              <small class="text-muted">Контакт: {{ task.contact.first_name }} {{ task.contact.last_name }}</small><br>
+              {% if task.contact.company %}
+                <small class="text-muted">Компанія: {{ task.contact.company.name }}</small>
+              {% endif %}
             </div>
             <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
               <i class="bi bi-chat"></i>
@@ -56,7 +60,11 @@
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
               <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small><br>
+              <small class="text-muted">Контакт: {{ task.contact.first_name }} {{ task.contact.last_name }}</small><br>
+              {% if task.contact.company %}
+                <small class="text-muted">Компанія: {{ task.contact.company.name }}</small>
+              {% endif %}
             </div>
             <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
               <i class="bi bi-chat"></i>
@@ -87,7 +95,11 @@
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
               <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small><br>
+              <small class="text-muted">Контакт: {{ task.contact.first_name }} {{ task.contact.last_name }}</small><br>
+              {% if task.contact.company %}
+                <small class="text-muted">Компанія: {{ task.contact.company.name }}</small>
+              {% endif %}
             </div>
             <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
               <i class="bi bi-chat"></i>
@@ -118,7 +130,11 @@
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
               <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small><br>
+              <small class="text-muted">Контакт: {{ task.contact.first_name }} {{ task.contact.last_name }}</small><br>
+              {% if task.contact.company %}
+                <small class="text-muted">Компанія: {{ task.contact.company.name }}</small>
+              {% endif %}
             </div>
             <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
               <i class="bi bi-chat"></i>
@@ -292,7 +308,7 @@
     left: 0;
     width: 4px;
     height: 100%;
-    background: linear-gradient(180deg, #3b82f6, #60a5fa); /* Бічна смужка */
+    background: linear-gradient(180deg, #3b82f6, #60a5fa);
   }
 
   .card-content {
