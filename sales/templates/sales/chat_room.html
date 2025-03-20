@@ -50,7 +50,7 @@
     <!-- Форма для відправки -->
     <div class="p-3 bg-white border-top shadow-sm">
   <div class="input-group">
-    <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="2"></textarea>
+    <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="1"></textarea>
     <button id="chat-message-submit" class="btn btn-primary" type="button">
       <i class="bi bi-send me-1"></i> Надіслати
     </button>
@@ -409,4 +409,11 @@ chatSocket.send(JSON.stringify({ 'message': '', 'subject': subject, 'channel_typ
 bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
 }
 </script>
+    <script>
+    document.querySelector('#chat-message-input').addEventListener('input', function() {
+  this.style.height = 'auto'; // Скидаємо висоту
+  this.style.height = `${this.scrollHeight}px`; // Встановлюємо висоту відповідно до вмісту
+});
+    </script>
+
 {% endblock %}
