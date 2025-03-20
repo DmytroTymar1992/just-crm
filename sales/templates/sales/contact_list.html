@@ -458,35 +458,45 @@
 
     // -------- Оновлення пагінації --------
     function updatePagination(pagination) {
-      const paginationContainer = document.querySelector("#pagination-container .pagination");
-      if (!paginationContainer || !pagination.has_other_pages) {
-        paginationContainer.style.display = "none";
-        return;
-      }
-      paginationContainer.style.display = "block";
+        const paginationContainer = document.querySelector("#pagination-container .pagination");
 
-      let paginationHtml = "";
-      if (pagination.has_previous) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.previous_page_number}">«</a></li>`;
-      } else {
-        paginationHtml += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
-      }
+        // Перевірка, чи елемент існує
+        if (!paginationContainer) {
+            console.error("Елемент '#pagination-container .pagination' не знайдено в DOM");
+            return;
+        }
 
-      pagination.page_range.forEach(page => {
-        paginationHtml += `
-          <li class="page-item ${pagination.current_page === page ? 'active' : ''}">
-            <a class="page-link" href="#" data-page="${page}">${page}</a>
-          </li>`;
-      });
+        // Приховуємо або показуємо пагінацію залежно від наявності сторінок
+        if (!pagination || !pagination.has_other_pages) {
+            paginationContainer.style.display = "none";
+            return;
+        }
+        paginationContainer.style.display = "block";
 
-      if (pagination.has_next) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.next_page_number}">»</a></li>`;
-      } else {
-        paginationHtml += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
-      }
+        // Формуємо HTML для пагінації
+        let paginationHtml = "";
+        if (pagination.has_previous) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.previous_page_number}">«</a></li>`;
+        } else {
+            paginationHtml += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
+        }
 
-      paginationContainer.innerHTML = paginationHtml;
-      bindPaginationLinks();
+        pagination.page_range.forEach(page => {
+            paginationHtml += `
+              <li class="page-item ${pagination.current_page === page ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${page}">${page}</a>
+              </li>`;
+        });
+
+        if (pagination.has_next) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.next_page_number}">»</a></li>`;
+        } else {
+            paginationHtml += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
+        }
+
+        // Оновлюємо вміст пагінації
+        paginationContainer.innerHTML = paginationHtml;
+        bindPaginationLinks();
     }
 
     // -------- Прив'язка обробників для пагінації --------
