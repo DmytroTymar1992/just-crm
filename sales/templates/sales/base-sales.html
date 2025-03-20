@@ -73,6 +73,35 @@
       margin-left: 200px;
       max-width: calc(100vw - 200px); /* Адаптуємо при наведенні */
     }
+
+    #notification-container .notification {
+  background-color: #333;
+  color: white;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+#notification-container .notification.show {
+  opacity: 1;
+}
+
+#notification-container .notification.telegram {
+  border-left: 4px solid #007bff;
+}
+
+#notification-container .notification.email {
+  border-left: 4px solid #28a745;
+}
+
+#notification-container .notification.call {
+  border-left: 4px solid #17a2b8;
+}
+
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -104,7 +133,7 @@
           </ul>
         </div>
       </nav>
-
+<div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"></div>
       <!-- Основний контент -->
       <main class="main-content">
         {% block content %}
@@ -199,6 +228,26 @@
 
       console.log('Room list UI updated successfully');
     }
+  </script>
+  <script>
+      function showNotification(type, content) {
+  const notificationContainer = document.getElementById('notification-container');
+  const notification = document.createElement('div');
+  notification.classList.add('notification', type);
+  notification.innerHTML = content;
+
+  // Додаємо сповіщення в контейнер
+  notificationContainer.appendChild(notification);
+
+  // Показуємо сповіщення з анімацією
+  setTimeout(() => notification.classList.add('show'), 10);
+
+  // Ховаємо через 10 секунд
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 500); // Чекаємо завершення анімації
+  }, 10000);
+}
   </script>
   {% block extra_js %}{% endblock %}
 </body>

@@ -171,6 +171,15 @@
       .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #28a745' : 'border-right: 4px solid #28a745')
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
+
+    // Додаємо сповіщення
+  const notificationContent = `
+    <strong>Email</strong><br>
+    <strong>Тема:</strong> ${payload.subject || ''}<br>
+    ${payload.body || ''}<br>
+    <small>${payload.created_at || ''}</small>
+  `;
+  showNotification('email', notificationContent);
   }
 
   function renderTelegramMessage(payload) {
@@ -183,6 +192,14 @@
       .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #007bff' : 'border-right: 4px solid #007bff')
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
+
+    // Додаємо сповіщення
+  const notificationContent = `
+    <strong>Telegram</strong><br>
+    ${payload.body || ''}<br>
+    <small>${payload.created_at || ''}</small>
+  `;
+  showNotification('telegram', notificationContent);
   }
 
   function renderCallMessage(payload) {
