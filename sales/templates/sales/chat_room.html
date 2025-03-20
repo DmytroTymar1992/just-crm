@@ -1,88 +1,81 @@
 {% extends "sales/base-sales.html" %}
 {% load static %}
-
 {% block content %}
 <div class="chat-container">
   <!-- Ліва колонка: Контакти -->
-  <div class="contacts-column">
-    <div class="contacts-header">
-      <h5 class="mb-0">Контакти</h5>
+  <aside class="contacts-sidebar">
+    <div class="sidebar-header">
+      <h5>Контакти</h5>
     </div>
-    <div class="contacts-body" id="contacts-container">
+    <div class="contacts-list" id="contacts-container">
       {% include "sales/room_list.html" %}
     </div>
-  </div>
+  </aside>
 
   <!-- Центральна колонка: Чат -->
-  <div class="chat-column">
-    <!-- Заголовок діалогу -->
-    <div class="chat-header">
+  <main class="chat-main">
+    <header class="chat-header">
       <div class="chat-title">
-        <h5 class="mb-0">
+        <h5>
           <span class="contact-name">{{ room.contact.first_name }} {{ room.contact.last_name }}</span>
           {% if room.contact.company %}
-            <small class="company-name">{{ room.contact.company.name }}</small>
+            <small>{{ room.contact.company.name }}</small>
           {% endif %}
         </h5>
       </div>
       <div class="chat-actions">
-        <a href="sip:380501234567" class="btn btn-outline-light btn-sm me-2">
-          <i class="bi bi-telephone me-1"></i> Подзвонити
+        <a href="sip:380501234567" class="btn btn-icon btn-call">
+          <i class="bi bi-telephone"></i>
         </a>
-        <button type="button" class="btn btn-outline-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#taskModal">
-          <i class="bi bi-plus-circle me-1"></i> Створити задачу
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#taskModal">
+          <i class="bi bi-plus-circle"></i> Задача
         </button>
-        <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal">
-          <i class="bi bi-envelope me-1"></i> Написати Email
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#emailModal">
+          <i class="bi bi-envelope"></i> Email
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- Кнопка "Завантажити ще" -->
     <button id="load-more-btn" class="load-more-btn">
       Завантажити ще
     </button>
 
-    <!-- Лог чату -->
-    <div id="chat-log" class="chat-body">
+    <div id="chat-log" class="chat-messages">
       {% if page_obj %}
         {% include "sales/partials/chat_messages.html" with interactions=page_obj.object_list %}
       {% else %}
-        <div class="no-messages">
-          Повідомлень ще немає
-        </div>
+        <div class="no-messages">Повідомлень ще немає</div>
       {% endif %}
     </div>
 
-    <!-- Форма для відправки -->
-    <div class="chat-footer">
+    <footer class="chat-footer">
       <div class="input-group">
-        <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="1"></textarea>
+        <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..."></textarea>
         <button id="chat-message-submit" class="btn btn-primary">
           <i class="bi bi-send"></i>
         </button>
       </div>
-    </div>
-  </div>
+    </footer>
+  </main>
 
-  <!-- Права колонка: Додаткові функції -->
-  <div class="sidebar-column">
+  <!-- Права колонка -->
+  <aside class="extra-sidebar">
     <div class="sidebar-header">
-      <h5 class="mb-0">Додаткові функції</h5>
+      <h5>Додаткові функції</h5>
     </div>
-    <div class="sidebar-body">
+    <div class="extra-content">
       <p class="text-muted">Тут може бути щось інше.</p>
     </div>
-  </div>
+  </aside>
 </div>
 
-<!-- Модальне вікно (для Email) -->
+<!-- Модальні вікна залишаться без змін у структурі -->
 <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg">
-      <div class="modal-header bg-primary-gradient text-white">
+    <div class="modal-content">
+      <div class="modal-header">
         <h5 class="modal-title">Надіслати Email</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <textarea id="email-message-input" class="form-control" rows="4" placeholder="Введіть текст листа..."></textarea>
@@ -90,23 +83,22 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
         <button type="button" class="btn btn-primary" id="email-message-submit">
-          <i class="bi bi-envelope me-1"></i> Надіслати
+          <i class="bi bi-envelope"></i> Надіслати
         </button>
         <button type="button" class="btn btn-success" id="email-template-submit">
-          <i class="bi bi-envelope-check me-1"></i> Надіслати шаблон листа
+          <i class="bi bi-envelope-check"></i> Шаблон
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Модальне вікно для створення задачі -->
 <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg">
-      <div class="modal-header bg-primary-gradient text-white">
+    <div class="modal-content">
+      <div class="modal-header">
         <h5 class="modal-title">Створити задачу</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="task-form">
@@ -135,7 +127,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
         <button type="button" class="btn btn-primary" id="task-submit">
-          <i class="bi bi-plus-circle me-1"></i> Створити
+          <i class="bi bi-plus-circle"></i> Створити
         </button>
       </div>
     </div>
@@ -145,82 +137,66 @@
 
 {% block extra_css %}
 <style>
-  /* Додаємо Google Fonts */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root {
+    --primary: #007bff;
+    --secondary: #6c757d;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
 
-  /* Загальний стиль для чату */
   .chat-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); /* Темно-синій градієнт */
-    padding: 20px;
-    font-family: 'Inter', sans-serif;
     display: flex;
-    gap: 20px;
+    height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--light);
   }
 
-  /* Ліва колонка: Контакти */
-  .contacts-column {
-    width: 280px;
+  /* Сайдбари */
+  .contacts-sidebar, .extra-sidebar {
+    width: 250px;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    background: #fff;
+    box-shadow: var(--shadow);
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
   }
 
-  .contacts-header {
-    padding: 15px 20px;
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
+  .extra-sidebar {
+    width: 300px;
+  }
+
+  .sidebar-header {
+    padding: 1rem;
+    background: var(--primary);
+    color: #fff;
     font-weight: 600;
-    letter-spacing: 0.5px;
     text-transform: uppercase;
-    font-size: 1rem;
-    border-radius: 20px 20px 0 0;
+    letter-spacing: 0.5px;
   }
 
-  .contacts-body {
-    padding: 15px;
-    max-height: calc(100vh - 60px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  }
-
-  .contacts-body::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .contacts-body::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-
-  .contacts-body::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  /* Центральна колонка: Чат */
-  .chat-column {
+  .contacts-list, .extra-content {
     flex-grow: 1;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  /* Центральна частина */
+  .chat-main {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
   }
 
   .chat-header {
-    padding: 15px 20px;
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
+    padding: 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow);
   }
 
   .chat-title h5 {
@@ -229,215 +205,125 @@
   }
 
   .contact-name {
-    color: white;
-    font-size: 1.2rem;
+    color: var(--dark);
   }
 
-  .company-name {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
+  .chat-title small {
     display: block;
+    color: var(--secondary);
+    font-size: 0.85rem;
   }
 
-  .chat-actions .btn {
+  .chat-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
     border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
 
-  .chat-actions .btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: white;
+  .btn-icon {
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--primary);
+  }
+
+  .btn-icon:hover {
+    color: #0056b3;
   }
 
   .load-more-btn {
     display: none;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    padding: 0.5rem;
+    background: #fff;
     border: none;
-    border-radius: 0;
+    color: var(--primary);
+    text-align: center;
     font-size: 0.9rem;
-    transition: background 0.3s ease;
+    transition: background 0.2s ease;
   }
 
   .load-more-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #e9ecef;
   }
 
-  .chat-body {
+  .chat-messages {
     flex-grow: 1;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    max-height: calc(100vh - 200px);
+    padding: 1.5rem;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  }
-
-  .chat-body::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .chat-body::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-
-  .chat-body::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--light);
   }
 
   .no-messages {
-    color: rgba(255, 255, 255, 0.5);
     text-align: center;
-    padding: 20px;
-    font-size: 1rem;
+    color: var(--secondary);
+    padding: 2rem;
   }
 
-  /* Повідомлення */
-  .chat-body .mb-3 {
-    margin-bottom: 15px !important;
-  }
-
-  .chat-body .rounded-3 {
-    border-radius: 12px !important;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-  }
-
-  .chat-body .justify-content-start .rounded-3 {
-    background: rgba(255, 255, 255, 0.9);
-    border-left: 4px solid #3b82f6;
-  }
-
-  .chat-body .justify-content-end .rounded-3 {
-    background: #3b82f6;
-    color: white;
-    border-right: 4px solid #60a5fa;
-  }
-
-  .chat-body .text-primary {
-    color: #3b82f6 !important;
-  }
-
-  .chat-body .text-success {
-    color: #10b981 !important;
-  }
-
-  .chat-body .bg-warning-subtle {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px;
-    padding: 8px;
-  }
-
-  .chat-body .text-dark {
-    color: #1e3a8a !important;
-  }
-
-  .chat-body .text-muted {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-
-  /* Форма для відправки */
   .chat-footer {
-    padding: 15px 20px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 0 0 20px 20px;
+    padding: 1rem;
+    background: #fff;
+    border-top: 1px solid #e9ecef;
+    box-shadow: var(--shadow);
   }
 
   .input-group {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    align-items: flex-end;
   }
 
   #chat-message-input {
-    border: none;
-    resize: none;
-    min-height: 48px;
+    resize: vertical;
+    min-height: 40px;
     max-height: 150px;
-    background: transparent;
-    color: #1e3a8a;
-    font-size: 0.95rem;
-    padding: 12px 15px;
-    transition: all 0.3s ease;
-  }
-
-  #chat-message-input:focus {
-    box-shadow: none;
-    outline: none;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.75rem;
   }
 
   #chat-message-submit {
-    border-radius: 0 12px 12px 0;
-    background: #3b82f6;
-    border: none;
-    padding: 0 20px;
-    transition: background 0.3s ease;
-  }
-
-  #chat-message-submit:hover {
-    background: #60a5fa;
-  }
-
-  /* Права колонка: Додаткові функції */
-  .sidebar-column {
-    width: 350px;
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-  }
-
-  .sidebar-header {
-    padding: 15px 20px;
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-size: 1rem;
-    border-radius: 20px 20px 0 0;
-  }
-
-  .sidebar-body {
-    padding: 15px;
-    max-height: calc(100vh - 60px);
-    overflow-y: auto;
-    color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
   }
 
   /* Модальні вікна */
   .modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
   }
 
   .modal-header {
-    border-radius: 16px 16px 0 0;
+    background: var(--primary);
+    color: #fff;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
   }
 
   .modal-footer {
     border-top: none;
   }
 
-  .form-control, .form-select {
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    transition: border-color 0.3s ease;
+  /* Скроллбари */
+  .chat-messages, .contacts-list {
+    scrollbar-width: thin;
+    scrollbar-color: #ced4da #e9ecef;
   }
 
-  .form-control:focus, .form-select:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .chat-messages::-webkit-scrollbar, .contacts-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-messages::-webkit-scrollbar-thumb, .contacts-list::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 3px;
+  }
+
+  .chat-messages::-webkit-scrollbar-track, .contacts-list::-webkit-scrollbar-track {
+    background: #e9ecef;
   }
 </style>
 {% endblock %}
@@ -448,10 +334,11 @@
   const roomId = "{{ room_id }}";
   const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + roomId + '/');
 
-  const chatUrl = `/sales/${roomId}/`;
-  const contactFirstName = "{{ room.contact.first_name|escapejs }}";
-  const contactLastName = "{{ room.contact.last_name|default:''|escapejs }}";
-  const contactFullName = `${contactFirstName} ${contactLastName}`.trim() || "Контакт";
+
+    const chatUrl = `/sales/${roomId}/`; // Формуємо URL на основі вашого маршруту
+    const contactFirstName = "{{ room.contact.first_name|escapejs }}";
+    const contactLastName = "{{ room.contact.last_name|default:''|escapejs }}";
+    const contactFullName = `${contactFirstName} ${contactLastName}`.trim() || "Контакт";
 
   chatSocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
@@ -474,21 +361,24 @@
 
   document.querySelector('#chat-message-submit').onclick = sendTelegram;
 
-  document.querySelector('#chat-message-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      sendTelegram();
-    }
-  });
+    // Обробка натискання клавіш у textarea
+    document.querySelector('#chat-message-input').addEventListener('keydown', function(e) {
+      // Відправка повідомлення при натисканні Ctrl+Enter або Cmd+Enter
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); // Запобігаємо додаванню нового рядка
+        sendTelegram();
+      }
+      // Звичайний Enter додає новий рядок
+    });
 
-  function sendTelegram() {
-    const textarea = document.querySelector('#chat-message-input');
-    const message = textarea.value.trim();
-    if (!message) return;
-    chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'telegram' }));
-    textarea.value = '';
-    textarea.style.height = 'auto';
-  }
+    function sendTelegram() {
+      const textarea = document.querySelector('#chat-message-input');
+      const message = textarea.value.trim();
+      if (!message) return;
+      chatSocket.send(JSON.stringify({ 'message': message, 'channel_type': 'telegram' }));
+      textarea.value = ''; // Очищаємо поле після відправки
+      textarea.style.height = 'auto'; // Скидаємо висоту, якщо textarea була розширена
+    }
 
   document.querySelector('#email-message-submit').onclick = sendEmail;
   function sendEmail() {
@@ -507,21 +397,22 @@
       .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
       .replace('__TIME__', payload.created_at || '')
       .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
-      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? 'rgba(255, 255, 255, 0.9)' : '#3b82f6')
-      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #3b82f6' : 'border-right: 4px solid #60a5fa')
+      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e9f7ef')
+      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #28a745' : 'border-right: 4px solid #28a745')
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
 
-    if (payload.sender_type === 'contact') {
-      const notificationContent = `
-        <strong>Email від ${contactFullName}</strong><br>
-        <strong>Тема:</strong> ${payload.subject || ''}<br>
-        <p class="message-text">${payload.body || ''}</p>
-        <small>${payload.created_at || ''}</small>
-      `;
-      showNotification('email', notificationContent);
-    }
+   // Показуємо сповіщення лише якщо відправник — контакт
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>Email від ${contactFullName}</strong><br>
+      <strong>Тема:</strong> ${payload.subject || ''}<br>
+      <p class="message-text">${payload.body || ''}</p>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('email', notificationContent);
   }
+}
 
   function renderTelegramMessage(payload) {
     const tpl = document.getElementById('telegramMessageTpl').innerHTML;
@@ -529,20 +420,21 @@
       .replace('__BODY__', (payload.body || "").replace(/\n/g, "<br>"))
       .replace('__TIME__', payload.created_at || '')
       .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
-      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? 'rgba(255, 255, 255, 0.9)' : '#3b82f6')
-      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #3b82f6' : 'border-right: 4px solid #60a5fa')
+      .replace('__BG_COLOR__', payload.sender_type === 'contact' ? '#ffffff' : '#e6f0fa')
+      .replace('__BORDER__', payload.sender_type === 'contact' ? 'border-left: 4px solid #007bff' : 'border-right: 4px solid #007bff')
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
 
-    if (payload.sender_type === 'contact') {
-      const notificationContent = `
-        <strong>Telegram від ${contactFullName}</strong><br>
-        <p class="message-text">${payload.body || ''}</p>
-        <small>${payload.created_at || ''}</small>
-      `;
-      showNotification('telegram', notificationContent);
-    }
+    // Показуємо сповіщення лише якщо відправник — контакт
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>Telegram від ${contactFullName}</strong><br>
+      <p class="message-text">${payload.body || ''}</p>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('telegram', notificationContent);
   }
+}
 
   function renderCallMessage(payload) {
     const tpl = document.getElementById('callMessageTpl').innerHTML;
@@ -557,15 +449,15 @@
       .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
     appendMessage(html);
 
-    if (payload.sender_type === 'contact') {
-      const notificationContent = `
-        <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
-        <p class="message-text">Телефон: ${payload.client_phone || ''}</p>
-        <small>${payload.created_at || ''}</small>
-      `;
-      showNotification('call', notificationContent);
-    }
+  if (payload.sender_type === 'contact') {
+    const notificationContent = `
+      <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
+      <p class="message-text">Телефон: ${payload.client_phone || ''}</p>
+      <small>${payload.created_at || ''}</small>
+    `;
+    showNotification('call', notificationContent);
   }
+}
 
   function renderUnknownMessage(payload) {
     const chatLog = document.getElementById('chat-log');
@@ -592,109 +484,7 @@
     const chatLog = document.getElementById("chat-log");
     if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
   });
-
-  const loadMoreBtn = document.getElementById('load-more-btn');
-  if (hasPrevious) {
-    loadMoreBtn.style.display = 'block';
-  }
-
-  loadMoreBtn.addEventListener('click', function() {
-    loadOlderMessages();
-  });
-
-  function loadOlderMessages() {
-    if (!prevPageNumber) return;
-
-    const url = `/sales/{{ room_id }}/load_more_interactions/?page=${prevPageNumber}`;
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        const chatLog = document.getElementById('chat-log');
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = data.messages_html;
-        chatLog.insertBefore(tempDiv, chatLog.firstChild);
-
-        hasPrevious = data.has_previous;
-        prevPageNumber = hasPrevious ? data.prev_page_number : null;
-
-        if (!hasPrevious) {
-          loadMoreBtn.style.display = 'none';
-        }
-      })
-      .catch(err => console.error("Помилка при завантаженні старіших повідомлень:", err));
-  }
-
-  document.querySelector('#email-template-submit').onclick = sendEmailTemplate;
-
-  function sendEmailTemplate() {
-    const subject = document.querySelector('#email-subject-input')?.value || 'Ласкаво просимо!';
-    chatSocket.send(JSON.stringify({ 'message': '', 'subject': subject, 'channel_type': 'email_template' }));
-    bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
-  }
-
-  document.querySelector('#chat-message-input').addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = `${this.scrollHeight}px`;
-  });
-
-  document.querySelector('#task-submit').onclick = createTask;
-
-  function createTask() {
-    const taskType = document.querySelector('#task-type').value;
-    const taskDate = document.querySelector('#task-date').value;
-    const taskTarget = document.querySelector('#task-target').value;
-    const taskDescription = document.querySelector('#task-description').value;
-
-    if (!taskType || !taskDate || !taskTarget) {
-      alert('Будь ласка, заповніть усі обов’язкові поля!');
-      return;
-    }
-
-    fetch('/sales/create_task/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken(),
-      },
-      body: JSON.stringify({
-        room_id: roomId,
-        task_type: taskType,
-        task_date: taskDate,
-        target: taskTarget,
-        description: taskDescription,
-      }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert('Задачу створено!');
-        bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
-        document.querySelector('#task-form').reset();
-      } else {
-        alert('Помилка: ' + data.error);
-      }
-    })
-    .catch(err => console.error('Помилка при створенні задачі:', err));
-  }
-
-  function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-  }
 </script>
-
-{% if page_obj %}
-  <script>
-    let currentPage = {{ page_obj.number }};
-    let hasPrevious = {{ page_obj.has_previous|yesno:"true,false" }};
-    let prevPageNumber = hasPrevious ? (currentPage - 1) : null;
-  </script>
-{% else %}
-  <script>
-    let currentPage = 1;
-    let hasPrevious = false;
-    let prevPageNumber = null;
-  </script>
-{% endif %}
 
 <script type="text/x-template" id="emailMessageTpl">
   <div class="mb-3 d-flex __SENDER_CLASS__">
@@ -731,4 +521,158 @@
     </div>
   </div>
 </script>
+    <script>
+  const currentUser = "{{ request.user.username }}";
+  const roomId = "{{ room_id }}";
+  const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + roomId + '/');
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const username = data.username || 'User';
+    const payload = data.payload || {};
+    handleIncomingPayload(username, payload);
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('WebSocket закрито', e);
+  };
+
+  function handleIncomingPayload(username, payload) {
+    ...
+  }
+
+  // При натисканні Enter або кнопки "Надіслати" відправляємо повідомлення
+  ...
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const chatLog = document.getElementById("chat-log");
+    if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+  });
+</script>
+
+{% if page_obj %}
+  <script>
+    // 1) Номер поточної сторінки
+    let currentPage = {{ page_obj.number }};
+    // 2) Чи є попередня сторінка
+    let hasPrevious = {{ page_obj.has_previous|yesno:"true,false" }};
+    // 3) Якщо hasPrevious — тоді page_obj.number > 1, і можна safely currentPage - 1
+    let prevPageNumber = hasPrevious ? (currentPage - 1) : null;
+  </script>
+{% else %}
+  <script>
+    // Якщо сторінок узагалі немає (page_obj = None)
+    let currentPage = 1;
+    let hasPrevious = false;
+    let prevPageNumber = null;
+  </script>
+{% endif %}
+
+<script>
+  // Кнопка "Завантажити ще"
+  const loadMoreBtn = document.getElementById('load-more-btn');
+
+  // Показати кнопку, якщо hasPrevious = true
+  if (hasPrevious) {
+    loadMoreBtn.style.display = 'block';
+  }
+
+  loadMoreBtn.addEventListener('click', function() {
+    loadOlderMessages();
+  });
+
+  function loadOlderMessages() {
+    // Якщо prevPageNumber = null, нічого не робимо.
+    if (!prevPageNumber) return;
+
+    const url = `/sales/{{ room_id }}/load_more_interactions/?page=${prevPageNumber}`;
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const chatLog = document.getElementById('chat-log');
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.messages_html;
+        // Додаємо "зверху" (prepenд)
+        chatLog.insertBefore(tempDiv, chatLog.firstChild);
+
+        hasPrevious = data.has_previous;
+        // Якщо `has_previous` = true, значить ще існує сторінка (prevPageNumber - 1).
+        // У load_more_interactions – ми рухаємось назад.
+        // Тобто на бекенді, якщо було page=5, воно підтягує 5-ту сторінку і поверне prev_page_number=4, якщо 4 > 0.
+        prevPageNumber = hasPrevious ? data.prev_page_number : null;
+
+        if (!hasPrevious) {
+          loadMoreBtn.style.display = 'none';
+        }
+      })
+      .catch(err => console.error("Помилка при завантаженні старіших повідомлень:", err));
+  }
+</script>
+<script>
+document.querySelector('#email-template-submit').onclick = sendEmailTemplate;
+
+function sendEmailTemplate() {
+// Приклад: можна взяти тему з input або використати стандартну
+const subject = document.querySelector('#email-subject-input')?.value || 'Ласкаво просимо!';
+// Тут message може бути порожнім, бо на сервері буде сформовано шаблон
+chatSocket.send(JSON.stringify({ 'message': '', 'subject': subject, 'channel_type': 'email_template' }));
+bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
+}
+</script>
+    <script>
+    document.querySelector('#chat-message-input').addEventListener('input', function() {
+  this.style.height = 'auto'; // Скидаємо висоту
+  this.style.height = `${this.scrollHeight}px`; // Встановлюємо висоту відповідно до вмісту
+});
+    </script>
+    <script>
+    // Скрипт створення нової задачі
+document.querySelector('#task-submit').onclick = createTask;
+
+function createTask() {
+  const taskType = document.querySelector('#task-type').value;
+  const taskDate = document.querySelector('#task-date').value;
+  const taskTarget = document.querySelector('#task-target').value;  // Змінено з taskSubject на taskTarget
+  const taskDescription = document.querySelector('#task-description').value;
+
+  // Перевірка, чи заповнені обов'язкові поля
+  if (!taskType || !taskDate || !taskTarget) {
+    alert('Будь ласка, заповніть усі обов’язкові поля!');
+    return;
+  }
+
+  // Відправка запиту на сервер
+  fetch('/sales/create_task/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({
+      room_id: roomId,
+      task_type: taskType,
+      task_date: taskDate,
+      target: taskTarget,  // Змінено з subject на target
+      description: taskDescription,
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Задачу створено!');
+      bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+      document.querySelector('#task-form').reset();
+    } else {
+      alert('Помилка: ' + data.error);
+    }
+  })
+  .catch(err => console.error('Помилка при створенні задачі:', err));
+}
+
+// Функція для отримання CSRF-токена
+function getCsrfToken() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+    </script>
+
 {% endblock %}
