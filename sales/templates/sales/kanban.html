@@ -4,145 +4,129 @@
 {% block title %}Канбан-дошка{% endblock %}
 
 {% block content %}
-<div class="container-fluid h-100">
-  <div class="row h-100">
+<div class="kanban-container">
+  <div class="kanban-board">
     <!-- Колонка "Протерміновані" -->
-    <div class="col-md-3 h-100">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header bg-danger text-white">
-          <h5 class="mb-0">Протерміновані</h5>
-        </div>
-        <div class="card-body overflow-auto kanban-column" id="overdue-tasks">
-          {% for task in overdue_tasks %}
-            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
-              <div class="card-body p-3 d-flex justify-content-between align-items-start">
-                <div class="flex-grow-1">
-                  <h6 class="card-title mb-2">
-                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
-                  </h6>
-                  <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
-                  <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-                  <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
-                </div>
-                <div class="d-flex flex-column align-items-end">
-                  <button class="btn btn-sm btn-outline-secondary complete-task-btn mb-2" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                    <i class="bi bi-check"></i>
-                  </button>
-                  <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary chat-btn" title="Перейти в чат">
-                    <i class="bi bi-chat"></i>
-                  </a>
-                </div>
+    <div class="kanban-column">
+      <div class="kanban-header bg-danger-gradient">
+        <h5 class="mb-0">Протерміновані</h5>
+      </div>
+      <div class="kanban-body" id="overdue-tasks">
+        {% for task in overdue_tasks %}
+          <div class="kanban-card" data-task-id="{{ task.id }}">
+            <div class="card-content">
+              <div class="card-header">
+                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                  <i class="bi bi-check"></i>
+                </button>
+                <h6 class="card-title">
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                </h6>
               </div>
+              <p class="card-text">{{ task.description|truncatechars:50 }}</p>
+              <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
             </div>
-          {% empty %}
-            <p class="text-muted text-center">Немає протермінованих задач</p>
-          {% endfor %}
-        </div>
+            <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
+              <i class="bi bi-chat"></i>
+            </a>
+          </div>
+        {% empty %}
+          <p class="text-muted text-center">Немає протермінованих задач</p>
+        {% endfor %}
       </div>
     </div>
 
     <!-- Колонка "Сьогодні" -->
-    <div class="col-md-3 h-100">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Сьогодні</h5>
-        </div>
-        <div class="card-body overflow-auto kanban-column" id="today-tasks">
-          {% for task in today_tasks %}
-            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
-              <div class="card-body p-2 d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 class="card-title mb-1">
-                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
-                  </h6>
-                  <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
-                  <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-                  <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                    <i class="bi bi-circle"></i>
-                  </button>
-                  <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
-                    <i class="bi bi-chat"></i>
-                  </a>
-                </div>
+    <div class="kanban-column">
+      <div class="kanban-header bg-primary-gradient">
+        <h5 class="mb-0">Сьогодні</h5>
+      </div>
+      <div class="kanban-body" id="today-tasks">
+        {% for task in today_tasks %}
+          <div class="kanban-card" data-task-id="{{ task.id }}">
+            <div class="card-content">
+              <div class="card-header">
+                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                  <i class="bi bi-check"></i>
+                </button>
+                <h6 class="card-title">
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                </h6>
               </div>
+              <p class="card-text">{{ task.description|truncatechars:50 }}</p>
+              <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
             </div>
-          {% empty %}
-            <p class="text-muted text-center">Немає задач на сьогодні</p>
-          {% endfor %}
-        </div>
+            <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
+              <i class="bi bi-chat"></i>
+            </a>
+          </div>
+        {% empty %}
+          <p class="text-muted text-center">Немає задач на сьогодні</p>
+        {% endfor %}
       </div>
     </div>
 
     <!-- Колонка "Завтра" -->
-    <div class="col-md-3 h-100">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header bg-warning text-white">
-          <h5 class="mb-0">Завтра</h5>
-        </div>
-        <div class="card-body overflow-auto kanban-column" id="tomorrow-tasks">
-          {% for task in tomorrow_tasks %}
-            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
-              <div class="card-body p-2 d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 class="card-title mb-1">
-                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
-                  </h6>
-                  <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
-                  <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-                  <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                    <i class="bi bi-circle"></i>
-                  </button>
-                  <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
-                    <i class="bi bi-chat"></i>
-                  </a>
-                </div>
+    <div class="kanban-column">
+      <div class="kanban-header bg-warning-gradient">
+        <h5 class="mb-0">Завтра</h5>
+      </div>
+      <div class="kanban-body" id="tomorrow-tasks">
+        {% for task in tomorrow_tasks %}
+          <div class="kanban-card" data-task-id="{{ task.id }}">
+            <div class="card-content">
+              <div class="card-header">
+                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                  <i class="bi bi-check"></i>
+                </button>
+                <h6 class="card-title">
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                </h6>
               </div>
+              <p class="card-text">{{ task.description|truncatechars:50 }}</p>
+              <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
             </div>
-          {% empty %}
-            <p class="text-muted text-center">Немає задач на завтра</p>
-          {% endfor %}
-        </div>
+            <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
+              <i class="bi bi-chat"></i>
+            </a>
+          </div>
+        {% empty %}
+          <p class="text-muted text-center">Немає задач на завтра</p>
+        {% endfor %}
       </div>
     </div>
 
     <!-- Колонка "На цьому тижні" -->
-    <div class="col-md-3 h-100">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0">На цьому тижні</h5>
-        </div>
-        <div class="card-body overflow-auto kanban-column" id="this-week-tasks">
-          {% for task in this_week_tasks %}
-            <div class="kanban-card card mb-2" data-task-id="{{ task.id }}">
-              <div class="card-body p-2 d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 class="card-title mb-1">
-                    <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
-                  </h6>
-                  <p class="card-text small text-muted mb-1">{{ task.description|truncatechars:50 }}</p>
-                  <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
-                  <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                    <i class="bi bi-circle"></i>
-                  </button>
-                  <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="btn btn-sm btn-primary" title="Перейти в чат">
-                    <i class="bi bi-chat"></i>
-                  </a>
-                </div>
+    <div class="kanban-column">
+      <div class="kanban-header bg-info-gradient">
+        <h5 class="mb-0">На цьому тижні</h5>
+      </div>
+      <div class="kanban-body" id="this-week-tasks">
+        {% for task in this_week_tasks %}
+          <div class="kanban-card" data-task-id="{{ task.id }}">
+            <div class="card-content">
+              <div class="card-header">
+                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
+                  <i class="bi bi-check"></i>
+                </button>
+                <h6 class="card-title">
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                </h6>
               </div>
+              <p class="card-text">{{ task.description|truncatechars:50 }}</p>
+              <small class="text-muted">Тип: {{ task.get_task_type_display }}</small><br>
+              <small class="text-muted">Дата: {{ task.task_date|date:"d.m.Y H:i" }}</small>
             </div>
-          {% empty %}
-            <p class="text-muted text-center">Немає задач на цей тиждень</p>
-          {% endfor %}
-        </div>
+            <a href="{% url 'chat_room' room_id=task.contact.rooms.first.id %}" class="chat-btn" title="Перейти в чат">
+              <i class="bi bi-chat"></i>
+            </a>
+          </div>
+        {% empty %}
+          <p class="text-muted text-center">Немає задач на цей тиждень</p>
+        {% endfor %}
       </div>
     </div>
   </div>
@@ -152,7 +136,7 @@
 <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg">
-      <div class="modal-header bg-primary text-white">
+      <div class="modal-header bg-primary-gradient text-white">
         <h5 class="modal-title">Редагувати задачу</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -194,126 +178,226 @@
 
 {% block extra_css %}
 <style>
+  /* Додаємо Google Fonts */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
   /* Загальний стиль для канбан-дошки */
-  .container-fluid {
-    padding: 20px;
-    background: #f4f7fc; /* Світло-синій фон */
+  .kanban-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); /* Темно-синій градієнт */
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* Дошка */
+  .kanban-board {
+    display: flex;
+    gap: 25px;
+    max-width: 1400px;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   /* Колонки */
   .kanban-column {
-    min-height: 200px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    padding: 15px;
+    flex: 1;
+    min-width: 300px;
+    max-width: 340px;
+    background: rgba(255, 255, 255, 0.15); /* Ефект скла */
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
     transition: transform 0.3s ease;
   }
 
+  .kanban-column:hover {
+    transform: translateY(-5px);
+  }
+
   /* Заголовки колонок */
-  .card-header {
-    border-radius: 12px 12px 0 0;
+  .kanban-header {
     padding: 15px 20px;
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-size: 1rem;
     color: white;
-    transition: background 0.3s ease;
+    border-radius: 20px 20px 0 0;
   }
 
-  .card-header.bg-danger {
-    background: linear-gradient(135deg, #ff6b6b, #ff8787); /* Градієнт для протермінованих */
+  .bg-danger-gradient {
+    background: linear-gradient(135deg, #ff3f6c, #ff6b8b);
   }
 
-  .card-header.bg-primary {
-    background: linear-gradient(135deg, #4facfe, #00f2fe); /* Градієнт для сьогодні */
+  .bg-primary-gradient {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
   }
 
-  .card-header.bg-warning {
-    background: linear-gradient(135deg, #feca57, #ff9f43); /* Градієнт для завтра */
+  .bg-warning-gradient {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
   }
 
-  .card-header.bg-info {
-    background: linear-gradient(135deg, #54a0ff, #74c0fc); /* Градієнт для цього тижня */
+  .bg-info-gradient {
+    background: linear-gradient(135deg, #10b981, #34d399);
+  }
+
+  /* Тіло колонок */
+  .kanban-body {
+    padding: 15px;
+    min-height: 200px;
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .kanban-body::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .kanban-body::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .kanban-body::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   /* Картки задач */
   .kanban-card {
-    background: #ffffff;
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     margin-bottom: 15px;
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
   }
 
   .kanban-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   }
 
-  .kanban-card .card-body {
+  .kanban-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #3b82f6, #60a5fa); /* Бічна смужка */
+  }
+
+  .card-content {
     padding: 15px;
   }
 
-  .kanban-card .card-title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 8px;
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
   }
 
-  .kanban-card .card-text {
-    color: #6c757d;
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin: 0;
+  }
+
+  .card-text {
+    color: #64748b;
     font-size: 0.9rem;
     margin-bottom: 5px;
   }
 
-  .kanban-card .text-muted {
-    color: #adb5bd !important;
+  .text-muted {
+    color: #94a3b8 !important;
     font-size: 0.85rem;
   }
 
   /* Клікабельна ціль */
   .edit-task-target {
-    color: #4facfe;
+    color: #3b82f6;
     font-weight: 600;
     transition: color 0.3s ease;
   }
 
   .edit-task-target:hover {
-    color: #00f2fe;
+    color: #60a5fa;
   }
 
   /* Кнопки */
   .complete-task-btn, .chat-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
-    padding: 6px;
     transition: all 0.3s ease;
   }
 
   .complete-task-btn {
-    border-color: #adb5bd;
-    color: #adb5bd;
+    border-color: #94a3b8;
+    color: #94a3b8;
   }
 
   .complete-task-btn:hover {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: #10b981;
+    border-color: #10b981;
     color: white;
   }
 
   .chat-btn {
-    background-color: #4facfe;
-    border-color: #4facfe;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #3b82f6;
+    border-color: #3b82f6;
     color: white;
   }
 
   .chat-btn:hover {
-    background-color: #00f2fe;
-    border-color: #00f2fe;
+    background-color: #60a5fa;
+    border-color: #60a5fa;
     color: white;
+  }
+
+  /* Модальне вікно */
+  .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-header {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-footer {
+    border-top: none;
+  }
+
+  .form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    transition: border-color 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 </style>
 {% endblock %}
@@ -360,7 +444,6 @@
         e.preventDefault();
         const taskId = this.getAttribute('data-task-id');
 
-        // Завантажуємо дані задачі через API
         fetch(`/sales/get_task/${taskId}/`)
           .then(response => response.json())
           .then(data => {
@@ -410,7 +493,7 @@
         if (data.success) {
           alert('Задачу оновлено!');
           bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
-          location.reload(); // Перезавантажуємо сторінку для оновлення
+          location.reload();
         } else {
           alert('Помилка: ' + data.error);
         }
