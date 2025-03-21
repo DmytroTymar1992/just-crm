@@ -190,6 +190,11 @@ class Vacancy(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['work_company_id']),  # Індекс для швидкого пошуку за work_company_id
+        ]
+
 class ContactLink(models.Model):
     contact = models.ForeignKey(
         Contact,
