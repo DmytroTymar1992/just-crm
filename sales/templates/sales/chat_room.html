@@ -22,7 +22,7 @@
           <small class="text-muted d-block">{{ room.contact.company.name }}</small>
         {% endif %}
       </h5>
-        <a href="sip:380501234567">Подзвонити</a>
+        <a href="sip:{{ room.contact.phone }}">Подзвонити</a>
         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#taskModal">
           <i class="bi bi-plus-circle me-1"></i> Створити задачу
         </button>
