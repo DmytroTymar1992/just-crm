@@ -1,6 +1,7 @@
 # chat/urls.py
 from django.urls import path
 from .views import *
+from sales_analytics.views import analytics_dashboard
 
 urlpatterns = [
     path('<int:room_id>/', chat_room, name='chat_room'),
@@ -21,5 +22,7 @@ urlpatterns = [
     path('contacts/search/', contact_search, name='contact_search'),
     path('contacts/create_chat/<int:contact_id>/', create_chat_room, name='create_chat_room'),
     path('<int:room_id>/vacancies/', get_company_vacancies, name='get_company_vacancies'),
+
+    path('dashboard/', analytics_dashboard, name='analytics_dashboard'),
 
 ]

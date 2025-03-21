@@ -10,6 +10,7 @@ from telethon import TelegramClient
 import datetime
 import logging
 from django.utils import timezone
+from sales_analytics.models import ManagerActivity
 
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,14 @@ def process_telegram_message(message_data):
             message_id=message_data.get('message_id'),
             chat_id=message_data.get('chat_id'),
             text=message_data.get('text'),
+        )
+
+        # Записуємо діяльність менеджера
+        ManagerActivity.objects.create(
+            manager=user,
+            activity_type='telegram_in',
+            contact=contact,
+            interaction=interaction
         )
 
     # Відправка повідомлення до конкретного чату (room)
@@ -169,6 +178,14 @@ def process_email_message(email_data):
             interaction=interaction,
             subject=subject,
             body=body,
+        )
+
+        # Записуємо діяльність менеджера
+        ManagerActivity.objects.create(
+            manager=user,
+            activity_type='email_in',
+            contact=contact,
+            interaction=interaction
         )
 
     # Відправка повідомлення до конкретного чату (room)
@@ -401,12 +418,15 @@ def process_phonet_call(call_data):
     #    Якщо inbound (4) -> "contact", outbound (2) -> "user"
     if direction_code == 4:
         sender = "contact"
+        activity_type = 'call_in'
     elif direction_code == 2:
         sender = "user"
+        activity_type = 'call_out'
     else:
         # Можна окремо обробити 1=internal, 32=paused, 64=unpaused, інші...
         # Тут поставимо "contact" за замовчуванням
         sender = "contact"
+        activity_type = 'call_in'
 
     # 4. Перетворимо мс у datetime (UTC)
     def ts_to_dt(ts):
@@ -480,6 +500,13 @@ def process_phonet_call(call_data):
                 hangup_at=None,
             )
             logger.info(f"Created new Interaction+CallMessage for dial uuid={uuid}.")
+            # Записуємо діяльність менеджера при call.dial
+            ManagerActivity.objects.create(
+                manager=user,
+                activity_type=activity_type,  # 'call_in' або 'call_out' залежно від direction_code
+                contact=contact,
+                interaction=interaction
+            )
         else:
             # Якщо це bridge або hangup, або dial (але вже існує) – оновлюємо поля
             if call_msg:
@@ -521,6 +548,13 @@ def process_phonet_call(call_data):
                     hangup_at=hangup_dt if event_type == "call.hangup" else None,
                 )
                 logger.warning(f"No existing call_msg for uuid={uuid}, created new on {event_type} event.")
+                # Записуємо діяльність менеджера при першому створенні (dial пропущено)
+                ManagerActivity.objects.create(
+                    manager=user,
+                    activity_type=activity_type,  # 'call_in' або 'call_out'
+                    contact=contact,
+                    interaction=interaction
+                )
 
         # 6. Відправити повідомлення у WebSocket
         channel_layer = get_channel_layer()

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'main',
     'sales.apps.SalesConfig',
     'celery',
+    'sales_analytics',
 
     'channels',
 ]

@@ -21,6 +21,7 @@ from datetime import timedelta, date
 import datetime
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
+from sales_analytics.models import ManagerActivity
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +317,13 @@ def create_contact(request):
                 contact=new_contact,  # Новий контакт
             )
 
+            ManagerActivity.objects.create(
+                manager=request.user,
+                activity_type='create_contact',
+                contact=new_contact,  # Додаємо контакт
+
+            )
+
             # Оновлюємо відповідь JSON із даними чату
             return JsonResponse({
                 'success': True,
@@ -343,6 +351,13 @@ def edit_contact(request, contact_id):
         form = ContactForm(request.POST, instance=contact)
         if form.is_valid():
             form.save()
+
+            ManagerActivity.objects.create(
+                manager=request.user,
+                activity_type='edit_contact',
+                contact=contact,  # Додаємо контакт
+
+            )
             return JsonResponse({
                 'success': True,
                 'id': contact.id,
@@ -368,6 +383,12 @@ def company_create(request):
             # Генеруємо slug (можна ще й зробити унікальність при потребі)
             company.slug = slugify(company.name)
             company.save()
+
+            ManagerActivity.objects.create(
+                manager=request.user,
+                activity_type='create_company',
+                company=company  # Додаємо компанію
+            )
             return redirect('company_list')  # або ваша потрібна URL-назва
     else:
         form = CompanyForm()
@@ -383,6 +404,12 @@ def edit_company(request, company_id):
             company = form.save(commit=False)
             company.slug = slugify(company.name)  # Оновлюємо slug при редагуванні
             company.save()
+
+            ManagerActivity.objects.create(
+                manager=request.user,
+                activity_type='edit_company',
+                company=company  # Додаємо компанію
+            )
             return redirect('company_list')  # Перенаправляємо на список компаній
     else:
         form = CompanyForm(instance=company)
@@ -440,6 +467,15 @@ def create_task(request):
             task_type=task_type,
             target=target,
             description=description or '',
+        )
+
+        # Записуємо діяльність менеджера
+        ManagerActivity.objects.create(
+            manager=request.user,
+            activity_type='create_task',
+            contact=room.contact,
+            task=task,
+            company=room.contact.company if room.contact.company else None  # Додаємо компанію, якщо є
         )
 
         return JsonResponse({
@@ -515,6 +551,15 @@ def complete_task(request):
         task.completed_at = timezone.now()
         task.save()
 
+        # Записуємо діяльність менеджера
+        ManagerActivity.objects.create(
+            manager=request.user,
+            activity_type='complete_task',
+            contact=task.contact,
+            task=task,
+            company=task.contact.company if task.contact.company else None  # Додаємо компанію, якщо є
+        )
+
         return JsonResponse({'success': True})
     except Task.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
@@ -567,6 +612,14 @@ def edit_task(request):
         task.target = target
         task.description = description or ''
         task.save()
+
+        ManagerActivity.objects.create(
+            manager=request.user,
+            activity_type='edit_task',
+            contact=task.contact,
+            task=task,
+            company=task.contact.company if task.contact.company else None  # Додаємо компанію, якщо є
+        )
 
         return JsonResponse({'success': True})
     except Task.DoesNotExist:
