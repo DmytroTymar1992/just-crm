@@ -21,11 +21,11 @@
             </div>
             <div class="col-md-3">
                 <label for="date_from" class="form-label">Дата від</label>
-                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from|default:'' }}">
+                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
             </div>
             <div class="col-md-3">
                 <label for="date_to" class="form-label">Дата до</label>
-                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to|default:'' }}">
+                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Фільтрувати</button>
@@ -39,17 +39,17 @@
         <div class="col-md-8">
             <div class="row">
                 <div class="col-md-6 mb-4">
-                    <h5>Створені компанії</h5>
+                    <h5>Створені компанії за період</h5>
                     <canvas id="companiesChart" height="200"></canvas>
                 </div>
                 <div class="col-md-6 mb-4">
-                    <h5>Створені контакти</h5>
+                    <h5>Створені контакти за період</h5>
                     <canvas id="contactsChart" height="200"></canvas>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-4">
-                    <h5>Дзвінки</h5>
+                    <h5>Дзвінки за період</h5>
                     <canvas id="callsChart" height="200"></canvas>
                 </div>
             </div>
@@ -98,9 +98,9 @@
     const companiesChart = new Chart(document.getElementById('companiesChart').getContext('2d'), {
         type: 'pie',
         data: {
-            labels: ['Створено менеджером', 'Загальна кількість'],
+            labels: ['Створено менеджером', 'Інші за період'],
             datasets: [{
-                data: [{{ manager_created_companies }}, {{ total_companies }} - {{ manager_created_companies }}],
+                data: [{{ manager_created_companies }}, {{ total_created_companies }} - {{ manager_created_companies }}],
                 backgroundColor: ['#36A2EB', '#FF6384']
             }]
         },
@@ -116,9 +116,9 @@
     const contactsChart = new Chart(document.getElementById('contactsChart').getContext('2d'), {
         type: 'pie',
         data: {
-            labels: ['Створено менеджером', 'Загальна кількість'],
+            labels: ['Створено менеджером', 'Інші за період'],
             datasets: [{
-                data: [{{ manager_created_contacts }}, {{ total_contacts }} - {{ manager_created_contacts }}],
+                data: [{{ manager_created_contacts }}, {{ total_created_contacts }} - {{ manager_created_contacts }}],
                 backgroundColor: ['#36A2EB', '#FF6384']
             }]
         },
