@@ -205,10 +205,30 @@ def contact_list(request):
 def company_detail(request, company_id):
     company = get_object_or_404(Company, id=company_id)
     contacts = Contact.objects.filter(company=company).order_by('created_at')
+    current_user = request.user
+
+    # Додаємо інформацію про чат для кожного контакту
+    contacts_with_chat_info = []
+    for contact in contacts:
+        room = Room.objects.filter(user=current_user, contact=contact).first()
+        contact_data = {
+            'id': contact.id,
+            'first_name': contact.first_name,
+            'last_name': contact.last_name,
+            'position': contact.position,
+            'phone': contact.phone,
+            'email': contact.email,
+            'telegram_username': contact.telegram_username,
+            'telegram_id': contact.telegram_id,
+            'created_at': contact.created_at,
+            'has_chat': bool(room),
+            'room_id': room.id if room else None
+        }
+        contacts_with_chat_info.append(contact_data)
 
     context = {
         'company': company,
-        'contacts': contacts,
+        'contacts': contacts_with_chat_info,
     }
     return render(request, 'sales/company_detail.html', context)
 
