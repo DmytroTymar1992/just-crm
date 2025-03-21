@@ -1,0 +1,13 @@
+{% extends "sales/base-sales.html" %}
+
+{% block content %}
+  <div class="container mt-5">
+    <h1>Редагування компанії: {{ company.name }}</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Зберегти зміни</button>
+      <a href="{% url 'company_list' %}" class="btn btn-secondary">Скасувати</a>
+    </form>
+  </div>
+{% endblock %}

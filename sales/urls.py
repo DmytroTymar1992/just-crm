@@ -9,6 +9,7 @@ urlpatterns = [
     path('contacts/create/', create_contact, name='create_contact'),
     path('contacts/edit/<int:contact_id>/', edit_contact, name='edit_contact'),
     path('company/create/', company_create, name='company_create'),
+    path('company/edit/<int:company_id>/', edit_company, name='edit_company'),
 
     path('<int:room_id>/load_more_interactions/', load_more_interactions, name='load_more_interactions'),
     path('create_task/', create_task, name='create_task'),

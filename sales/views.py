@@ -375,6 +375,21 @@ def company_create(request):
     return render(request, 'sales/company_create.html', {'form': form})
 
 @login_required
+def edit_company(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    if request.method == 'POST':
+        form = CompanyForm(request.POST, instance=company)
+        if form.is_valid():
+            company = form.save(commit=False)
+            company.slug = slugify(company.name)  # Оновлюємо slug при редагуванні
+            company.save()
+            return redirect('company_list')  # Перенаправляємо на список компаній
+    else:
+        form = CompanyForm(instance=company)
+
+    return render(request, 'sales/company_edit.html', {'form': form, 'company': company})
+
+@login_required
 @csrf_exempt
 @require_POST
 def create_task(request):
