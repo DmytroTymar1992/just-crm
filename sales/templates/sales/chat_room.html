@@ -61,13 +61,20 @@
 </div>
   </div>
 
-  <!-- Права колонка -->
+
+  <!-- Права колонка: Вакансії компанії -->
   <div class="d-flex flex-column h-100 shadow-sm" style="width: 350px; flex-shrink: 0; background: #ffffff;">
     <div class="p-3 border-bottom bg-primary text-white">
-      <h5 class="mb-0 fw-bold">Додаткові функції</h5>
+      <h5 class="mb-0 fw-bold">Вакансії компанії</h5>
     </div>
-    <div class="p-3 flex-grow-1">
-      <p class="text-muted">Тут може бути щось інше.</p>
+    <div class="p-3 flex-grow-1 overflow-auto" id="vacancies-container">
+      <div id="vacancies-list" class="list-group">
+        <!-- Вакансії завантажуватимуться асинхронно -->
+        <div class="text-center py-3">
+          <i class="bi bi-arrow-clockwise spin" style="font-size: 1.5rem;"></i>
+          <p class="text-muted mt-2">Завантаження вакансій...</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -508,6 +515,39 @@ function createTask() {
 // Функція для отримання CSRF-токена
 function getCsrfToken() {
   return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+    </script>
+    <script>
+    function loadVacancies() {
+  const vacanciesList = document.getElementById('vacancies-list');
+  fetch(`/sales/${roomId}/vacancies/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        vacanciesList.innerHTML = '';
+        if (data.vacancies.length === 0) {
+          vacanciesList.innerHTML = '<p class="text-muted text-center py-3">Вакансій немає</p>';
+        } else {
+          data.vacancies.forEach(vacancy => {
+            const vacancyHtml = `
+              <div class="list-group-item vacancy-item ${vacancy.is_hot ? 'hot' : ''} p-3">
+                <h6 class="mb-1 fw-bold">${vacancy.title}</h6>
+                <p class="mb-1 text-muted small">${vacancy.city || 'Місто не вказано'}</p>
+                <small class="text-muted">Додано: ${vacancy.created_at || 'Невідомо'}</small>
+                ${vacancy.work_id ? `<a href="https://www.work.ua/jobs/${vacancy.work_id}/" target="_blank" class="d-block text-primary small">Переглянути на Work.ua</a>` : ''}
+              </div>
+            `;
+            vacanciesList.insertAdjacentHTML('beforeend', vacancyHtml);
+          });
+        }
+      } else {
+        vacanciesList.innerHTML = '<p class="text-muted text-center py-3">Помилка завантаження вакансій</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Помилка:', error);
+      vacanciesList.innerHTML = '<p class="text-muted text-center py-3">Щось пішло не так</p>';
+    });
 }
     </script>
 

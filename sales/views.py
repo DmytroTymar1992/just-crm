@@ -214,6 +214,33 @@ def create_chat_room(request, contact_id):
     room = Room.objects.create(user=user, contact=contact)
     return redirect('chat_room', room_id=room.id)
 
+@login_required
+def get_company_vacancies(request, room_id):
+    room = Room.objects.get(id=room_id)
+    contact = room.contact
+    company = contact.company
+
+    if not company or not company.work_id:
+        return JsonResponse({'success': True, 'vacancies': []})
+
+    # Фільтруємо вакансії лише за work_company_id
+    vacancies = Vacancy.objects.filter(
+        work_company_id=company.work_id
+    )[:10]  # Обмежуємо до 10 вакансій
+
+    vacancies_data = [
+        {
+            'title': vacancy.title,
+            'city': vacancy.city,
+            'work_id': vacancy.work_id,
+            'is_hot': vacancy.is_hot,
+            'created_at': vacancy.created_at.strftime('%d.%m.%Y') if vacancy.created_at else None
+        }
+        for vacancy in vacancies
+    ]
+
+    return JsonResponse({'success': True, 'vacancies': vacancies_data})
+
 def contact_search(request):
     query = request.GET.get('q', '')
     page = request.GET.get('page', 1)
