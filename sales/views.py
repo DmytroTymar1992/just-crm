@@ -202,6 +202,17 @@ def contact_list(request):
     })
 
 @login_required
+def company_detail(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    contacts = Contact.objects.filter(company=company).order_by('created_at')
+
+    context = {
+        'company': company,
+        'contacts': contacts,
+    }
+    return render(request, 'sales/company_detail.html', context)
+
+@login_required
 def create_chat_room(request, contact_id):
     contact = Contact.objects.get(id=contact_id)
     user = request.user

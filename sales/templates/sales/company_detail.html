@@ -1,0 +1,109 @@
+{% extends 'sales/base-sales.html' %}
+{% load static %}
+
+{% block title %}
+  {{ company.name }} - Деталі компанії
+{% endblock %}
+
+{% block content %}
+<div class="d-flex h-100">
+  <!-- Ліва частина: Деталі компанії та контакти -->
+  <div class="flex-grow-1 h-100 d-flex flex-column">
+    <div class="p-4 flex-shrink-0">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-dark mb-0">{{ company.name }}</h1>
+        <a href="{% url 'edit_company' company.id %}" class="btn btn-primary shadow-sm">
+          <i class="bi bi-pencil-fill me-1"></i> Редагувати
+        </a>
+      </div>
+
+      <!-- Інформація про компанію -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-3">
+          <h5 class="mb-3">Інформація про компанію</h5>
+          <p class="mb-2 text-muted">
+            <i class="bi bi-person-fill me-1"></i>
+            Відповідальний: {% if company.responsible %}{{ company.responsible.get_full_name }}{% else %}—{% endif %}
+          </p>
+          <p class="mb-2 text-muted">
+            <i class="bi bi-clock me-1"></i>
+            Дата створення: {{ company.created_at|date:"d.m.Y H:i" }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Список контактів -->
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-3">
+          <h5 class="mb-3">Контакти компанії</h5>
+          {% if contacts %}
+            <div class="row g-3">
+              {% for contact in contacts %}
+                <div class="col-12 col-md-6">
+                  <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                      <h6 class="mb-2 fw-semibold">{{ contact.first_name }} {{ contact.last_name|default:"" }}</h6>
+                      <p class="mb-1 text-muted small">
+                        <i class="bi bi-briefcase-fill me-1"></i> Посада: {{ contact.position|default:"—" }}
+                      </p>
+                      <p class="mb-1 text-muted small">
+                        <i class="bi bi-telephone-fill me-1"></i> Телефон: {{ contact.phone|default:"—" }}
+                      </p>
+                      <p class="mb-1 text-muted small">
+                        <i class="bi bi-envelope-fill me-1"></i> Email: {{ contact.email|default:"—" }}
+                      </p>
+                      <p class="mb-1 text-muted small">
+                        <i class="bi bi-clock me-1"></i> Створено: {{ contact.created_at|date:"d.m.Y H:i" }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted">Немає пов’язаних контактів.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Права частина: Поки порожня -->
+  <div class="w-25 h-100 bg-light p-4">
+    <!-- Тут поки нічого немає, додамо пізніше -->
+    <h5 class="mb-3">Додаткова інформація</h5>
+    <p class="text-muted">Тут з’явиться додаткова інформація пізніше.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Стилі для контейнера */
+  .h-100 {
+    height: 100vh;
+  }
+
+  /* Картки */
+  .card {
+    border-radius: 10px;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Кнопка */
+  .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+</style>
+{% endblock %}

@@ -24,5 +24,6 @@ urlpatterns = [
     path('<int:room_id>/vacancies/', get_company_vacancies, name='get_company_vacancies'),
 
     path('dashboard/', analytics_dashboard, name='analytics_dashboard'),
+    path('company/<int:company_id>/', company_detail, name='company_detail'),
 
 ]

@@ -19,7 +19,9 @@
       <h5 class="mb-0">
         <span class="fw-bold text-dark">{{ room.contact.first_name }} {{ room.contact.last_name }}</span>
         {% if room.contact.company %}
+          <a href="{% url 'company_detail' room.contact.company.id %}">
           <small class="text-muted d-block">{{ room.contact.company.name }}</small>
+          </a>
         {% endif %}
       </h5>
         <a href="sip:{{room.contact.phone}}">Подзвонити</a>

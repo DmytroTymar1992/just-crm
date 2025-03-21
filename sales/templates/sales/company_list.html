@@ -29,7 +29,7 @@
                   </div>
                   <div class="flex-grow-1">
                     <h6 class="mb-0 fw-semibold">
-                      <a href="#" class="text-dark text-decoration-none company-name">{{ company.name }}</a>
+                      <a href="{% url 'company_detail' company.id %} class="text-dark text-decoration-none company-name">{{ company.name }}</a>
                     </h6>
                   </div>
                   <a href="{% url 'edit_company' company.id %}" class="btn btn-link p-0 ms-2 text-muted edit-contact-btn">
