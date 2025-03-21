@@ -67,19 +67,23 @@ class Command(BaseCommand):
                 except Vacancy.DoesNotExist:
                     pass
 
-                # Визначаємо місто (правильний селектор)
+                # Визначаємо місто (нова логіка)
                 city = ""
                 city_div = a_tag.find_next("div", class_=re.compile(r"mt-xs"))
                 if city_div:
-                    # Шукаємо span без класу "strong-600", який містить місто
-                    city_span = city_div.find("span", class_=lambda x: x != "strong-600")
-                    if city_span:
-                        city = city_span.get_text(strip=True).strip(",").strip()
-                    else:
-                        # Якщо span не знайдено, беремо текст напряму після компанії
-                        city_text = city_div.get_text(strip=True)
-                        company_name = city_div.find("span", class_="strong-600").get_text(strip=True)
-                        city = city_text.replace(company_name, "").strip(",").strip()
+                    # Шукаємо всі span у city_div
+                    spans = city_div.find_all("span")
+                    for i, span in enumerate(spans):
+                        # Місто — це span без класу, який іде після ul (міток)
+                        if not span.get("class") and i > 0:  # Пропускаємо перший span (компанія)
+                            city = span.get_text(strip=True).strip(",").strip()
+                            break
+                    if not city:  # Якщо не знайшли span без класу
+                        ul = city_div.find("ul")
+                        if ul:
+                            next_sibling = ul.find_next_sibling("span")
+                            if next_sibling and not next_sibling.get("class"):
+                                city = next_sibling.get_text(strip=True).strip(",").strip()
 
                 # Перевірка на «гарячу» вакансію
                 is_hot = False
