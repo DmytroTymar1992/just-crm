@@ -289,52 +289,91 @@ def send_outgoing_email_task(user_id, subject, message, recipient_email, email_t
 @shared_task
 def send_outgoing_telegram_task(user_id, contact_data, message_text):
     from django.contrib.auth import get_user_model
+    from telethon.tl.functions.contacts import ImportContactsRequest
+    from telethon.tl.types import InputPhoneContact
+    from sales.utils import normalize_phone_number
+
     User = get_user_model()
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
+        logger.error(f"User with id={user_id} not found")
         return "User not found"
+
     profile = user.profile
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
     phone = profile.telegram_phone
-    # Використовуємо outbound-сесію:
-    try:
-        session_file = profile.telegram_session_file_out
-        if not session_file:
-            session_file = f"{user.username}_out.session"
-    except AttributeError:
-        session_file = f"{user.username}_out.session"
+    session_file = getattr(profile, 'telegram_session_file_out', f"{user.username}_out.session")
 
     client = TelegramClient(session_file, api_id, api_hash)
-    # Запускаємо клієнта; якщо повертається awaitable, виконуємо його
     start_result = client.start(phone=phone)
     if hasattr(start_result, '__await__'):
         client.loop.run_until_complete(start_result)
 
     result = None
-    # Спробуємо відправити повідомлення за даними контакту за пріоритетом: phone -> username -> telegram_id
-    if contact_data.get('phone'):
-        try:
-            result = client.loop.run_until_complete(
-                client.send_message(contact_data['phone'], message_text)
+    contact_phone = contact_data.get('phone')
+    normalized_phone = normalize_phone_number(contact_phone) if contact_phone else None
+
+    try:
+        # Якщо є номер телефону, спочатку імпортуємо його до контактів
+        if normalized_phone:
+            logger.info(f"Attempting to import contact: {normalized_phone}")
+            contact = InputPhoneContact(
+                client_id=0,
+                phone=normalized_phone,
+                first_name=contact_data.get('first_name', 'Contact'),
+                last_name=contact_data.get('last_name', '')
             )
-        except Exception as e:
-            print("Sending by phone failed:", e)
-    if not result and contact_data.get('telegram_username'):
-        try:
-            result = client.loop.run_until_complete(
-                client.send_message(contact_data['telegram_username'], message_text)
+            import_result = client.loop.run_until_complete(
+                client(ImportContactsRequest([contact]))
             )
-        except Exception as e:
-            print("Sending by username failed:", e)
-    if not result and contact_data.get('telegram_id'):
-        try:
-            result = client.loop.run_until_complete(
-                client.send_message(contact_data['telegram_id'], message_text)
-            )
-        except Exception as e:
-            print("Sending by telegram_id failed:", e)
+            logger.info(f"Contact import result: {import_result}")
+
+            # Перевіряємо, чи номер зареєстрований у Telegram, і отримуємо entity
+            try:
+                entity = client.loop.run_until_complete(client.get_entity(normalized_phone))
+                telegram_id = entity.id
+                logger.info(f"Found Telegram ID for {normalized_phone}: {telegram_id}")
+                # Оновлюємо контакт у базі, якщо telegram_id відсутній
+                if not contact_data.get('telegram_id'):
+                    contact = Contact.objects.filter(phone=normalized_phone).first()
+                    if contact and not contact.telegram_id:
+                        contact.telegram_id = telegram_id
+                        contact.save()
+                        contact_data['telegram_id'] = telegram_id
+                # Відправляємо за номером телефону
+                result = client.loop.run_until_complete(
+                    client.send_message(normalized_phone, message_text)
+                )
+                logger.info(f"Message sent to phone: {normalized_phone}")
+            except ValueError as e:
+                logger.warning(f"Phone {normalized_phone} not registered in Telegram or inaccessible: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error sending to phone {normalized_phone}: {str(e)}")
+
+        # Якщо відправка за номером не вдалася або номера немає, пробуємо за telegram_id
+        if not result and contact_data.get('telegram_id'):
+            try:
+                result = client.loop.run_until_complete(
+                    client.send_message(int(contact_data['telegram_id']), message_text)
+                )
+                logger.info(f"Message sent to telegram_id: {contact_data['telegram_id']}")
+            except Exception as e:
+                logger.error(f"Error sending to telegram_id {contact_data['telegram_id']}: {str(e)}")
+
+        # Якщо немає telegram_id, пробуємо за telegram_username
+        if not result and contact_data.get('telegram_username'):
+            try:
+                result = client.loop.run_until_complete(
+                    client.send_message(contact_data['telegram_username'], message_text)
+                )
+                logger.info(f"Message sent to username: {contact_data['telegram_username']}")
+            except Exception as e:
+                logger.error(f"Error sending to username {contact_data['telegram_username']}: {str(e)}")
+
+    except Exception as e:
+        logger.error(f"General error in send_outgoing_telegram_task: {str(e)}")
 
     # Відключення клієнта
     disconnect_coro = client.disconnect()
@@ -346,6 +385,7 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
             "message_id": result.id,
             "chat_id": getattr(result.to_id, "channel_id", getattr(result.to_id, "user_id", None))
         }
+    logger.warning(f"Failed to send message to contact: {contact_data}")
     return None
 
 
