@@ -2,6 +2,7 @@ from django.db import models
 from main.models import Company
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from sales_analytics.models import ManagerActivity
 
 User = get_user_model()
 
@@ -91,8 +92,35 @@ class EmailMessage(models.Model):
     # attachments = ...
     # і т.д.
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None  # Перевіряємо, чи це новий об'єкт
+        super().save(*args, **kwargs)  # Зберігаємо об'єкт Interaction
+
+        # Визначаємо тип активності менеджера
+        if self.interaction_type == 'telegram':
+            activity_type = 'telegram_out' if self.sender == 'user' else 'telegram_in'
+        elif self.interaction_type == 'email':
+            activity_type = 'email_out' if self.sender == 'user' else 'email_in'
+        elif self.interaction_type == 'call':
+            activity_type = 'call_out' if self.sender == 'user' else 'call_in'
+        else:
+            return  # Якщо тип невідомий, пропускаємо
+
+        # Отримуємо користувача та контакт із пов'язаної Room
+        user = self.room.user
+        contact = self.room.contact
+
+        # Записуємо діяльність менеджера лише при створенні нового об'єкта
+        if is_new:
+            ManagerActivity.objects.create(
+                manager=user,
+                activity_type=activity_type,
+                contact=contact,
+                interaction=self
+            )
+
     def __str__(self):
-        return f"Email #{self.pk} (Interaction {self.interaction_id})"
+        return f"{self.interaction_type} - {self.sender} - {self.room}"
 
 
 class TelegramMessage(models.Model):

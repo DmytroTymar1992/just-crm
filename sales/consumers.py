@@ -11,7 +11,7 @@ from .models import Room, Interaction, TelegramMessage, EmailMessage
 from sales.tasks import send_outgoing_email_task, send_outgoing_telegram_task
 from channels.layers import get_channel_layer
 from sales.utils import render_email_template
-from sales_analytics.models import ManagerActivity
+
 
 # Idle timeout – 1 година (3600 секунд)
 IDLE_TIMEOUT = 3600
@@ -76,13 +76,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
             send_outgoing_telegram_task.delay(self.scope["user"].id, contact_data, message)
 
-            # Записуємо діяльність менеджера
-            await database_sync_to_async(ManagerActivity.objects.create)(
-                manager=self.scope["user"],
-                activity_type='telegram_out',
-                contact=contact,
-                interaction=interaction
-            )
+
 
         elif channel_type == "email":
             subject = data.get("subject", "Без теми")
@@ -108,13 +102,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 logger.info(f"Sending plain email to {contact.email} with subject '{subject}'")
                 send_outgoing_email_task.delay(self.scope["user"].id, subject, message, contact.email, email_type="plain")
 
-            # Записуємо діяльність менеджера
-            await database_sync_to_async(ManagerActivity.objects.create)(
-                manager=self.scope["user"],
-                activity_type='email_out',
-                contact=contact,
-                interaction=interaction
-            )
+
 
         elif channel_type == "email_template":
             subject = data.get("subject", "Ласкаво просимо!")
@@ -141,13 +129,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 logger.info(f"Sending HTML email template to {contact.email} with subject '{subject}'")
                 send_outgoing_email_task.delay(self.scope["user"].id, subject, message, contact.email, email_type="html")
 
-            # Записуємо діяльність менеджера
-            await database_sync_to_async(ManagerActivity.objects.create)(
-                manager=self.scope["user"],
-                activity_type='email_out',
-                contact=contact,
-                interaction=interaction
-            )
+
 
         else:
             logger.warning(f"Unknown channel_type: {channel_type}")
