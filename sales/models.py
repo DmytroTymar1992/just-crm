@@ -10,7 +10,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 class Contact(models.Model):
-    company = models.ForeignKey('sales.Company',
+    company = models.ForeignKey(Company,
                                 on_delete=models.CASCADE,
                                 related_name="contacts",
                                 verbose_name="Компанія",
