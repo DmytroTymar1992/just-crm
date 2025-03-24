@@ -7,6 +7,7 @@ from telethon.tl.types import InputPhoneContact
 from main.utils import normalize_phone_number
 from sales.models import Contact
 import asyncio
+from asgiref.sync import sync_to_async
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
@@ -26,15 +27,16 @@ class Command(BaseCommand):
         self.stdout.write(f"Починаємо імпорт контакту {contact_phone} для користувача {user_id}...")
         logger.info(f"Starting import for user_id={user_id}, phone={contact_phone}")
 
+        # Асинхронний виклик ORM
         try:
-            user = User.objects.get(id=user_id)
+            user = await sync_to_async(User.objects.get)(id=user_id)
         except User.DoesNotExist:
             self.stdout.write(f"[ERROR] Користувача з id={user_id} не знайдено")
             logger.error(f"User with id={user_id} not found")
             return
 
         try:
-            profile = user.profile
+            profile = await sync_to_async(lambda: user.profile)()
         except AttributeError:
             self.stdout.write(f"[ERROR] Користувач {user.username} не має профілю")
             logger.error(f"User {user.username} has no profile")
@@ -80,7 +82,8 @@ class Command(BaseCommand):
             self.stdout.write(f"Отримано telegram_id={telegram_id}, username={telegram_username} для {telegram_phone}")
             logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
-            contact_obj = Contact.objects.filter(phone=normalized_phone).first()
+            # Асинхронний виклик для пошуку контакту
+            contact_obj = await sync_to_async(Contact.objects.filter(phone=normalized_phone).first)()
             if contact_obj:
                 needs_save = False
                 if telegram_id and contact_obj.telegram_id != telegram_id:
@@ -90,7 +93,7 @@ class Command(BaseCommand):
                     contact_obj.telegram_username = telegram_username
                     needs_save = True
                 if needs_save:
-                    contact_obj.save()
+                    await sync_to_async(contact_obj.save)()
                     self.stdout.write(f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
                     logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
                 else:
