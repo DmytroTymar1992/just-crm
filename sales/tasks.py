@@ -630,8 +630,20 @@ def process_phonet_call(call_data):
 
 
 
+# sales/tasks.py
 @shared_task
 def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
+    from django.contrib.auth import get_user_model
+    from telethon import TelegramClient
+    from telethon.tl.functions.contacts import ImportContactsRequest
+    from telethon.tl.types import InputPhoneContact
+    from main.utils import normalize_phone_number
+    from sales.models import Contact  # Імпортуємо Contact для оновлення
+    import logging
+
+    logger = logging.getLogger(__name__)
+    User = get_user_model()
+
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
@@ -651,52 +663,47 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     if not normalized_phone:
         logger.warning(f"Invalid phone number: {contact_phone}")
         return
+    telegram_phone = f"+{normalized_phone}"  # Додаємо '+' до номера
 
     contact = InputPhoneContact(
         client_id=0,
-        phone=normalized_phone,
+        phone=telegram_phone,
         first_name=first_name or "Contact",
         last_name=last_name or ""
     )
     try:
+        logger.info(f"Importing contact: {telegram_phone}")
         import_result = client.loop.run_until_complete(
             client(ImportContactsRequest([contact]))
         )
-        logger.info(f"Imported contact {normalized_phone} to Telegram: {import_result}")
+        logger.info(f"Imported contact {telegram_phone}: {import_result}")
+
+        # Отримуємо entity для отримання telegram_id і username
+        try:
+            entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
+            telegram_id = entity.id
+            telegram_username = getattr(entity, 'username', None)
+            logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
+
+            # Оновлюємо Contact у базі
+            contact_obj = Contact.objects.filter(phone=normalized_phone).first()
+            if contact_obj:
+                updated = False
+                if not contact_obj.telegram_id and telegram_id:
+                    contact_obj.telegram_id = telegram_id
+                    updated = True
+                if not contact_obj.telegram_username and telegram_username:
+                    contact_obj.telegram_username = telegram_username
+                    updated = True
+                if updated:
+                    contact_obj.save()
+                    logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+        except ValueError as e:
+            logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error retrieving entity for {telegram_phone}: {str(e)}")
+
     except Exception as e:
-        logger.error(f"Error importing contact {normalized_phone}: {str(e)}")
+        logger.error(f"Error importing contact {telegram_phone}: {str(e)}")
 
     client.loop.run_until_complete(client.disconnect())
-
-
-@shared_task
-def import_all_existing_contacts_to_telegram():
-    """Проходить по всіх існуючих Room і додає номери контактів до Telegram-списків користувачів."""
-    from sales.models import Room  # Локальний імпорт, щоб уникнути циклічних імпортів
-
-    # Отримуємо всі Room із номерами телефонів у контактів
-    rooms = Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False)
-    total_rooms = rooms.count()
-    logger.info(f"Starting import for {total_rooms} rooms")
-
-    for idx, room in enumerate(rooms, 1):
-        user = room.user
-        contact = room.contact
-        normalized_phone = normalize_phone_number(contact.phone)
-
-        if normalized_phone:
-            logger.info(f"Queuing import for contact {normalized_phone} (Room #{room.id}, User: {user.username})")
-            import_telegram_contact_task.delay(
-                user.id,
-                normalized_phone,
-                contact.first_name,
-                contact.last_name
-            )
-        else:
-            logger.warning(f"Skipping Room #{room.id} - invalid phone: {contact.phone}")
-
-        # Логування прогресу
-        if idx % 100 == 0 or idx == total_rooms:
-            logger.info(f"Processed {idx}/{total_rooms} rooms")
-
-    logger.info("Finished queuing imports for all existing rooms")
