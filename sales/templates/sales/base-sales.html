@@ -33,18 +33,14 @@
       left: 0;
       width: 70px;
       background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
-      transition: width 0.3s ease;
       z-index: 1000;
     }
-    .sidebar:hover {
-      width: 200px;
-    }
+
     .sidebar .nav-link {
       color: #bdc3c7;
       padding: 15px 0;
       text-align: center;
       white-space: nowrap;
-      transition: color 0.2s ease, background 0.2s ease;
     }
     .sidebar .nav-link:hover {
       color: #ffffff;
@@ -65,9 +61,7 @@
       margin-top: 5px;
       font-size: 0.85rem;
     }
-    .sidebar:hover .nav-link div {
-      display: block;
-    }
+
     .main-content {
       margin-left: 70px;
       height: 100vh;
@@ -77,8 +71,8 @@
       transition: margin-left 0.3s ease, max-width 0.3s ease;
     }
     .sidebar:hover ~ .main-content {
-      margin-left: 200px;
-      max-width: calc(100vw - 200px); /* Адаптуємо при наведенні */
+      margin-left: 70px;
+      max-width: calc(100vw - 70px); /* Адаптуємо при наведенні */
     }
 
     #notification-container .notification .notification-link {
