@@ -32,7 +32,7 @@
           </div>
           <div class="flex-grow-1">
             <h6 class="mb-0 fw-semibold contact-name">
-              <a href="#" class="text-dark text-decoration-none">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</a>
+              <a href="{% url 'contact_detail' contact.id %}" class="text-dark text-decoration-none">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</a>
             </h6>
             {% if contact.position %}
               <small class="text-muted d-block">{{ contact.position }}</small>

@@ -1,0 +1,143 @@
+{% extends 'sales/base-sales.html' %}
+{% load static %}
+
+{% block title %}
+  {{ contact.first_name }} {{ contact.last_name|default_if_none:"" }} - Деталі контакту
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow-sm modern-contact-card">
+    <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
+      <div class="avatar-circle me-3">
+        <i class="bi bi-person-fill text-primary"></i>
+      </div>
+      <h2 class="mb-0 fw-semibold">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</h2>
+      <div class="ms-auto">
+        <a href="{% url 'edit_contact' contact.id %}" class="btn btn-link text-muted" title="Редагувати">
+          <i class="bi bi-pencil-fill"></i>
+        </a>
+      </div>
+    </div>
+    <div class="card-body p-4">
+      <div class="row">
+        <div class="col-md-6">
+          {% if contact.position %}
+            <p><strong>Посада:</strong> {{ contact.position }}</p>
+          {% endif %}
+          {% if contact.company %}
+            <p><strong>Компанія:</strong> <a href="#">{{ contact.company.name }}</a></p>
+          {% endif %}
+          {% if contact.phone %}
+            <p><strong>Телефон:</strong> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          {% if contact.email %}
+            <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+          {% endif %}
+          {% if contact.telegram_username %}
+            <p><strong>Telegram:</strong> <a href="https://t.me/{{ contact.telegram_username }}" target="_blank">@{{ contact.telegram_username }}</a></p>
+          {% elif contact.telegram_id %}
+            <p><strong>Telegram ID:</strong> {{ contact.telegram_id }}</p>
+          {% endif %}
+          <p><strong>Створено:</strong> {{ contact.created_at }}</p>
+        </div>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#mergeContactModal">
+          <i class="bi bi-link-45deg me-1"></i> Об'єднати з іншим контактом
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно для вибору контакту -->
+<div class="modal fade" id="mergeContactModal" tabindex="-1" aria-labelledby="mergeContactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="mergeContactModalLabel">Об'єднати з іншим контактом</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="merge-contact-select" class="form-label">Виберіть контакт для об'єднання:</label>
+        <select class="form-select" id="merge-contact-select" name="merge_contact">
+          <option value="">— Виберіть контакт —</option>
+          {% for c in other_contacts %}
+            <option value="{{ c.id }}">{{ c.first_name }} {{ c.last_name|default_if_none:"" }} ({{ c.phone|default_if_none:"" }} {{ c.email|default_if_none:"" }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary" id="merge-contact-btn" disabled>Далі</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
+<style>
+  .modern-contact-card {
+    border-radius: 12px;
+    background: #f9fbfd;
+    border: 1px solid #d8dee5;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+  .avatar-circle {
+    width: 50px;
+    height: 50px;
+    background: #dbe7ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const mergeContactSelect = document.getElementById("merge-contact-select");
+    const mergeContactBtn = document.getElementById("merge-contact-btn");
+    const contactId = "{{ contact.id }}";
+
+    // Ініціалізація Choices.js із пошуком
+    const choices = new Choices(mergeContactSelect, {
+      searchEnabled: true,
+      searchPlaceholderValue: "Пошук за ім'ям, телефоном, email...",
+      noResultsText: "Контактів не знайдено",
+      itemSelectText: "",
+      shouldSort: false,
+    });
+
+    // Активуємо кнопку "Далі" при виборі контакту
+    mergeContactSelect.addEventListener("change", function() {
+      mergeContactBtn.disabled = !this.value;
+    });
+
+    // Перенаправлення на сторінку підтвердження
+    mergeContactBtn.addEventListener("click", function() {
+      const selectedContactId = mergeContactSelect.value;
+      if (selectedContactId) {
+        window.location.href = `/sales/contacts/merge_confirm/${contactId}/${selectedContactId}/`;
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -661,57 +661,48 @@ def edit_task(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
-def merge_contacts_view(request):
+def merge_contacts_confirm_view(request, contact1_id, contact2_id):
+    contact1 = get_object_or_404(Contact, id=contact1_id)
+    contact2 = get_object_or_404(Contact, id=contact2_id)
+
     if request.method == "POST":
-        selected_contacts = request.POST.getlist("selected_contacts")
         keep_contact_id = request.POST.get("keep_contact")
-
-        if len(selected_contacts) != 2:
-            messages.error(request, "Виберіть рівно два контакти для об'єднання.")
-            return redirect("merge_contacts")
-
-        contact1 = Contact.objects.get(id=selected_contacts[0])
-        contact2 = Contact.objects.get(id=selected_contacts[1])
         keep_self = str(contact1.id) == keep_contact_id
 
+        # Вибираємо основний контакт
+        primary = contact1 if keep_self else contact2
+        secondary = contact2 if keep_self else contact1
+
+        # Оновлюємо поля основного контакту на основі вибору користувача
+        primary.first_name = request.POST.get(f"contact{'1' if keep_self else '2'}_first_name", primary.first_name)
+        primary.last_name = request.POST.get(f"contact{'1' if keep_self else '2'}_last_name", primary.last_name)
+        primary.position = request.POST.get(f"contact{'1' if keep_self else '2'}_position", primary.position)
+        company_id = request.POST.get(f"contact{'1' if keep_self else '2'}_company")
+        primary.company = Company.objects.get(id=company_id) if company_id else primary.company
+        primary.phone = request.POST.get(f"contact{'1' if keep_self else '2'}_phone", primary.phone)
+        primary.email = request.POST.get(f"contact{'1' if keep_self else '2'}_email", primary.email)
+        primary.telegram_username = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_username", primary.telegram_username)
+        primary.telegram_id = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_id", primary.telegram_id)
+
         try:
-            contact1.merge_with(contact2, keep_self=keep_self)
-            messages.success(request, f"Контакти успішно об'єднані в {contact1 if keep_self else contact2}.")
-            return redirect("contact_list")  # Або інший URL для списку контактів
+            primary.merge_with(secondary, keep_self=True)  # Використовуємо merge_with для оновлення зв’язків
+            messages.success(request, f"Контакти успішно об'єднані в {primary}.")
+            return redirect("contact_detail", contact_id=primary.id)
         except Exception as e:
             messages.error(request, f"Помилка при об'єднанні: {str(e)}")
-            return redirect("merge_contacts")
+            return redirect("merge_contacts_confirm", contact1_id=contact1_id, contact2_id=contact2_id)
 
-    contacts = Contact.objects.all()
-    return render(request, "sales/merge_contacts.html", {"contacts": contacts})
+    return render(request, "sales/merge_contacts.html", {
+        "contact1": contact1,
+        "contact2": contact2,
+        "other_contact": contact2 if contact1 else contact1,  # Для шаблону contact_fields.html
+    })
 
-def search_contacts(request):
-    query = request.GET.get("q", "").strip()
-    if query:
-        contacts = Contact.objects.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(position__icontains=query) |
-            Q(phone__icontains=query) |
-            Q(email__icontains=query) |
-            Q(telegram_username__icontains=query) |
-            Q(telegram_id__icontains=query) |
-            Q(company__name__icontains=query)
-        ).distinct()
-    else:
-        contacts = Contact.objects.all()
 
-    contacts_data = [{
-        "id": contact.id,
-        "first_name": contact.first_name,
-        "last_name": contact.last_name or "",
-        "position": contact.position or "",
-        "company_name": contact.company.name if contact.company else "",
-        "phone": contact.phone or "",
-        "email": contact.email or "",
-        "telegram_username": contact.telegram_username or "",
-        "telegram_id": str(contact.telegram_id) if contact.telegram_id else "",
-        "created_at": contact.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-    } for contact in contacts]
-
-    return JsonResponse({"success": True, "contacts": contacts_data})
+def contact_detail_view(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+    other_contacts = Contact.objects.exclude(id=contact_id)
+    return render(request, "sales/contact_detail.html", {
+        "contact": contact,
+        "other_contacts": other_contacts,
+    })
