@@ -10,6 +10,9 @@ from telethon import TelegramClient
 import datetime
 import logging
 from django.utils import timezone
+from main.utils import normalize_phone_number
+from telethon.tl.functions.contacts import ImportContactsRequest  # Імпорт функції
+from telethon.tl.types import InputPhoneContact
 
 
 
@@ -563,3 +566,76 @@ def process_phonet_call(call_data):
                 "type": "room_list_update",
             }
         )
+
+
+
+@shared_task
+def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        logger.error(f"User with id={user_id} not found")
+        return
+
+    profile = user.profile
+    api_id = profile.telegram_api_id
+    api_hash = profile.telegram_api_hash
+    user_phone = profile.telegram_phone
+    session_file = getattr(profile, 'telegram_session_file_out', f"{user.username}_out.session")
+
+    client = TelegramClient(session_file, api_id, api_hash)
+    client.loop.run_until_complete(client.start(phone=user_phone))
+
+    normalized_phone = normalize_phone_number(contact_phone)
+    if not normalized_phone:
+        logger.warning(f"Invalid phone number: {contact_phone}")
+        return
+
+    contact = InputPhoneContact(
+        client_id=0,
+        phone=normalized_phone,
+        first_name=first_name or "Contact",
+        last_name=last_name or ""
+    )
+    try:
+        import_result = client.loop.run_until_complete(
+            client(ImportContactsRequest([contact]))
+        )
+        logger.info(f"Imported contact {normalized_phone} to Telegram: {import_result}")
+    except Exception as e:
+        logger.error(f"Error importing contact {normalized_phone}: {str(e)}")
+
+    client.loop.run_until_complete(client.disconnect())
+
+
+@shared_task
+def import_all_existing_contacts_to_telegram():
+    """Проходить по всіх існуючих Room і додає номери контактів до Telegram-списків користувачів."""
+    from sales.models import Room  # Локальний імпорт, щоб уникнути циклічних імпортів
+
+    # Отримуємо всі Room із номерами телефонів у контактів
+    rooms = Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False)
+    total_rooms = rooms.count()
+    logger.info(f"Starting import for {total_rooms} rooms")
+
+    for idx, room in enumerate(rooms, 1):
+        user = room.user
+        contact = room.contact
+        normalized_phone = normalize_phone_number(contact.phone)
+
+        if normalized_phone:
+            logger.info(f"Queuing import for contact {normalized_phone} (Room #{room.id}, User: {user.username})")
+            import_telegram_contact_task.delay(
+                user.id,
+                normalized_phone,
+                contact.first_name,
+                contact.last_name
+            )
+        else:
+            logger.warning(f"Skipping Room #{room.id} - invalid phone: {contact.phone}")
+
+        # Логування прогресу
+        if idx % 100 == 0 or idx == total_rooms:
+            logger.info(f"Processed {idx}/{total_rooms} rooms")
+
+    logger.info("Finished queuing imports for all existing rooms")
