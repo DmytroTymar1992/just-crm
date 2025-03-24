@@ -2,7 +2,7 @@ from django.db import models
 from main.models import Company
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from sales_analytics.models import ManagerActivity
+
 
 User = get_user_model()
 
@@ -93,6 +93,7 @@ class EmailMessage(models.Model):
     # і т.д.
 
     def save(self, *args, **kwargs):
+        from sales_analytics.models import ManagerActivity
         is_new = self.pk is None  # Перевіряємо, чи це новий об'єкт
         super().save(*args, **kwargs)  # Зберігаємо об'єкт Interaction
 
