@@ -286,13 +286,16 @@ def send_outgoing_email_task(user_id, subject, message, recipient_email, email_t
         return f"Send error: {str(e)}"
 
 
+# sales/tasks.py
 @shared_task
 def send_outgoing_telegram_task(user_id, contact_data, message_text):
     from django.contrib.auth import get_user_model
     from telethon.tl.functions.contacts import ImportContactsRequest
     from telethon.tl.types import InputPhoneContact
-    from sales.utils import normalize_phone_number
+    from main.utils import normalize_phone_number
+    import logging
 
+    logger = logging.getLogger(__name__)
     User = get_user_model()
     try:
         user = User.objects.get(id=user_id)
@@ -316,26 +319,18 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
     normalized_phone = normalize_phone_number(contact_phone) if contact_phone else None
 
     try:
-        # Якщо є номер телефону, спочатку імпортуємо його до контактів
+        # Якщо є номер телефону
         if normalized_phone:
-            logger.info(f"Attempting to import contact: {normalized_phone}")
-            contact = InputPhoneContact(
-                client_id=0,
-                phone=normalized_phone,
-                first_name=contact_data.get('first_name', 'Contact'),
-                last_name=contact_data.get('last_name', '')
-            )
-            import_result = client.loop.run_until_complete(
-                client(ImportContactsRequest([contact]))
-            )
-            logger.info(f"Contact import result: {import_result}")
+            # Додаємо '+' до номера, як того вимагає Telegram API
+            telegram_phone = f"+{normalized_phone}"
+            logger.info(f"Processing phone: {telegram_phone}")
 
-            # Перевіряємо, чи номер зареєстрований у Telegram, і отримуємо entity
+            # Спробуємо отримати entity (перевіряємо, чи номер доступний)
             try:
-                entity = client.loop.run_until_complete(client.get_entity(normalized_phone))
+                entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
                 telegram_id = entity.id
-                logger.info(f"Found Telegram ID for {normalized_phone}: {telegram_id}")
-                # Оновлюємо контакт у базі, якщо telegram_id відсутній
+                logger.info(f"Found Telegram ID for {telegram_phone}: {telegram_id}")
+                # Оновлюємо contact_data і базу, якщо telegram_id відсутній
                 if not contact_data.get('telegram_id'):
                     contact = Contact.objects.filter(phone=normalized_phone).first()
                     if contact and not contact.telegram_id:
@@ -344,15 +339,41 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
                         contact_data['telegram_id'] = telegram_id
                 # Відправляємо за номером телефону
                 result = client.loop.run_until_complete(
-                    client.send_message(normalized_phone, message_text)
+                    client.send_message(telegram_phone, message_text)
                 )
-                logger.info(f"Message sent to phone: {normalized_phone}")
+                logger.info(f"Message sent to phone: {telegram_phone}")
             except ValueError as e:
-                logger.warning(f"Phone {normalized_phone} not registered in Telegram or inaccessible: {str(e)}")
+                logger.warning(f"Phone {telegram_phone} not found in Telegram: {str(e)}")
+                # Імпортуємо контакт, якщо його немає
+                contact = InputPhoneContact(
+                    client_id=0,
+                    phone=telegram_phone,
+                    first_name=contact_data.get('first_name', 'Contact'),
+                    last_name=contact_data.get('last_name', '')
+                )
+                import_result = client.loop.run_until_complete(
+                    client(ImportContactsRequest([contact]))
+                )
+                logger.info(f"Imported contact {telegram_phone}: {import_result}")
+                # Повторна спроба після імпорту
+                try:
+                    entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
+                    telegram_id = entity.id
+                    contact_data['telegram_id'] = telegram_id
+                    contact = Contact.objects.filter(phone=normalized_phone).first()
+                    if contact and not contact.telegram_id:
+                        contact.telegram_id = telegram_id
+                        contact.save()
+                    result = client.loop.run_until_complete(
+                        client.send_message(telegram_phone, message_text)
+                    )
+                    logger.info(f"Message sent to phone after import: {telegram_phone}")
+                except Exception as e:
+                    logger.error(f"Failed to send to {telegram_phone} after import: {str(e)}")
             except Exception as e:
-                logger.error(f"Error sending to phone {normalized_phone}: {str(e)}")
+                logger.error(f"Error processing phone {telegram_phone}: {str(e)}")
 
-        # Якщо відправка за номером не вдалася або номера немає, пробуємо за telegram_id
+        # Якщо відправка за номером не вдалася, пробуємо telegram_id
         if not result and contact_data.get('telegram_id'):
             try:
                 result = client.loop.run_until_complete(
@@ -362,7 +383,7 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
             except Exception as e:
                 logger.error(f"Error sending to telegram_id {contact_data['telegram_id']}: {str(e)}")
 
-        # Якщо немає telegram_id, пробуємо за telegram_username
+        # Якщо немає telegram_id, пробуємо telegram_username
         if not result and contact_data.get('telegram_username'):
             try:
                 result = client.loop.run_until_complete(
