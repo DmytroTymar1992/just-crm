@@ -32,9 +32,6 @@
                       <a href="{% url 'company_detail' company.id %}" class="text-dark text-decoration-none company-name">{{ company.name }}</a>
                     </h6>
                   </div>
-                  <a href="{% url 'edit_company' company.id %}" class="btn btn-link p-0 ms-2 text-muted edit-contact-btn">
-                    <i class="bi bi-pencil-fill" style="font-size: 1rem;"></i>
-                  </a>
                 </div>
                 <div class="company-details">
                   {% if company.responsible %}
