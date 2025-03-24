@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from sales.models import Room, Contact
-from main.utils import normalize_phone_number
+from main.utils import normalize_phone_number  # Змінено на sales.utils
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
@@ -40,7 +40,7 @@ async def import_contact(user, contact, stdout):
         stdout.write(f"[WARNING] Пропущено контакт із некоректним номером: {contact.phone}")
         logger.warning(f"Invalid phone number: {contact.phone}")
         return
-    telegram_phone = f"+{normalized_phone}"
+    telegram_phone = normalized_phone  # Уже з '+'
 
     contact_input = InputPhoneContact(
         client_id=0,
@@ -60,12 +60,12 @@ async def import_contact(user, contact, stdout):
         stdout.write(f"Отримано telegram_id={telegram_id}, username={telegram_username} для {telegram_phone}")
         logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
-        # Перевіряємо, чи змінилися поля
+        # Завжди оновлюємо обидва поля, якщо вони отримані
         needs_save = False
-        if not contact.telegram_id and telegram_id:
+        if telegram_id and contact.telegram_id != telegram_id:
             contact.telegram_id = telegram_id
             needs_save = True
-        if not contact.telegram_username and telegram_username:
+        if telegram_username and contact.telegram_username != telegram_username:
             contact.telegram_username = telegram_username
             needs_save = True
         if needs_save:
@@ -74,6 +74,9 @@ async def import_contact(user, contact, stdout):
                 f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
             logger.info(
                 f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+        else:
+            stdout.write(f"Контакт {normalized_phone} уже має актуальні дані")
+            logger.info(f"Contact {normalized_phone} already has up-to-date data")
 
     except ValueError as e:
         stdout.write(f"[WARNING] Не вдалося отримати entity для {telegram_phone}: {str(e)}")
@@ -92,7 +95,6 @@ class Command(BaseCommand):
         self.stdout.write("Починаємо імпорт контактів до Telegram...")
         logger.info("Starting import for all existing rooms")
 
-        # Отримуємо rooms асинхронно
         loop = asyncio.get_event_loop()
         rooms = loop.run_until_complete(async_get_rooms())
         total_rooms = len(rooms)
@@ -105,7 +107,6 @@ class Command(BaseCommand):
             normalized_phone = normalize_phone_number(contact.phone)
 
             if normalized_phone:
-                # Перевіряємо профіль у синхронній частині
                 if not hasattr(user, 'profile'):
                     self.stdout.write(f"[WARNING] Пропущено Room #{room.id}: Користувач {user.username} не має профілю")
                     logger.warning(f"Skipping Room #{room.id} - User {user.username} has no profile")

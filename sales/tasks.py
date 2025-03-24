@@ -637,7 +637,7 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     from telethon import TelegramClient
     from telethon.tl.functions.contacts import ImportContactsRequest
     from telethon.tl.types import InputPhoneContact
-    from main.utils import normalize_phone_number
+    from main.utils import normalize_phone_number  # Змінено на sales.utils
     from sales.models import Contact
     import logging
 
@@ -650,7 +650,6 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.error(f"User with id={user_id} not found")
         return
 
-    # Перевіряємо наявність профілю
     try:
         profile = user.profile
     except AttributeError:
@@ -673,9 +672,9 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     if not normalized_phone:
         logger.warning(f"Invalid phone number: {contact_phone}")
         return
-    telegram_phone = f"+{normalized_phone}"
+    telegram_phone = normalized_phone  # Уже з '+'
 
-    contact = InputPhoneContact(
+    contact_input = InputPhoneContact(
         client_id=0,
         phone=telegram_phone,
         first_name=first_name or "Contact",
@@ -684,34 +683,33 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     try:
         logger.info(f"Importing contact: {telegram_phone}")
         import_result = client.loop.run_until_complete(
-            client(ImportContactsRequest([contact]))
+            client(ImportContactsRequest([contact_input]))
         )
         logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-        try:
-            entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
-            telegram_id = entity.id
-            telegram_username = getattr(entity, 'username', None)
-            logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
+        entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
+        telegram_id = entity.id
+        telegram_username = getattr(entity, 'username', None)
+        logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
-            contact_obj = Contact.objects.filter(phone=normalized_phone).first()
-            if contact_obj:
-                updated = False
-                if not contact_obj.telegram_id and telegram_id:
-                    contact_obj.telegram_id = telegram_id
-                    updated = True
-                if not contact_obj.telegram_username and telegram_username:
-                    contact_obj.telegram_username = telegram_username
-                    updated = True
-                if updated:
-                    contact_obj.save()
-                    logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
-        except ValueError as e:
-            logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
-        except Exception as e:
-            logger.error(f"Error retrieving entity for {telegram_phone}: {str(e)}")
+        contact_obj = Contact.objects.filter(phone=normalized_phone).first()
+        if contact_obj:
+            needs_save = False
+            if telegram_id and contact_obj.telegram_id != telegram_id:
+                contact_obj.telegram_id = telegram_id
+                needs_save = True
+            if telegram_username and contact_obj.telegram_username != telegram_username:
+                contact_obj.telegram_username = telegram_username
+                needs_save = True
+            if needs_save:
+                contact_obj.save()
+                logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+            else:
+                logger.info(f"Contact {normalized_phone} already has up-to-date data")
 
+    except ValueError as e:
+        logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
     except Exception as e:
         logger.error(f"Error importing contact {telegram_phone}: {str(e)}")
-
-    client.loop.run_until_complete(client.disconnect())
+    finally:
+        client.loop.run_until_complete(client.disconnect())
