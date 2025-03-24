@@ -1,4 +1,3 @@
-# sales/management/commands/import_single_telegram_contact.py
 import logging
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
@@ -7,6 +6,7 @@ from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
 from main.utils import normalize_phone_number
 from sales.models import Contact
+import asyncio
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
@@ -22,12 +22,7 @@ class Command(BaseCommand):
         parser.add_argument('--first_name', type=str, default="Contact", help='Ім’я контакту')
         parser.add_argument('--last_name', type=str, default="", help='Прізвище контакту')
 
-    def handle(self, *args, **kwargs):
-        user_id = kwargs['user_id']
-        contact_phone = kwargs['phone']
-        first_name = kwargs['first_name']
-        last_name = kwargs['last_name']
-
+    async def _handle(self, user_id, contact_phone, first_name, last_name):
         self.stdout.write(f"Починаємо імпорт контакту {contact_phone} для користувача {user_id}...")
         logger.info(f"Starting import for user_id={user_id}, phone={contact_phone}")
 
@@ -57,8 +52,7 @@ class Command(BaseCommand):
 
         client = TelegramClient(session_file, api_id, api_hash)
         try:
-            # Синхронний запуск клієнта
-            client.loop.run_until_complete(client.start(phone=user_phone))
+            await client.start(phone=user_phone)
             self.stdout.write(f"Клієнт Telegram запущено для {user_phone}")
 
             normalized_phone = normalize_phone_number(contact_phone)
@@ -76,11 +70,11 @@ class Command(BaseCommand):
             )
 
             logger.info(f"Importing contact: {telegram_phone}")
-            import_result = client.loop.run_until_complete(client(ImportContactsRequest([contact_input])))
+            import_result = await client(ImportContactsRequest([contact_input]))
             self.stdout.write(f"Імпортовано контакт: {telegram_phone}")
             logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-            entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
+            entity = await client.get_entity(telegram_phone)
             telegram_id = entity.id
             telegram_username = getattr(entity, 'username', None)
             self.stdout.write(f"Отримано telegram_id={telegram_id}, username={telegram_username} для {telegram_phone}")
@@ -110,5 +104,12 @@ class Command(BaseCommand):
             self.stdout.write(f"[ERROR] Помилка імпорту: {str(e)}")
             logger.error(f"Error during import: {str(e)}")
         finally:
-            client.loop.run_until_complete(client.disconnect())
+            await client.disconnect()
             self.stdout.write("Завершено")
+
+    def handle(self, *args, **kwargs):
+        user_id = kwargs['user_id']
+        contact_phone = kwargs['phone']
+        first_name = kwargs['first_name']
+        last_name = kwargs['last_name']
+        asyncio.run(self._handle(user_id, contact_phone, first_name, last_name))
