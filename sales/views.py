@@ -663,30 +663,55 @@ def edit_task(request):
 
 def merge_contacts_view(request):
     if request.method == "POST":
-        contact1_id = request.POST.get("contact1_id")
-        contact2_id = request.POST.get("contact2_id")
-        keep_contact_id = request.POST.get("keep_contact")  # ID контакту, який залишаємо
+        selected_contacts = request.POST.getlist("selected_contacts")
+        keep_contact_id = request.POST.get("keep_contact")
 
-        if not (contact1_id and contact2_id and keep_contact_id):
-            messages.error(request, "Виберіть два контакти та вкажіть, який залишити.")
+        if len(selected_contacts) != 2:
+            messages.error(request, "Виберіть рівно два контакти для об'єднання.")
             return redirect("merge_contacts")
 
-        contact1 = get_object_or_404(Contact, id=contact1_id)
-        contact2 = get_object_or_404(Contact, id=contact2_id)
-
-        if contact1 == contact2:
-            messages.error(request, "Не можна об'єднати один і той же контакт.")
-            return redirect("merge_contacts")
-
-        # Визначаємо, який контакт залишаємо
+        contact1 = Contact.objects.get(id=selected_contacts[0])
+        contact2 = Contact.objects.get(id=selected_contacts[1])
         keep_self = str(contact1.id) == keep_contact_id
+
         try:
             contact1.merge_with(contact2, keep_self=keep_self)
             messages.success(request, f"Контакти успішно об'єднані в {contact1 if keep_self else contact2}.")
+            return redirect("contact_list")  # Або інший URL для списку контактів
         except Exception as e:
             messages.error(request, f"Помилка при об'єднанні: {str(e)}")
-        return redirect("contact_list")  # Перенаправлення на список контактів
+            return redirect("merge_contacts")
 
-    # GET-запит: показуємо форму
     contacts = Contact.objects.all()
     return render(request, "sales/merge_contacts.html", {"contacts": contacts})
+
+def search_contacts(request):
+    query = request.GET.get("q", "").strip()
+    if query:
+        contacts = Contact.objects.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(position__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(email__icontains=query) |
+            Q(telegram_username__icontains=query) |
+            Q(telegram_id__icontains=query) |
+            Q(company__name__icontains=query)
+        ).distinct()
+    else:
+        contacts = Contact.objects.all()
+
+    contacts_data = [{
+        "id": contact.id,
+        "first_name": contact.first_name,
+        "last_name": contact.last_name or "",
+        "position": contact.position or "",
+        "company_name": contact.company.name if contact.company else "",
+        "phone": contact.phone or "",
+        "email": contact.email or "",
+        "telegram_username": contact.telegram_username or "",
+        "telegram_id": str(contact.telegram_id) if contact.telegram_id else "",
+        "created_at": contact.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+    } for contact in contacts]
+
+    return JsonResponse({"success": True, "contacts": contacts_data})

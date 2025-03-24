@@ -27,5 +27,6 @@ urlpatterns = [
     path('company/<int:company_id>/', company_detail, name='company_detail'),
 
     path("merge-contacts/", merge_contacts_view, name="merge_contacts"),
+    path("contacts/search/", search_contacts, name="search_contacts"),
 
 ]
