@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from sales.models import Room, Contact
-from main.utils import normalize_phone_number
+from sales.utils import normalize_phone_number
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
@@ -20,7 +20,7 @@ async_save_contact = sync_to_async(lambda contact: contact.save())
 
 
 async def import_contact(user, contact, stdout):
-    # Профіль уже перевірено в handle, тому просто використовуємо його
+    # Профіль уже перевірено в handle
     profile = user.profile
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
@@ -28,7 +28,7 @@ async def import_contact(user, contact, stdout):
     session_file = getattr(profile, 'telegram_session_file_out', f"{user.username}_out.session")
 
     if not all([api_id, api_hash, user_phone]):
-        stdout.write(stdout.style.ERROR(f"Неповні Telegram дані для {user.username}"))
+        stdout.write(f"[ERROR] Неповні Telegram дані для {user.username}")
         logger.error(f"Incomplete Telegram credentials for user {user.username}")
         return
 
@@ -37,7 +37,7 @@ async def import_contact(user, contact, stdout):
 
     normalized_phone = normalize_phone_number(contact.phone)
     if not normalized_phone:
-        stdout.write(f"Пропущено контакт із некоректним номером: {contact.phone}")
+        stdout.write(f"[WARNING] Пропущено контакт із некоректним номером: {contact.phone}")
         logger.warning(f"Invalid phone number: {contact.phone}")
         return
     telegram_phone = f"+{normalized_phone}"
@@ -60,12 +60,15 @@ async def import_contact(user, contact, stdout):
         stdout.write(f"Отримано telegram_id={telegram_id}, username={telegram_username} для {telegram_phone}")
         logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
-        # Оновлюємо контакт асинхронно
+        # Перевіряємо, чи змінилися поля
+        needs_save = False
         if not contact.telegram_id and telegram_id:
             contact.telegram_id = telegram_id
+            needs_save = True
         if not contact.telegram_username and telegram_username:
             contact.telegram_username = telegram_username
-        if contact.is_modified():
+            needs_save = True
+        if needs_save:
             await async_save_contact(contact)
             stdout.write(
                 f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
@@ -73,10 +76,10 @@ async def import_contact(user, contact, stdout):
                 f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
 
     except ValueError as e:
-        stdout.write(stdout.style.WARNING(f"Не вдалося отримати entity для {telegram_phone}: {str(e)}"))
+        stdout.write(f"[WARNING] Не вдалося отримати entity для {telegram_phone}: {str(e)}")
         logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
     except Exception as e:
-        stdout.write(stdout.style.ERROR(f"Помилка імпорту для {telegram_phone}: {str(e)}"))
+        stdout.write(f"[ERROR] Помилка імпорту для {telegram_phone}: {str(e)}")
         logger.error(f"Error importing contact {telegram_phone}: {str(e)}")
     finally:
         await client.disconnect()
@@ -104,8 +107,7 @@ class Command(BaseCommand):
             if normalized_phone:
                 # Перевіряємо профіль у синхронній частині
                 if not hasattr(user, 'profile'):
-                    self.stdout.write(
-                        self.style.WARNING(f"Пропущено Room #{room.id}: Користувач {user.username} не має профілю"))
+                    self.stdout.write(f"[WARNING] Пропущено Room #{room.id}: Користувач {user.username} не має профілю")
                     logger.warning(f"Skipping Room #{room.id} - User {user.username} has no profile")
                     continue
 
@@ -113,12 +115,12 @@ class Command(BaseCommand):
                 logger.info(f"Processing contact {normalized_phone} (Room #{room.id}, User: {user.username})")
                 loop.run_until_complete(import_contact(user, contact, self.stdout))
             else:
-                self.stdout.write(f"Пропущено Room #{room.id} - некоректний номер: {contact.phone}")
+                self.stdout.write(f"[WARNING] Пропущено Room #{room.id} - некоректний номер: {contact.phone}")
                 logger.warning(f"Skipping Room #{room.id} - invalid phone: {contact.phone}")
 
             if idx % 10 == 0 or idx == total_rooms:
                 self.stdout.write(f"Оброблено {idx}/{total_rooms} чатів")
                 logger.info(f"Processed {idx}/{total_rooms} rooms")
 
-        self.stdout.write(self.style.SUCCESS("Імпорт завершено"))
+        self.stdout.write("Імпорт завершено")
         logger.info("Finished importing all existing rooms")
