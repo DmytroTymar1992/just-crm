@@ -638,7 +638,7 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     from telethon.tl.functions.contacts import ImportContactsRequest
     from telethon.tl.types import InputPhoneContact
     from main.utils import normalize_phone_number
-    from sales.models import Contact  # Імпортуємо Contact для оновлення
+    from sales.models import Contact
     import logging
 
     logger = logging.getLogger(__name__)
@@ -650,11 +650,21 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.error(f"User with id={user_id} not found")
         return
 
-    profile = user.profile
+    # Перевіряємо наявність профілю
+    try:
+        profile = user.profile
+    except AttributeError:
+        logger.error(f"User {user.username} has no profile")
+        return
+
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
     user_phone = profile.telegram_phone
     session_file = getattr(profile, 'telegram_session_file_out', f"{user.username}_out.session")
+
+    if not all([api_id, api_hash, user_phone]):
+        logger.error(f"Incomplete Telegram credentials for user {user.username}")
+        return
 
     client = TelegramClient(session_file, api_id, api_hash)
     client.loop.run_until_complete(client.start(phone=user_phone))
@@ -663,7 +673,7 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     if not normalized_phone:
         logger.warning(f"Invalid phone number: {contact_phone}")
         return
-    telegram_phone = f"+{normalized_phone}"  # Додаємо '+' до номера
+    telegram_phone = f"+{normalized_phone}"
 
     contact = InputPhoneContact(
         client_id=0,
@@ -678,14 +688,12 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         )
         logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-        # Отримуємо entity для отримання telegram_id і username
         try:
             entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
             telegram_id = entity.id
             telegram_username = getattr(entity, 'username', None)
             logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
-            # Оновлюємо Contact у базі
             contact_obj = Contact.objects.filter(phone=normalized_phone).first()
             if contact_obj:
                 updated = False
