@@ -56,26 +56,27 @@ class Command(BaseCommand):
             return
 
         client = TelegramClient(session_file, api_id, api_hash)
-        client.loop.run_until_complete(client.start(phone=user_phone))
-
-        normalized_phone = normalize_phone_number(contact_phone)
-        if not normalized_phone:
-            self.stdout.write(f"[WARNING] Некоректний номер: {contact_phone}")
-            logger.warning(f"Invalid phone number: {contact_phone}")
-            return
-        telegram_phone = normalized_phone  # Уже з '+'
-
-        contact_input = InputPhoneContact(
-            client_id=0,
-            phone=telegram_phone,
-            first_name=first_name,
-            last_name=last_name
-        )
         try:
-            logger.info(f"Importing contact: {telegram_phone}")
-            import_result = client.loop.run_until_complete(
-                client(ImportContactsRequest([contact_input]))
+            # Синхронний запуск клієнта
+            client.loop.run_until_complete(client.start(phone=user_phone))
+            self.stdout.write(f"Клієнт Telegram запущено для {user_phone}")
+
+            normalized_phone = normalize_phone_number(contact_phone)
+            if not normalized_phone:
+                self.stdout.write(f"[WARNING] Некоректний номер: {contact_phone}")
+                logger.warning(f"Invalid phone number: {contact_phone}")
+                return
+            telegram_phone = normalized_phone
+
+            contact_input = InputPhoneContact(
+                client_id=0,
+                phone=telegram_phone,
+                first_name=first_name,
+                last_name=last_name
             )
+
+            logger.info(f"Importing contact: {telegram_phone}")
+            import_result = client.loop.run_until_complete(client(ImportContactsRequest([contact_input])))
             self.stdout.write(f"Імпортовано контакт: {telegram_phone}")
             logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
@@ -106,8 +107,8 @@ class Command(BaseCommand):
             self.stdout.write(f"[WARNING] Не вдалося отримати entity для {telegram_phone}: {str(e)}")
             logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
         except Exception as e:
-            self.stdout.write(f"[ERROR] Помилка імпорту для {telegram_phone}: {str(e)}")
-            logger.error(f"Error importing contact {telegram_phone}: {str(e)}")
+            self.stdout.write(f"[ERROR] Помилка імпорту: {str(e)}")
+            logger.error(f"Error during import: {str(e)}")
         finally:
             client.loop.run_until_complete(client.disconnect())
             self.stdout.write("Завершено")
