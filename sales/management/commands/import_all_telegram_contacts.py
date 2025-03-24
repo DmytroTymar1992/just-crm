@@ -2,23 +2,29 @@
 import asyncio
 import logging
 from django.core.management.base import BaseCommand
-from sales.models import Room
+from asgiref.sync import sync_to_async
+from sales.models import Room, Contact
 from main.utils import normalize_phone_number
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
 
+# Налаштування логування
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Асинхронні обгортки для операцій із базою
+async_get_rooms = sync_to_async(Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False).all)
+async_save_contact = sync_to_async(lambda contact: contact.save())
+
 async def import_contact(user, contact, stdout):
-    try:
-        profile = user.profile
-    except AttributeError:
-        stdout.write(stdout.style.ERROR(f"Користувач {user.username} не має профілю"))
-        logger.error(f"User {user.username} has no profile")
+    # Перевіряємо наявність профілю
+    if not hasattr(user, 'profile'):
+        stdout.write(stdout.style.WARNING(f"Пропущено Room #{contact.rooms.first().id}: Користувач {user.username} не має профілю"))
+        logger.warning(f"Skipping user {user.username} - no profile")
         return
 
+    profile = user.profile
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
     user_phone = profile.telegram_phone
@@ -57,12 +63,13 @@ async def import_contact(user, contact, stdout):
         stdout.write(f"Отримано telegram_id={telegram_id}, username={telegram_username} для {telegram_phone}")
         logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
+        # Оновлюємо контакт асинхронно
         if not contact.telegram_id and telegram_id:
             contact.telegram_id = telegram_id
         if not contact.telegram_username and telegram_username:
             contact.telegram_username = telegram_username
         if contact.is_modified():
-            contact.save()
+            await async_save_contact(contact)
             stdout.write(f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
             logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
 
@@ -82,12 +89,12 @@ class Command(BaseCommand):
         self.stdout.write("Починаємо імпорт контактів до Telegram...")
         logger.info("Starting import for all existing rooms")
 
-        rooms = Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False)
-        total_rooms = rooms.count()
+        loop = asyncio.get_event_loop()
+        rooms = loop.run_until_complete(async_get_rooms())
+        total_rooms = len(rooms)
         self.stdout.write(f"Знайдено {total_rooms} чатів для обробки")
         logger.info(f"Starting import for {total_rooms} rooms")
 
-        loop = asyncio.get_event_loop()
         for idx, room in enumerate(rooms, 1):
             user = room.user
             contact = room.contact
