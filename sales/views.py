@@ -22,6 +22,8 @@ import datetime
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from sales_analytics.models import ManagerActivity
+from django.contrib import messages
+
 
 logger = logging.getLogger(__name__)
 
@@ -657,3 +659,34 @@ def edit_task(request):
         return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+def merge_contacts_view(request):
+    if request.method == "POST":
+        contact1_id = request.POST.get("contact1_id")
+        contact2_id = request.POST.get("contact2_id")
+        keep_contact_id = request.POST.get("keep_contact")  # ID контакту, який залишаємо
+
+        if not (contact1_id and contact2_id and keep_contact_id):
+            messages.error(request, "Виберіть два контакти та вкажіть, який залишити.")
+            return redirect("merge_contacts")
+
+        contact1 = get_object_or_404(Contact, id=contact1_id)
+        contact2 = get_object_or_404(Contact, id=contact2_id)
+
+        if contact1 == contact2:
+            messages.error(request, "Не можна об'єднати один і той же контакт.")
+            return redirect("merge_contacts")
+
+        # Визначаємо, який контакт залишаємо
+        keep_self = str(contact1.id) == keep_contact_id
+        try:
+            contact1.merge_with(contact2, keep_self=keep_self)
+            messages.success(request, f"Контакти успішно об'єднані в {contact1 if keep_self else contact2}.")
+        except Exception as e:
+            messages.error(request, f"Помилка при об'єднанні: {str(e)}")
+        return redirect("contact_list")  # Перенаправлення на список контактів
+
+    # GET-запит: показуємо форму
+    contacts = Contact.objects.all()
+    return render(request, "sales/merge_contacts.html", {"contacts": contacts})

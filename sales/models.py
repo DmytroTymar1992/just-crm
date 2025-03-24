@@ -3,12 +3,14 @@ from main.models import Company
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from main.utils import normalize_phone_number
+import logging
+from django.apps import apps
 
 User = get_user_model()
-
+logger = logging.getLogger(__name__)
 
 class Contact(models.Model):
-    company = models.ForeignKey(Company,
+    company = models.ForeignKey('sales.Company',
                                 on_delete=models.CASCADE,
                                 related_name="contacts",
                                 verbose_name="Компанія",
@@ -19,27 +21,78 @@ class Contact(models.Model):
     position = models.CharField("Посада", max_length=100, blank=True, null=True)
     created_at = models.DateTimeField("Створено", auto_now_add=True)
 
-
-
-    telegram_id = models.BigIntegerField(null=True,blank=True, unique=True, verbose_name="Telegram ID")
+    telegram_id = models.BigIntegerField(null=True, blank=True, unique=True, verbose_name="Telegram ID")
     telegram_username = models.CharField(max_length=100, null=True, blank=True, verbose_name="Telegram Username")
     phone = models.CharField(max_length=32, null=True, blank=True, verbose_name="Телефон")
     email = models.EmailField("Email", max_length=254, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Нормалізуємо номер телефону перед збереженням
         if self.phone:
             normalized_phone = normalize_phone_number(self.phone)
             if normalized_phone:
                 self.phone = normalized_phone
             else:
-                # Якщо номер некоректний, можна або залишити порожнім, або викликати помилку
-                self.phone = None  # або raise ValueError("Некоректний номер телефону")
-
+                self.phone = None
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip() or self.phone or self.email or "Безіменний контакт"
+
+    def merge_with(self, other_contact, keep_self=True):
+        """
+        Об'єднує цей контакт з іншим (other_contact).
+        :param other_contact: Контакт, з яким об'єднуємо.
+        :param keep_self: True - цей контакт залишається, False - other_contact стає основним.
+        """
+        # Визначаємо основний і дубльований контакти
+        primary = self if keep_self else other_contact
+        secondary = other_contact if keep_self else self
+
+        logger.info(f"Об'єднання контактів: основний={primary}, дубльований={secondary}")
+
+        # Переносимо непорожні дані з дубльованого в основний
+        if not primary.first_name and secondary.first_name:
+            primary.first_name = secondary.first_name
+        if not primary.last_name and secondary.last_name:
+            primary.last_name = secondary.last_name
+        if not primary.position and secondary.position:
+            primary.position = secondary.position
+        if not primary.company and secondary.company:
+            primary.company = secondary.company
+        if not primary.telegram_id and secondary.telegram_id:
+            primary.telegram_id = secondary.telegram_id
+        if not primary.telegram_username and secondary.telegram_username:
+            primary.telegram_username = secondary.telegram_username
+        if not primary.phone and secondary.phone:
+            primary.phone = secondary.phone
+        if not primary.email and secondary.email:
+            primary.email = secondary.email
+
+        # Обробка конфліктів (якщо обидва поля заповнені, але різні)
+        if primary.phone and secondary.phone and primary.phone != secondary.phone:
+            primary.phone = f"{primary.phone}, {secondary.phone}"
+        if primary.email and secondary.email and primary.email != secondary.email:
+            primary.email = f"{primary.email}, {secondary.email}"
+
+        # Знаходимо всі моделі, які посилаються на Contact через ForeignKey
+        for model in apps.get_models():
+            for field in model._meta.get_fields():
+                if isinstance(field, models.ForeignKey) and field.related_model == Contact:
+                    # Оновлюємо всі записи, де є посилання на secondary
+                    filter_kwargs = {field.name: secondary}
+                    update_kwargs = {field.name: primary}
+                    model.objects.filter(**filter_kwargs).update(**update_kwargs)
+                    logger.info(f"Оновлено {model.__name__}: замінено {secondary} на {primary}")
+
+        # Зберігаємо основний контакт
+        primary.save()
+        # Видаляємо дубльований контакт
+        secondary.delete()
+        logger.info(f"Контакт {secondary} видалено після об'єднання в {primary}")
+
+    class Meta:
+        verbose_name = "Контакт"
+        verbose_name_plural = "Контакти"
 
 
 

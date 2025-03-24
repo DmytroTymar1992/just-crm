@@ -26,4 +26,6 @@ urlpatterns = [
     path('dashboard/', analytics_dashboard, name='analytics_dashboard'),
     path('company/<int:company_id>/', company_detail, name='company_detail'),
 
+    path("merge-contacts/", merge_contacts_view, name="merge_contacts"),
+
 ]

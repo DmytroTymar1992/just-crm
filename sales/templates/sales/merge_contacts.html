@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Об'єднання контактів</title>
+</head>
+<body>
+    <h1>Об'єднання контактів</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <p {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="contact1_id">Виберіть перший контакт:</label>
+        <select name="contact1_id" id="contact1_id">
+            {% for contact in contacts %}
+                <option value="{{ contact.id }}">{{ contact }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label for="contact2_id">Виберіть другий контакт:</label>
+        <select name="contact2_id" id="contact2_id">
+            {% for contact in contacts %}
+                <option value="{{ contact.id }}">{{ contact }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label>Який контакт залишити основним?</label><br>
+        <input type="radio" name="keep_contact" value="{{ contacts.0.id }}" id="keep_contact1" checked>
+        <label for="keep_contact1">Перший контакт</label><br>
+        <input type="radio" name="keep_contact" value="{{ contacts.1.id }}" id="keep_contact2">
+        <label for="keep_contact2">Другий контакт</label><br>
+        <button type="submit">Об'єднати</button>
+    </form>
+</body>
+</html>
