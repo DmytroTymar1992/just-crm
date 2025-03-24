@@ -14,16 +14,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Асинхронні обгортки для операцій із базою
-async_get_rooms = sync_to_async(Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False).all)
+async_get_rooms = sync_to_async(
+    lambda: list(Room.objects.select_related('user', 'contact').filter(contact__phone__isnull=False)))
 async_save_contact = sync_to_async(lambda contact: contact.save())
 
-async def import_contact(user, contact, stdout):
-    # Перевіряємо наявність профілю
-    if not hasattr(user, 'profile'):
-        stdout.write(stdout.style.WARNING(f"Пропущено Room #{contact.rooms.first().id}: Користувач {user.username} не має профілю"))
-        logger.warning(f"Skipping user {user.username} - no profile")
-        return
 
+async def import_contact(user, contact, stdout):
+    # Профіль уже перевірено в handle, тому просто використовуємо його
     profile = user.profile
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
@@ -70,8 +67,10 @@ async def import_contact(user, contact, stdout):
             contact.telegram_username = telegram_username
         if contact.is_modified():
             await async_save_contact(contact)
-            stdout.write(f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
-            logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+            stdout.write(
+                f"Оновлено Contact {normalized_phone} з telegram_id={telegram_id}, username={telegram_username}")
+            logger.info(
+                f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
 
     except ValueError as e:
         stdout.write(stdout.style.WARNING(f"Не вдалося отримати entity для {telegram_phone}: {str(e)}"))
@@ -82,6 +81,7 @@ async def import_contact(user, contact, stdout):
     finally:
         await client.disconnect()
 
+
 class Command(BaseCommand):
     help = "Синхронно імпортує всі номери телефонів із існуючих Room до Telegram-списків користувачів"
 
@@ -89,6 +89,7 @@ class Command(BaseCommand):
         self.stdout.write("Починаємо імпорт контактів до Telegram...")
         logger.info("Starting import for all existing rooms")
 
+        # Отримуємо rooms асинхронно
         loop = asyncio.get_event_loop()
         rooms = loop.run_until_complete(async_get_rooms())
         total_rooms = len(rooms)
@@ -101,6 +102,13 @@ class Command(BaseCommand):
             normalized_phone = normalize_phone_number(contact.phone)
 
             if normalized_phone:
+                # Перевіряємо профіль у синхронній частині
+                if not hasattr(user, 'profile'):
+                    self.stdout.write(
+                        self.style.WARNING(f"Пропущено Room #{room.id}: Користувач {user.username} не має профілю"))
+                    logger.warning(f"Skipping Room #{room.id} - User {user.username} has no profile")
+                    continue
+
                 self.stdout.write(f"Обробка контакту {normalized_phone} (Room #{room.id}, User: {user.username})")
                 logger.info(f"Processing contact {normalized_phone} (Room #{room.id}, User: {user.username})")
                 loop.run_until_complete(import_contact(user, contact, self.stdout))
