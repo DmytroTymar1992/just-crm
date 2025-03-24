@@ -2,6 +2,7 @@ from django.db import models
 from main.models import Company
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from main.utils import normalize_phone_number
 
 User = get_user_model()
 
@@ -25,8 +26,22 @@ class Contact(models.Model):
     phone = models.CharField(max_length=32, null=True, blank=True, verbose_name="Телефон")
     email = models.EmailField("Email", max_length=254, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        # Нормалізуємо номер телефону перед збереженням
+        if self.phone:
+            normalized_phone = normalize_phone_number(self.phone)
+            if normalized_phone:
+                self.phone = normalized_phone
+            else:
+                # Якщо номер некоректний, можна або залишити порожнім, або викликати помилку
+                self.phone = None  # або raise ValueError("Некоректний номер телефону")
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.first_name} {self.last_name}".strip() or self.phone or self.email or "Безіменний контакт"
+
+
 
 
 class Room(models.Model):
