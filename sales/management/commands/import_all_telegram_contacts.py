@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from sales.models import Room, Contact
-from sales.utils import normalize_phone_number
+from main.utils import normalize_phone_number
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
