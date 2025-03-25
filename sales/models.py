@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from main.utils import normalize_phone_number
 import logging
 from django.apps import apps
-from sales.tasks import import_telegram_contact_task
 from django.core.cache import cache
 
 User = get_user_model()
