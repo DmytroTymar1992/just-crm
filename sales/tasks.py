@@ -668,11 +668,21 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.error(result['message'])
         return result
 
+    logger.info(f"Using api_id={api_id}, api_hash={api_hash[:5]}..., session_file={session_file}")
     client = TelegramClient(session_file, api_id, api_hash)
     try:
         # Синхронний запуск клієнта
+        logger.info(f"Starting Telegram client for {user_phone}")
         client.start(phone=user_phone)
         logger.info(f"Telegram client started for {user_phone}")
+
+        # Перевіряємо, чи клієнт авторизований
+        is_authorized = client.is_user_authorized()
+        logger.info(f"Client authorized: {is_authorized}")
+        if not is_authorized:
+            result['message'] = f"Telegram client not authorized for {user_phone}"
+            logger.error(result['message'])
+            return result
 
         telegram_phone = contact_phone  # Номер уже нормалізований
         if not telegram_phone:
@@ -690,13 +700,13 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         # Додаємо контакт
         logger.info(f"Importing contact: {telegram_phone}")
         import_result = client(ImportContactsRequest([contact_input]))
-        logger.info(f"Import result: imported={import_result.imported}, users={import_result.users}")
+        logger.info(f"Full import result: {import_result.to_dict()}")
         if import_result.imported:
             logger.info(f"Contact {telegram_phone} successfully added to Telegram contacts")
             result['imported'] = True
         else:
-            logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: imported={import_result.imported}, users={import_result.users}")
-            result['message'] = f"Failed to add {telegram_phone} to Telegram contacts: imported={import_result.imported}, users={import_result.users}"
+            logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: {import_result.to_dict()}")
+            result['message'] = f"Failed to add {telegram_phone} to Telegram contacts: {import_result.to_dict()}"
             return result
 
         # Перевіряємо, чи є користувач у результаті імпорту
