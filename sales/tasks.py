@@ -631,10 +631,11 @@ def process_phonet_call(call_data):
 
 
 from celery import shared_task
-from telethon.sync import TelegramClient  # Використовуємо синхронний клієнт
+from telethon.sync import TelegramClient
 from telethon.tl.types import InputPhoneContact
 from .models import User, Contact
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -686,14 +687,30 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
             last_name=last_name or ""
         )
 
+        # Додаємо контакт
         logger.info(f"Importing contact: {telegram_phone}")
         import_result = client(ImportContactsRequest([contact_input]))
         logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-        entity = client.get_entity(telegram_phone)
-        telegram_id = entity.id
-        telegram_username = getattr(entity, 'username', None)
-        logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
+        # Перевіряємо, чи є користувач у результаті імпорту
+        if import_result.users:
+            entity = import_result.users[0]  # Беремо першого користувача з результату імпорту
+            telegram_id = entity.id
+            telegram_username = getattr(entity, 'username', None)
+            logger.info(f"Retrieved from import: telegram_id={telegram_id}, username={telegram_username}")
+        else:
+            # Якщо імпорт не повернув користувача, чекаємо синхронізації і повторюємо спробу
+            logger.info(f"No user in import result, waiting for sync...")
+            time.sleep(2)  # Даємо час на синхронізацію (2 секунди)
+            try:
+                entity = client.get_entity(telegram_phone)
+                telegram_id = entity.id
+                telegram_username = getattr(entity, 'username', None)
+                logger.info(f"Retrieved after sync: telegram_id={telegram_id}, username={telegram_username}")
+            except ValueError as e:
+                result['message'] = f"Could not retrieve entity for {telegram_phone} after sync: {str(e)}"
+                logger.warning(result['message'])
+                return result
 
         # Оновлюємо контакт
         contact_obj = Contact.objects.filter(phone=telegram_phone).first()
@@ -715,7 +732,7 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
             result['telegram_id'] = telegram_id
             result['telegram_username'] = telegram_username
         else:
-            result['message'] = f"No Contact found with phone {telegram_phone}"
+            result['message'] = f"No Contact found with phone {telegram_phone} in database"
             logger.warning(result['message'])
 
     except ValueError as e:
