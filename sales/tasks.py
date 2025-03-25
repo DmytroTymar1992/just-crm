@@ -690,27 +690,36 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         # Додаємо контакт
         logger.info(f"Importing contact: {telegram_phone}")
         import_result = client(ImportContactsRequest([contact_input]))
-        logger.info(f"Imported contact {telegram_phone}: {import_result}")
+        if import_result.imported:
+            logger.info(f"Contact {telegram_phone} successfully added to Telegram contacts")
+        else:
+            logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: {import_result}")
 
         # Перевіряємо, чи є користувач у результаті імпорту
         if import_result.users:
-            entity = import_result.users[0]  # Беремо першого користувача з результату імпорту
+            entity = import_result.users[0]
             telegram_id = entity.id
             telegram_username = getattr(entity, 'username', None)
             logger.info(f"Retrieved from import: telegram_id={telegram_id}, username={telegram_username}")
         else:
-            # Якщо імпорт не повернув користувача, чекаємо синхронізації і повторюємо спробу
-            logger.info(f"No user in import result, waiting for sync...")
-            time.sleep(2)  # Даємо час на синхронізацію (2 секунди)
-            try:
-                entity = client.get_entity(telegram_phone)
-                telegram_id = entity.id
-                telegram_username = getattr(entity, 'username', None)
-                logger.info(f"Retrieved after sync: telegram_id={telegram_id}, username={telegram_username}")
-            except ValueError as e:
-                result['message'] = f"Could not retrieve entity for {telegram_phone} after sync: {str(e)}"
-                logger.warning(result['message'])
-                return result
+            # Якщо імпорт не повернув користувача, чекаємо синхронізації з повторними спробами
+            logger.info(f"No user in import result, attempting sync with retries...")
+            max_attempts = 3
+            delay_between_attempts = 5  # 5 секунд між спробами
+            for attempt in range(max_attempts):
+                time.sleep(delay_between_attempts)
+                try:
+                    entity = client.get_entity(telegram_phone)
+                    telegram_id = entity.id
+                    telegram_username = getattr(entity, 'username', None)
+                    logger.info(f"Retrieved after sync (attempt {attempt + 1}): telegram_id={telegram_id}, username={telegram_username}")
+                    break  # Успіх, виходимо з циклу
+                except ValueError as e:
+                    logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                    if attempt == max_attempts - 1:  # Остання спроба
+                        result['message'] = f"Could not retrieve entity for {telegram_phone} after {max_attempts} attempts: {str(e)}"
+                        logger.error(result['message'])
+                        return result
 
         # Оновлюємо контакт
         contact_obj = Contact.objects.filter(phone=telegram_phone).first()
