@@ -641,7 +641,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
-    result = {'success': False, 'message': None, 'telegram_id': None, 'telegram_username': None}
+    result = {'success': False, 'message': None, 'telegram_id': None, 'telegram_username': None, 'imported': False}
 
     try:
         user = User.objects.get(id=user_id)
@@ -692,8 +692,11 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         import_result = client(ImportContactsRequest([contact_input]))
         if import_result.imported:
             logger.info(f"Contact {telegram_phone} successfully added to Telegram contacts")
+            result['imported'] = True
         else:
             logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: {import_result}")
+            result['message'] = f"Failed to add {telegram_phone} to Telegram contacts"
+            return result
 
         # Перевіряємо, чи є користувач у результаті імпорту
         if import_result.users:
