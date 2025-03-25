@@ -1,0 +1,21 @@
+<!-- templates/sales/telegram_import_log.html -->
+{% extends 'sales/base-sales.html' %}
+{% load static %}
+
+{% block title %}
+  Лог імпорту Telegram для Room #{{ room_id }}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="fw-bold text-dark mb-4">Лог імпорту Telegram для Room #{{ room_id }}</h1>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+  <a href="{% url 'contact_detail' contact_id=room.contact.id %}" class="btn btn-outline-secondary mt-3">Повернутися до контакту</a>
+</div>
+{% endblock %}

@@ -746,3 +746,30 @@ def contact_detail_view(request, contact_id):
         "contact": contact,
         "other_contacts": other_contacts,
     })
+
+from django.shortcuts import render
+from django.core.cache import cache
+from celery.result import AsyncResult
+from django.contrib import messages
+
+def telegram_import_log(request, room_id):
+    task_id = cache.get(f"telegram_import_task_{room_id}")
+    error_message = request.session.pop('telegram_error', None)
+
+    if task_id:
+        task_result = AsyncResult(task_id)
+        if task_result.ready():
+            result = task_result.result
+            if result['success']:
+                messages.success(request,
+                                 f"Успішно отримано: Telegram ID = {result['telegram_id']}, Username = {result['telegram_username']}")
+            else:
+                messages.error(request, result['message'])
+        else:
+            messages.info(request, "Задача ще виконується, зачекайте...")
+    elif error_message:
+        messages.error(request, error_message)
+    else:
+        messages.error(request, "Немає даних про задачу імпорту")
+
+    return render(request, 'sales/telegram_import_log.html', {'room_id': room_id})

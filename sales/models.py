@@ -6,6 +6,7 @@ from main.utils import normalize_phone_number
 import logging
 from django.apps import apps
 from sales.tasks import import_telegram_contact_task
+from django.core.cache import cache
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -76,29 +77,38 @@ class Room(models.Model):
         return f"Room #{self.pk} (User: {self.user.username} - Contact: {self.contact})"
 
     def save(self, *args, **kwargs):
-        # Перевіряємо, чи це створення нового чату (ще немає pk)
         is_new = self.pk is None
-        super().save(*args, **kwargs)  # Зберігаємо об'єкт
+        super().save(*args, **kwargs)
 
         if is_new:
-            # Викликаємо задачу для імпорту контакту в Telegram
             try:
                 contact_phone = self.contact.phone
                 first_name = self.contact.first_name
                 last_name = self.contact.last_name or ""
                 if contact_phone:
                     logger.info(f"Запускаємо задачу import_telegram_contact_task для Room #{self.pk}, контакт: {self.contact}")
-                    import_telegram_contact_task.delay(
+                    task_result = import_telegram_contact_task.delay(
                         self.user.id,
                         contact_phone,
                         first_name,
                         last_name
                     )
-                    logger.info(f"Задача запущена для Room #{self.pk}: user_id={self.user.id}, phone={contact_phone}")
+                    # Зберігаємо task_id у кеші, щоб пізніше перевірити результат
+                    cache.set(f"telegram_import_task_{self.pk}", task_result.id, timeout=300)  # 5 хвилин
                 else:
                     logger.warning(f"Контакт {self.contact} не має номера телефону, пропускаємо імпорт у Telegram")
+                    if 'request' in kwargs:  # Перевіряємо, чи є request у kwargs
+                        from django.http import HttpResponseRedirect
+                        from django.urls import reverse
+                        kwargs['request'].session['telegram_error'] = "Контакт не має номера телефону"
+                        return HttpResponseRedirect(reverse('telegram_import_log', args=[self.pk]))
             except Exception as e:
                 logger.error(f"Помилка при запуску задачі import_telegram_contact_task для Room #{self.pk}: {str(e)}")
+                if 'request' in kwargs:
+                    from django.http import HttpResponseRedirect
+                    from django.urls import reverse
+                    kwargs['request'].session['telegram_error'] = str(e)
+                    return HttpResponseRedirect(reverse('telegram_import_log', args=[self.pk]))
 
 
 class Interaction(models.Model):

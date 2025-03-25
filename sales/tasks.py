@@ -633,18 +633,22 @@ def process_phonet_call(call_data):
 # sales/tasks.py
 @shared_task
 def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
+    result = {'success': False, 'message': None, 'telegram_id': None, 'telegram_username': None}
+
     try:
         user = User.objects.get(id=user_id)
         logger.info(f"Задача запущена для user_id={user_id}, phone={contact_phone}")
     except User.DoesNotExist:
-        logger.error(f"User with id={user_id} not found")
-        return
+        result['message'] = f"User with id={user_id} not found"
+        logger.error(result['message'])
+        return result
 
     try:
         profile = user.profile
     except AttributeError:
-        logger.error(f"User {user.username} has no profile")
-        return
+        result['message'] = f"User {user.username} has no profile"
+        logger.error(result['message'])
+        return result
 
     api_id = profile.telegram_api_id
     api_hash = profile.telegram_api_hash
@@ -652,8 +656,9 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     session_file = getattr(profile, 'telegram_session_file_out', f"{user.username}_out.session")
 
     if not all([api_id, api_hash, user_phone]):
-        logger.error(f"Incomplete Telegram credentials for user {user.username}")
-        return
+        result['message'] = f"Incomplete Telegram credentials for user {user.username}"
+        logger.error(result['message'])
+        return result
 
     client = TelegramClient(session_file, api_id, api_hash)
     try:
@@ -662,8 +667,9 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
 
         normalized_phone = normalize_phone_number(contact_phone)
         if not normalized_phone:
-            logger.warning(f"Invalid phone number: {contact_phone}")
-            return
+            result['message'] = f"Invalid phone number: {contact_phone}"
+            logger.warning(result['message'])
+            return result
         telegram_phone = normalized_phone
 
         contact_input = InputPhoneContact(
@@ -696,16 +702,25 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
                 needs_save = True
             if needs_save:
                 contact_obj.save()
-                logger.info(f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+                logger.info(
+                    f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
             else:
                 logger.info(f"Contact {normalized_phone} already has up-to-date Telegram data")
+            result['success'] = True
+            result['telegram_id'] = telegram_id
+            result['telegram_username'] = telegram_username
         else:
-            logger.warning(f"No Contact found with phone {normalized_phone}")
+            result['message'] = f"No Contact found with phone {normalized_phone}"
+            logger.warning(result['message'])
 
     except ValueError as e:
-        logger.warning(f"Could not retrieve entity for {telegram_phone}: {str(e)}")
+        result['message'] = f"Could not retrieve entity for {telegram_phone}: {str(e)}"
+        logger.warning(result['message'])
     except Exception as e:
-        logger.error(f"Error importing contact {telegram_phone}: {str(e)}")
+        result['message'] = f"Error importing contact {telegram_phone}: {str(e)}"
+        logger.error(result['message'])
     finally:
         client.loop.run_until_complete(client.disconnect())
         logger.info("Telegram client disconnected")
+
+    return result
