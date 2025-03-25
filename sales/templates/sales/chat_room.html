@@ -285,7 +285,7 @@
     const tpl = document.getElementById('callMessageTpl').innerHTML;
     let html = tpl
       .replace('__IS_INCOMING__', payload.sender_type === 'contact' ? '(Вхідний)' : '(Вихідний)')
-      .replace('__CLIENT_PHONE__', payload.client_phone || '')
+      .replace('__CLIENT_PHONE__', payload.phone || '')
       .replace('__DIAL_AT__', payload.dial_at || '')
       .replace('__BRIDGE_AT__', payload.bridge_at || '')
       .replace('__HANGUP_AT__', payload.hangup_at || '')
