@@ -633,7 +633,7 @@ def process_phonet_call(call_data):
 from celery import shared_task
 from telethon.sync import TelegramClient
 from telethon.tl.types import InputPhoneContact
-from telegram.models import User, Contact
+from .models import User, Contact
 import logging
 import time
 
