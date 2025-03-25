@@ -631,15 +631,13 @@ def process_phonet_call(call_data):
 
 
 from celery import shared_task
-from telethon.sync import TelegramClient
+from telethon.sync import TelegramClient  # Використовуємо синхронний клієнт
 from telethon.tl.types import InputPhoneContact
 from .models import User, Contact
 import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 
-# sales/tasks.py
 @shared_task
 def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
     result = {'success': False, 'message': None, 'telegram_id': None, 'telegram_username': None}
@@ -669,14 +667,10 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.error(result['message'])
         return result
 
-    # Використовуємо один event loop для всіх асинхронних викликів
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
     client = TelegramClient(session_file, api_id, api_hash)
     try:
-        # Асинхронний запуск клієнта
-        loop.run_until_complete(client.start(phone=user_phone))
+        # Синхронний запуск клієнта
+        client.start(phone=user_phone)
         logger.info(f"Telegram client started for {user_phone}")
 
         telegram_phone = contact_phone  # Номер уже нормалізований
@@ -693,10 +687,10 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         )
 
         logger.info(f"Importing contact: {telegram_phone}")
-        import_result = loop.run_until_complete(client(ImportContactsRequest([contact_input])))
+        import_result = client(ImportContactsRequest([contact_input]))
         logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-        entity = loop.run_until_complete(client.get_entity(telegram_phone))
+        entity = client.get_entity(telegram_phone)
         telegram_id = entity.id
         telegram_username = getattr(entity, 'username', None)
         logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
@@ -731,8 +725,7 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         result['message'] = f"Error importing contact {telegram_phone}: {str(e)}"
         logger.error(result['message'])
     finally:
-        loop.run_until_complete(client.disconnect())
+        client.disconnect()
         logger.info("Telegram client disconnected")
-        loop.close()
 
     return result
