@@ -296,6 +296,8 @@ def search_contacts(request):
     html = render_to_string('sales/contact_card.html', {'contacts': contacts})
     return HttpResponse(html)
 
+
+from .tasks import import_telegram_contact_task
 @login_required
 def create_contact(request):
     if request.method == "POST":
@@ -303,32 +305,32 @@ def create_contact(request):
         if form.is_valid():
             new_contact = form.save()
 
-            # 1. Залежно від наявності компанії та її slug:
-            if new_contact.company and new_contact.company.slug:
-                company_part = new_contact.company.slug
-            else:
-                company_part = 'null'  # якщо компанії немає або її slug відсутній
-
-            # 2. Формуємо URL:
+            # 1. Генеруємо URL для ContactLink
+            company_part = new_contact.company.slug if new_contact.company and new_contact.company.slug else 'null'
             link_url = f"https://www.just-look.com.ua/?utm_company={company_part}_{new_contact.id}"
-
-            # 3. Створюємо запис Link, прив’язаний до контакту
             ContactLink.objects.create(contact=new_contact, url=link_url)
 
-            # 4. Створюємо чат (Room) із контактом
-            room = Room.objects.create(
-                user=request.user,  # Поточний авторизований користувач
-                contact=new_contact,  # Новий контакт
-            )
+            # 2. Створюємо чат (Room)
+            room = Room.objects.create(user=request.user, contact=new_contact)
 
+            # 3. Запускаємо задачу імпорту Telegram
+            task = import_telegram_contact_task.delay(
+                request.user.id,
+                new_contact.phone or '',
+                new_contact.first_name,
+                new_contact.last_name or ''
+            )
+            # Зберігаємо task_id у кеші
+            cache.set(f"telegram_import_task_{room.id}", task.id, timeout=3600)
+
+            # 4. Записуємо активність менеджера
             ManagerActivity.objects.create(
                 manager=request.user,
                 activity_type='create_contact',
-                contact=new_contact,  # Додаємо контакт
-
+                contact=new_contact,
             )
 
-            # Оновлюємо відповідь JSON із даними чату
+            # 5. Повертаємо JsonResponse з URL для перенаправлення
             return JsonResponse({
                 'success': True,
                 'id': new_contact.id,
@@ -340,8 +342,9 @@ def create_contact(request):
                 'email': new_contact.email or '',
                 'telegram_username': new_contact.telegram_username or '',
                 'telegram_id': new_contact.telegram_id or '',
-                'room_id': room.id,  # ID створеного чату
-                'room_url': f"/sales/{room.id}/"  # URL для переходу в чат (залежить від твоєї маршрутизації)
+                'room_id': room.id,
+                'room_url': f"/sales/{room.id}/",
+                'redirect_url': reverse('telegram_import_log', kwargs={'room_id': room.id})
             })
         else:
             return JsonResponse({'success': False, 'error': form.errors.as_json()}, status=400)
