@@ -82,22 +82,23 @@ class Room(models.Model):
 
         if is_new:
             try:
+                from sales.tasks import import_telegram_contact_task  # Імпорт усередині методу
                 contact_phone = self.contact.phone
                 first_name = self.contact.first_name
                 last_name = self.contact.last_name or ""
                 if contact_phone:
-                    logger.info(f"Запускаємо задачу import_telegram_contact_task для Room #{self.pk}, контакт: {self.contact}")
+                    logger.info(
+                        f"Запускаємо задачу import_telegram_contact_task для Room #{self.pk}, контакт: {self.contact}")
                     task_result = import_telegram_contact_task.delay(
                         self.user.id,
                         contact_phone,
                         first_name,
                         last_name
                     )
-                    # Зберігаємо task_id у кеші, щоб пізніше перевірити результат
-                    cache.set(f"telegram_import_task_{self.pk}", task_result.id, timeout=300)  # 5 хвилин
+                    cache.set(f"telegram_import_task_{self.pk}", task_result.id, timeout=300)
                 else:
                     logger.warning(f"Контакт {self.contact} не має номера телефону, пропускаємо імпорт у Telegram")
-                    if 'request' in kwargs:  # Перевіряємо, чи є request у kwargs
+                    if 'request' in kwargs:
                         from django.http import HttpResponseRedirect
                         from django.urls import reverse
                         kwargs['request'].session['telegram_error'] = "Контакт не має номера телефону"
