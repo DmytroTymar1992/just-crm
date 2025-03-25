@@ -45,13 +45,19 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f"Waiting for Telegram import task (task_id={task_id})...")
-        task_result = AsyncResult(task_id)
+        task_result = AsyncResult(task_id, app=import_telegram_contact_task.app)  # Явно вказуємо Celery app
+
+        # Перевіряємо стан задачі
+        self.stdout.write(f"Task state: {task_result.state}")
+        if task_result.state == 'PENDING':
+            self.stdout.write(self.style.WARNING("Task is still pending, worker may not have picked it up yet"))
 
         # Очікуємо завершення задачі (максимум 60 секунд)
         timeout = 60
         start_time = time.time()
         while not task_result.ready() and (time.time() - start_time) < timeout:
             time.sleep(1)
+            self.stdout.write(f"Task state (checking): {task_result.state}")
 
         if task_result.ready():
             result = task_result.result
