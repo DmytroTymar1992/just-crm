@@ -1,0 +1,73 @@
+{% for contact in contacts %}
+  <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="{{ contact.id }}">
+    <div class="card h-100 shadow-sm border-0 modern-contact-card">
+      <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
+        <div class="avatar-circle me-3">
+          <i class="bi bi-person-fill text-primary"></i>
+        </div>
+        <div class="flex-grow-1">
+          <h6 class="mb-0 fw-semibold contact-name">
+            <a href="{% url 'contact_detail' contact.id %}" class="text-dark text-decoration-none">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</a>
+          </h6>
+          {% if contact.position %}
+            <small class="text-muted d-block">{{ contact.position }}</small>
+          {% endif %}
+        </div>
+        <button class="btn btn-link p-0 ms-2 text-muted edit-contact-btn" data-bs-toggle="modal" data-bs-target="#editContactModal" data-contact-id="{{ contact.id }}">
+          <i class="bi bi-pencil-fill" style="font-size: 1rem;"></i>
+        </button>
+      </div>
+      <div class="card-body p-3">
+        <div class="contact-details">
+          {% if contact.company %}
+            <p class="mb-2 text-muted small">
+              <i class="bi bi-building me-2"></i>
+              <a href="#" class="text-muted text-decoration-none">{{ contact.company.name }}</a>
+            </p>
+          {% endif %}
+          {% if contact.phone %}
+            <p class="mb-2 text-muted small">
+              <i class="bi bi-telephone-fill me-2"></i>
+              <a href="tel:{{ contact.phone }}" class="text-muted text-decoration-none">{{ contact.phone }}</a>
+            </p>
+          {% endif %}
+          {% if contact.email %}
+            <p class="mb-2 text-muted small">
+              <i class="bi bi-envelope-fill me-2"></i>
+              <a href="mailto:{{ contact.email }}" class="text-muted text-decoration-none">{{ contact.email }}</a>
+            </p>
+          {% endif %}
+          {% if contact.telegram_username or contact.telegram_id %}
+            <p class="mb-2 text-muted small">
+              <i class="bi bi-telegram me-2"></i>
+              {% if contact.telegram_username %}
+                <a href="https://t.me/{{ contact.telegram_username }}" class="text-muted text-decoration-none" target="_blank">@{{ contact.telegram_username }}</a>
+              {% else %}
+                ID: {{ contact.telegram_id }}
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center p-2">
+        <small class="text-muted">
+          <i class="bi bi-clock me-1"></i> {{ contact.created_at }}
+        </small>
+        {% if contact.has_chat %}
+          <a href="{% url 'chat_room' room_id=contact.room_id %}" class="chat-btn" title="Перейти в чат">
+            <i class="bi bi-chat-dots-fill text-primary"></i>
+          </a>
+        {% else %}
+          <a href="{% url 'create_chat_room' contact_id=contact.id %}" class="chat-btn" title="Створити чат">
+            <i class="bi bi-plus-circle-fill text-success"></i>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <div class="col-12 text-center py-5">
+    <i class="bi bi-person-lines-fill text-muted" style="font-size: 3rem;"></i>
+    <p class="text-muted mt-3">Немає жодного контакту</p>
+  </div>
+{% endfor %}

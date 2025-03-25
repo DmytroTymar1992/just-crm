@@ -346,6 +346,8 @@
 {% endblock %}
 
 {% block extra_js %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("contacts-container");
@@ -366,12 +368,11 @@
       shouldSort: false,
     });
 
-    // Якщо є контейнер, прокрутимо вниз
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
 
-    // -------- Пошук контактів через AJAX --------
+    // Пошук контактів через AJAX
     if (searchInput) {
       let debounceTimer;
       searchInput.addEventListener("input", function(e) {
@@ -391,14 +392,13 @@
           "X-Requested-With": "XMLHttpRequest"
         }
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          updateContactsList(data.contacts);
-          updatePagination(data.pagination);
-        } else {
-          contactsList.innerHTML = '<div class="col-12 text-center py-5"><p class="text-muted">Помилка при пошуку</p></div>';
-        }
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        return response.text(); // Отримуємо HTML замість JSON
+      })
+      .then(html => {
+        contactsList.innerHTML = html; // Вставляємо отриманий HTML
+        bindEditButtons(); // Прив'язуємо кнопки редагування
       })
       .catch(error => {
         console.error("Помилка:", error);
@@ -406,134 +406,7 @@
       });
     }
 
-    // -------- Оновлення списку контактів --------
-    function updateContactsList(contacts) {
-      contactsList.innerHTML = "";
-      if (contacts.length === 0) {
-        contactsList.innerHTML = '<div class="col-12 text-center py-5"><i class="bi bi-person-lines-fill text-muted" style="font-size: 3rem;"></i><p class="text-muted mt-3">Контактів не знайдено</p></div>';
-        return;
-      }
-
-      contacts.forEach(contact => {
-        const cardHtml = `
-          <div class="col-12 col-md-6 col-lg-4 contact-card" data-contact-id="${contact.id}" data-name="${contact.first_name} ${contact.last_name || ''}" data-phone="${contact.phone || ''}" data-company="${contact.company_name || ''}">
-            <div class="card h-100 shadow-sm border-0 modern-contact-card">
-              <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
-                <div class="avatar-circle me-3">
-                  <i class="bi bi-person-fill text-primary"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <h6 class="mb-0 fw-semibold contact-name">
-                    <a href="#" class="text-dark text-decoration-none">${contact.first_name} ${contact.last_name || ''}</a>
-                  </h6>
-                  ${contact.position ? `<small class="text-muted d-block">${contact.position}</small>` : ''}
-                </div>
-                <button class="btn btn-link p-0 ms-2 text-muted edit-contact-btn" data-bs-toggle="modal" data-bs-target="#editContactModal" data-contact-id="${contact.id}">
-                  <i class="bi bi-pencil-fill" style="font-size: 1rem;"></i>
-                </button>
-              </div>
-              <div class="card-body p-3">
-                <div class="contact-details">
-                  ${contact.company_name ? `<p class="mb-2 text-muted small"><i class="bi bi-building me-2"></i><a href="#" class="text-muted text-decoration-none">${contact.company_name}</a></p>` : ''}
-                  ${contact.phone ? `<p class="mb-2 text-muted small"><i class="bi bi-telephone-fill me-2"></i><a href="tel:${contact.phone}" class="text-muted text-decoration-none">${contact.phone}</a></p>` : ''}
-                  ${contact.email ? `<p class="mb-2 text-muted small"><i class="bi bi-envelope-fill me-2"></i><a href="mailto:${contact.email}" class="text-muted text-decoration-none">${contact.email}</a></p>` : ''}
-                  ${contact.telegram_username || contact.telegram_id ? `
-                    <p class="mb-2 text-muted small">
-                      <i class="bi bi-telegram me-2"></i>
-                      ${contact.telegram_username ? `<a href="https://t.me/${contact.telegram_username}" class="text-muted text-decoration-none" target="_blank">@${contact.telegram_username}</a>` : `ID: ${contact.telegram_id}`}
-                    </p>` : ''}
-                </div>
-              </div>
-              <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center p-2">
-                <small class="text-muted">
-                  <i class="bi bi-clock me-1"></i> ${contact.created_at}
-                </small>
-                ${contact.has_chat ? `
-                  <a href="/sales/${contact.room_id}/" class="chat-btn" title="Перейти в чат">
-                    <i class="bi bi-chat-dots-fill text-primary"></i>
-                  </a>` : `
-                  <a href="/sales/contacts/create_chat/${contact.id}/" class="chat-btn" title="Створити чат">
-                    <i class="bi bi-plus-circle-fill text-success"></i>
-                  </a>`}
-              </div>
-            </div>
-          </div>
-        `;
-        contactsList.insertAdjacentHTML('beforeend', cardHtml);
-      });
-
-      bindEditButtons();
-    }
-
-    // -------- Оновлення пагінації --------
-    function updatePagination(pagination) {
-      const paginationContainer = document.querySelector("#pagination-container .pagination");
-      if (!paginationContainer) {
-        console.error("Елемент '#pagination-container .pagination' не знайдено в DOM");
-        return;
-      }
-
-      if (!pagination || !pagination.has_other_pages) {
-        paginationContainer.style.display = "none";
-        return;
-      }
-      paginationContainer.style.display = "block";
-
-      let paginationHtml = "";
-      if (pagination.has_previous) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.previous_page_number}">«</a></li>`;
-      } else {
-        paginationHtml += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
-      }
-
-      pagination.page_range.forEach(page => {
-        paginationHtml += `
-          <li class="page-item ${pagination.current_page === page ? 'active' : ''}">
-            <a class="page-link" href="#" data-page="${page}">${page}</a>
-          </li>`;
-      });
-
-      if (pagination.has_next) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.next_page_number}">»</a></li>`;
-      } else {
-        paginationHtml += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
-      }
-
-      paginationContainer.innerHTML = paginationHtml;
-      bindPaginationLinks();
-    }
-
-    // -------- Прив'язка обробників для пагінації --------
-    function bindPaginationLinks() {
-      document.querySelectorAll(".pagination .page-link").forEach(link => {
-        link.addEventListener("click", function(e) {
-          e.preventDefault();
-          const page = this.dataset.page;
-          if (page) {
-            searchContactsWithPage(searchInput.value, page);
-          }
-        });
-      });
-    }
-
-    function searchContactsWithPage(query, page) {
-      fetch(`/sales/contacts/search/?q=${encodeURIComponent(query)}&page=${page}`, {
-        method: "GET",
-        headers: {
-          "X-Requested-With": "XMLHttpRequest"
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          updateContactsList(data.contacts);
-          updatePagination(data.pagination);
-        }
-      })
-      .catch(error => console.error("Помилка:", error));
-    }
-
-    // -------- Кнопка "Додати контакт" --------
+    // Кнопка "Додати контакт"
     if (addContactBtn) {
       addContactBtn.addEventListener("click", function(e) {
         e.preventDefault();
@@ -559,7 +432,7 @@
       });
     }
 
-    // -------- Прив'язка кнопок редагування --------
+    // Прив'язка кнопок редагування
     function bindEditButtons() {
       document.querySelectorAll(".edit-contact-btn").forEach(button => {
         button.addEventListener("click", function() {
@@ -617,7 +490,7 @@
       });
     }
 
-    // -------- Обробка відправки форми --------
+    // Обробка відправки форми
     editForm.addEventListener("submit", function(e) {
       e.preventDefault();
       const contactId = this.dataset.contactId;
@@ -637,11 +510,7 @@
       })
       .then(data => {
         if (data.success) {
-          if (contactId === "0") {
-            updateContactsList([data]);
-          } else {
-            updateContactsList([data]);
-          }
+          searchContacts(searchInput.value); // Оновлюємо список після редагування
           bootstrap.Modal.getInstance(editModal).hide();
         } else {
           showFormErrors(data.error);
@@ -673,8 +542,8 @@
       formErrors.innerHTML = errorMessages;
     }
 
-    // Ініціально прив’язуємо кнопки редагування
     bindEditButtons();
   });
 </script>
+{% endblock %}
 {% endblock %}

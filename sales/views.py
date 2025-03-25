@@ -23,6 +23,7 @@ from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from sales_analytics.models import ManagerActivity
 from django.contrib import messages
+from django.http import HttpResponse
 
 
 logger = logging.getLogger(__name__)
@@ -275,55 +276,25 @@ def get_company_vacancies(request, room_id):
 
     return JsonResponse({'success': True, 'vacancies': vacancies_data})
 
-def contact_search(request):
-    query = request.GET.get('q', '')
-    page = request.GET.get('page', 1)
+def search_contacts(request):
+    query = request.GET.get("q", "").strip()
+    if query:
+        contacts = Contact.objects.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(position__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(email__icontains=query) |
+            Q(telegram_username__icontains=query) |
+            Q(telegram_id__icontains=query) |
+            Q(company__name__icontains=query)
+        ).distinct()
+    else:
+        contacts = Contact.objects.all()
 
-    # Фільтруємо контакти
-    contacts = Contact.objects.filter(
-        Q(first_name__icontains=query) |
-        Q(last_name__icontains=query) |
-        Q(phone__icontains=query) |
-        Q(company__name__icontains=query)
-    ).select_related('company').prefetch_related('rooms').order_by('id')
-
-    # Пагінація
-    paginator = Paginator(contacts, 10)  # 10 контактів на сторінку
-    page_obj = paginator.get_page(page)
-
-    # Формуємо дані для JSON
-    contacts_data = [
-        {
-            'id': contact.id,
-            'first_name': contact.first_name,
-            'last_name': contact.last_name or '',
-            'position': contact.position or '',
-            'phone': contact.phone or '',
-            'email': contact.email or '',
-            'telegram_username': contact.telegram_username or '',
-            'telegram_id': contact.telegram_id or '',
-            'company_name': contact.company.name if contact.company else '',
-            'created_at': contact.created_at.strftime('%d.%m.%Y %H:%M'),
-            'rooms': [{'id': room.id} for room in contact.rooms.all()]  # Додаємо пов’язані rooms
-        }
-        for contact in page_obj
-    ]
-
-    pagination_data = {
-        'has_previous': page_obj.has_previous(),
-        'has_next': page_obj.has_next(),
-        'previous_page_number': page_obj.previous_page_number() if page_obj.has_previous() else None,
-        'next_page_number': page_obj.next_page_number() if page_obj.has_next() else None,
-        'current_page': page_obj.number,
-        'page_range': list(paginator.page_range),
-        'has_other_pages': page_obj.has_other_pages()
-    }
-
-    return JsonResponse({
-        'success': True,
-        'contacts': contacts_data,
-        'pagination': pagination_data
-    })
+    # Рендеримо карточки через шаблон
+    html = render_to_string('sales/contact_card.html', {'contacts': contacts})
+    return HttpResponse(html)
 
 @login_required
 def create_contact(request):
