@@ -100,7 +100,6 @@ class Room(models.Model):
                 else:
                     logger.warning(f"Контакт {self.contact} не має номера телефону")
                     cache.set(f"telegram_import_task_{self.pk}_error", "Контакт не має номера телефону", timeout=300)
-
             except Exception as e:
                 logger.error(f"Помилка при запуску задачі для Room #{self.pk}: {str(e)}")
                 cache.set(f"telegram_import_task_{self.pk}_error", str(e), timeout=300)
