@@ -1,104 +1,128 @@
 <p>
   <strong>Ім'я:</strong> {{ contact.first_name }}
-  {% if contact.first_name != other_contact.first_name and other_contact.first_name %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_first_name" id="{{ prefix }}_first_name_{{ contact.id }}" value="{{ contact.first_name }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_first_name_{{ contact.id }}">{{ contact.first_name }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_first_name" id="{{ prefix }}_first_name_{{ other_contact.id }}" value="{{ other_contact.first_name }}">
-      <label class="form-check-label" for="{{ prefix }}_first_name_{{ other_contact.id }}">{{ other_contact.first_name }}</label>
-    </div>
+  {% if contact.first_name != other_contact.first_name %}
+    {% if contact.first_name and other_contact.first_name %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_first_name" id="{{ prefix }}_first_name_{{ contact.id }}" value="{{ contact.first_name }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_first_name_{{ contact.id }}">{{ contact.first_name }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_first_name" id="{{ prefix }}_first_name_{{ other_contact.id }}" value="{{ other_contact.first_name }}">
+        <label class="form-check-label" for="{{ prefix }}_first_name_{{ other_contact.id }}">{{ other_contact.first_name }}</label>
+      </div>
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Прізвище:</strong> {{ contact.last_name|default_if_none:"—" }}
-  {% if contact.last_name != other_contact.last_name and other_contact.last_name %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_last_name" id="{{ prefix }}_last_name_{{ contact.id }}" value="{{ contact.last_name }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_last_name_{{ contact.id }}">{{ contact.last_name }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_last_name" id="{{ prefix }}_last_name_{{ other_contact.id }}" value="{{ other_contact.last_name }}">
-      <label class="form-check-label" for="{{ prefix }}_last_name_{{ other_contact.id }}">{{ other_contact.last_name }}</label>
-    </div>
+  {% if contact.last_name != other_contact.last_name %}
+    {% if contact.last_name and other_contact.last_name %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_last_name" id="{{ prefix }}_last_name_{{ contact.id }}" value="{{ contact.last_name }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_last_name_{{ contact.id }}">{{ contact.last_name }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_last_name" id="{{ prefix }}_last_name_{{ other_contact.id }}" value="{{ other_contact.last_name }}">
+        <label class="form-check-label" for="{{ prefix }}_last_name_{{ other_contact.id }}">{{ other_contact.last_name }}</label>
+      </div>
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Посада:</strong> {{ contact.position|default_if_none:"—" }}
-  {% if contact.position != other_contact.position and other_contact.position %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_position" id="{{ prefix }}_position_{{ contact.id }}" value="{{ contact.position }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_position_{{ contact.id }}">{{ contact.position }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_position" id="{{ prefix }}_position_{{ other_contact.id }}" value="{{ other_contact.position }}">
-      <label class="form-check-label" for="{{ prefix }}_position_{{ other_contact.id }}">{{ other_contact.position }}</label>
-    </div>
+  {% if contact.position != other_contact.position %}
+    {% if contact.position and other_contact.position %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_position" id="{{ prefix }}_position_{{ contact.id }}" value="{{ contact.position }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_position_{{ contact.id }}">{{ contact.position }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_position" id="{{ prefix }}_position_{{ other_contact.id }}" value="{{ other_contact.position }}">
+        <label class="form-check-label" for="{{ prefix }}_position_{{ other_contact.id }}">{{ other_contact.position }}</label>
+      </div>
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Компанія:</strong> {{ contact.company.name|default_if_none:"—" }}
-  {% if contact.company != other_contact.company and other_contact.company %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_company" id="{{ prefix }}_company_{{ contact.id }}" value="{{ contact.company.id }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_company_{{ contact.id }}">{{ contact.company.name }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_company" id="{{ prefix }}_company_{{ other_contact.id }}" value="{{ other_contact.company.id }}">
-      <label class="form-check-label" for="{{ prefix }}_company_{{ other_contact.id }}">{{ other_contact.company.name }}</label>
-    </div>
+  {% if contact.company != other_contact.company %}
+    {% if contact.company and other_contact.company %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_company" id="{{ prefix }}_company_{{ contact.id }}" value="{{ contact.company.id }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_company_{{ contact.id }}">{{ contact.company.name }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_company" id="{{ prefix }}_company_{{ other_contact.id }}" value="{{ other_contact.company.id }}">
+        <label class="form-check-label" for="{{ prefix }}_company_{{ other_contact.id }}">{{ other_contact.company.name }}</label>
+      </div>
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Телефон:</strong> {{ contact.phone|default_if_none:"—" }}
-  {% if contact.phone != other_contact.phone and other_contact.phone %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_phone" id="{{ prefix }}_phone_{{ contact.id }}" value="{{ contact.phone }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_phone_{{ contact.id }}">{{ contact.phone }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_phone" id="{{ prefix }}_phone_{{ other_contact.id }}" value="{{ other_contact.phone }}">
-      <label class="form-check-label" for="{{ prefix }}_phone_{{ other_contact.id }}">{{ other_contact.phone }}</label>
-    </div>
+  {% if contact.phone != other_contact.phone %}
+    {% if contact.phone and other_contact.phone %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_phone" id="{{ prefix }}_phone_{{ contact.id }}" value="{{ contact.phone }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_phone_{{ contact.id }}">{{ contact.phone }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_phone" id="{{ prefix }}_phone_{{ other_contact.id }}" value="{{ other_contact.phone }}">
+        <label class="form-check-label" for="{{ prefix }}_phone_{{ other_contact.id }}">{{ other_contact.phone }}</label>
+      </div>
+    {% else %}
+      <input type="hidden" name="{{ prefix }}_phone" value="{{ contact.phone|default_if_none:other_contact.phone|default_if_none:'' }}">
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Email:</strong> {{ contact.email|default_if_none:"—" }}
-  {% if contact.email != other_contact.email and other_contact.email %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_email" id="{{ prefix }}_email_{{ contact.id }}" value="{{ contact.email }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_email_{{ contact.id }}">{{ contact.email }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_email" id="{{ prefix }}_email_{{ other_contact.id }}" value="{{ other_contact.email }}">
-      <label class="form-check-label" for="{{ prefix }}_email_{{ other_contact.id }}">{{ other_contact.email }}</label>
-    </div>
+  {% if contact.email != other_contact.email %}
+    {% if contact.email and other_contact.email %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_email" id="{{ prefix }}_email_{{ contact.id }}" value="{{ contact.email }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_email_{{ contact.id }}">{{ contact.email }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_email" id="{{ prefix }}_email_{{ other_contact.id }}" value="{{ other_contact.email }}">
+        <label class="form-check-label" for="{{ prefix }}_email_{{ other_contact.id }}">{{ other_contact.email }}</label>
+      </div>
+    {% else %}
+      <input type="hidden" name="{{ prefix }}_email" value="{{ contact.email|default_if_none:other_contact.email|default_if_none:'' }}">
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Telegram Username:</strong> {{ contact.telegram_username|default_if_none:"—" }}
-  {% if contact.telegram_username != other_contact.telegram_username and other_contact.telegram_username %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_username" id="{{ prefix }}_telegram_username_{{ contact.id }}" value="{{ contact.telegram_username }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_telegram_username_{{ contact.id }}">{{ contact.telegram_username }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_username" id="{{ prefix }}_telegram_username_{{ other_contact.id }}" value="{{ other_contact.telegram_username }}">
-      <label class="form-check-label" for="{{ prefix }}_telegram_username_{{ other_contact.id }}">{{ other_contact.telegram_username }}</label>
-    </div>
+  {% if contact.telegram_username != other_contact.telegram_username %}
+    {% if contact.telegram_username and other_contact.telegram_username %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_username" id="{{ prefix }}_telegram_username_{{ contact.id }}" value="{{ contact.telegram_username }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_telegram_username_{{ contact.id }}">{{ contact.telegram_username }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_username" id="{{ prefix }}_telegram_username_{{ other_contact.id }}" value="{{ other_contact.telegram_username }}">
+        <label class="form-check-label" for="{{ prefix }}_telegram_username_{{ other_contact.id }}">{{ other_contact.telegram_username }}</label>
+      </div>
+    {% else %}
+      <input type="hidden" name="{{ prefix }}_telegram_username" value="{{ contact.telegram_username|default_if_none:other_contact.telegram_username|default_if_none:'' }}">
+    {% endif %}
   {% endif %}
 </p>
 <p>
   <strong>Telegram ID:</strong> {{ contact.telegram_id|default_if_none:"—" }}
-  {% if contact.telegram_id != other_contact.telegram_id and other_contact.telegram_id %}
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_id" id="{{ prefix }}_telegram_id_{{ contact.id }}" value="{{ contact.telegram_id }}" checked>
-      <label class="form-check-label" for="{{ prefix }}_telegram_id_{{ contact.id }}">{{ contact.telegram_id }}</label>
-    </div>
-    <div class="form-check field-option">
-      <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_id" id="{{ prefix }}_telegram_id_{{ other_contact.id }}" value="{{ other_contact.telegram_id }}">
-      <label class="form-check-label" for="{{ prefix }}_telegram_id_{{ other_contact.id }}">{{ other_contact.telegram_id }}</label>
-    </div>
+  {% if contact.telegram_id != other_contact.telegram_id %}
+    {% if contact.telegram_id and other_contact.telegram_id %}
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_id" id="{{ prefix }}_telegram_id_{{ contact.id }}" value="{{ contact.telegram_id }}" checked>
+        <label class="form-check-label" for="{{ prefix }}_telegram_id_{{ contact.id }}">{{ contact.telegram_id }}</label>
+      </div>
+      <div class="form-check field-option">
+        <input class="form-check-input" type="radio" name="{{ prefix }}_telegram_id" id="{{ prefix }}_telegram_id_{{ other_contact.id }}" value="{{ other_contact.telegram_id }}">
+        <label class="form-check-label" for="{{ prefix }}_telegram_id_{{ other_contact.id }}">{{ other_contact.telegram_id }}</label>
+      </div>
+    {% else %}
+      <input type="hidden" name="{{ prefix }}_telegram_id" value="{{ contact.telegram_id|default_if_none:other_contact.telegram_id|default_if_none:'' }}">
+    {% endif %}
   {% endif %}
 </p>

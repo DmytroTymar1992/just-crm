@@ -632,58 +632,103 @@ def edit_task(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
+from django.db import models
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from main.models import Company
+
 def merge_contacts_confirm_view(request, contact1_id, contact2_id):
     contact1 = get_object_or_404(Contact, id=contact1_id)
     contact2 = get_object_or_404(Contact, id=contact2_id)
 
     if request.method == "POST":
+        print("POST data:", request.POST)
         keep_contact_id = request.POST.get("keep_contact")
         keep_self = str(contact1.id) == keep_contact_id
 
-        # Вибираємо основний і дубльований контакти
         primary = contact1 if keep_self else contact2
         secondary = contact2 if keep_self else contact1
 
-        # Оновлюємо поля основного контакту на основі вибору користувача
-        primary.first_name = request.POST.get(f"contact{'1' if keep_self else '2'}_first_name", primary.first_name)
-        primary.last_name = request.POST.get(f"contact{'1' if keep_self else '2'}_last_name", primary.last_name)
-        primary.position = request.POST.get(f"contact{'1' if keep_self else '2'}_position", primary.position)
+        # Зберігаємо нові значення для всіх полів
+        new_values = {
+            'first_name': request.POST.get(f"contact{'1' if keep_self else '2'}_first_name", primary.first_name),
+            'last_name': request.POST.get(f"contact{'1' if keep_self else '2'}_last_name", primary.last_name),
+            'position': request.POST.get(f"contact{'1' if keep_self else '2'}_position", primary.position),
+            'company': None,
+            'phone': request.POST.get(f"contact{'1' if keep_self else '2'}_phone", primary.phone or secondary.phone),
+            'email': request.POST.get(f"contact{'1' if keep_self else '2'}_email", primary.email or secondary.email),
+            'telegram_username': request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_username", primary.telegram_username or secondary.telegram_username),
+            'telegram_id': None,
+        }
+
+        # Обробка company
         company_id = request.POST.get(f"contact{'1' if keep_self else '2'}_company")
-        primary.company = Company.objects.get(id=company_id) if company_id else primary.company
-        primary.phone = request.POST.get(f"contact{'1' if keep_self else '2'}_phone", primary.phone)
-        primary.email = request.POST.get(f"contact{'1' if keep_self else '2'}_email", primary.email)
-        primary.telegram_username = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_username", primary.telegram_username)
+        try:
+            new_values['company'] = Company.objects.get(id=company_id) if company_id else primary.company
+        except Company.DoesNotExist:
+            print(f"Помилка: Компанії з ID {company_id} не існує")
+            new_values['company'] = None
+
+        # Обробка telegram_id
         telegram_id = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_id")
-        primary.telegram_id = int(telegram_id) if telegram_id and telegram_id.strip() else None
+        try:
+            new_values['telegram_id'] = int(telegram_id) if telegram_id and telegram_id.strip() else None
+        except ValueError:
+            print(f"Помилка: Некоректний Telegram ID: {telegram_id}")
+            new_values['telegram_id'] = None
+
+        # Визначаємо, які унікальні поля потрібно відкласти до видалення secondary
+        unique_fields_to_update_later = {}
+        for field in ['telegram_id', 'email', 'phone', 'telegram_username']:
+            new_value = new_values[field]
+            current_primary_value = getattr(primary, field)
+            current_secondary_value = getattr(secondary, field)
+            # Якщо нове значення є і відрізняється від primary, але збігається з secondary (для унікальних полів)
+            if field == 'telegram_id' and new_value and new_value == current_secondary_value and new_value != current_primary_value:
+                unique_fields_to_update_later[field] = new_value
+                print(f"{field} ({new_value}) належить secondary, оновимо після видалення")
+            # Для всіх інших полів (включаючи telegram_username), оновлюємо, якщо нове значення є
+            elif new_value and new_value != current_primary_value:
+                setattr(primary, field, new_value)
+                print(f"Оновлюємо {field} одразу до {new_value}")
+
+        # Оновлюємо неунікальні поля
+        primary.first_name = new_values['first_name']
+        primary.last_name = new_values['last_name']
+        primary.position = new_values['position']
+        primary.company = new_values['company']
 
         try:
-            # Зберігаємо оновлені поля перед об'єднанням
+            print(f"Зберігаємо primary контакт (тимчасово): {primary}")
             primary.save()
 
-            # Знаходимо всі чати, пов'язані з обома контактами
+            # Обробка чатів
             all_rooms = Room.objects.filter(contact__in=[primary, secondary])
-
-            # Якщо є чати, обробляємо їх
+            print(f"Знайдено чатів: {all_rooms.count()}")
             if all_rooms.exists():
-                # Вибираємо основний чат (наприклад, найстаріший за created_at)
                 primary_room = all_rooms.order_by('created_at').first()
                 duplicate_rooms = all_rooms.exclude(id=primary_room.id)
-
-                # Оновлюємо contact у всіх чатах на primary (хоча merge_with це зробить пізніше)
                 all_rooms.update(contact=primary)
-
-                # Переносимо повідомлення з дубльованих чатів на основний і видаляємо дублі
                 for dup_room in duplicate_rooms:
                     interactions_updated = Interaction.objects.filter(room=dup_room).update(room=primary_room)
                     print(f"Перенесено {interactions_updated} повідомлень з чату ID {dup_room.id} на чат ID {primary_room.id}")
-                    dup_room.delete()  # Видаляємо дубльований чат
+                    dup_room.delete()
                     print(f"Видалено дубльований чат ID {dup_room.id}")
 
-            # Виконуємо об'єднання контактів
+            print(f"Починаємо об'єднання: primary={primary}, secondary={secondary}")
             primary.merge_with(secondary)
+
+            # Оновлюємо унікальні поля після видалення secondary
+            for field, value in unique_fields_to_update_later.items():
+                setattr(primary, field, value)
+                print(f"Оновлюємо {field} primary до {value}")
+            if unique_fields_to_update_later:
+                primary.save()
+
             messages.success(request, f"Контакти успішно об'єднані в {primary}.")
             return redirect("contact_detail", contact_id=primary.id)
         except Exception as e:
+            print(f"Помилка при об'єднанні контактів {contact1_id} і {contact2_id}: {str(e)}")
             messages.error(request, f"Помилка при об'єднанні: {str(e)}")
             return redirect("merge_contacts_confirm", contact1_id=contact1_id, contact2_id=contact2_id)
 

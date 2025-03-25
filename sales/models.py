@@ -46,17 +46,22 @@ class Contact(models.Model):
         primary = self
         secondary = other_contact
 
-        # Оновлюємо зв’язки у всіх моделях
-        from django.apps import apps
-        for model in apps.get_models():
-            for field in model._meta.get_fields():
-                if isinstance(field, models.ForeignKey) and field.related_model == Contact:
-                    filter_kwargs = {field.name: secondary}
-                    update_kwargs = {field.name: primary}
-                    model.objects.filter(**filter_kwargs).update(**update_kwargs)
-
-        # Видаляємо дубльований контакт
-        secondary.delete()
+        print(f"merge_with: Починаємо об'єднання primary={primary}, secondary={secondary}")
+        try:
+            from django.apps import apps
+            for model in apps.get_models():
+                for field in model._meta.get_fields():
+                    if isinstance(field, models.ForeignKey) and field.related_model == Contact:
+                        filter_kwargs = {field.name: secondary}
+                        update_kwargs = {field.name: primary}
+                        print(f"Оновлюємо {model.__name__}.{field.name}: {filter_kwargs} -> {update_kwargs}")
+                        updated_count = model.objects.filter(**filter_kwargs).update(**update_kwargs)
+                        print(f"Оновлено {updated_count} записів у {model.__name__}")
+            print(f"Видаляємо secondary контакт: {secondary}")
+            secondary.delete()
+        except Exception as e:
+            print(f"Помилка в merge_with: {str(e)}")
+            raise
 
 
 
