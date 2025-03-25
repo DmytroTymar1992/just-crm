@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from sales.models import Room, Contact
 from celery.result import AsyncResult
 from django.core.cache import cache
+from sales.tasks import import_telegram_contact_task  # Явний імпорт
 import logging
 import time
 
@@ -54,7 +55,7 @@ class Command(BaseCommand):
 
         if task_result.ready():
             result = task_result.result
-            self.stdout.write(f"Raw task result: {result} (type: {type(result)})")  # Додаємо дебаг
+            self.stdout.write(f"Raw task result: {result} (type: {type(result)})")
             if result and isinstance(result, dict):
                 if result.get('success'):
                     self.stdout.write(self.style.SUCCESS(
