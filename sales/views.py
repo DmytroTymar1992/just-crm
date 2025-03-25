@@ -794,20 +794,10 @@ class PhonetCallEventView(APIView):
         else:
             user = User.objects.get(id=1)
 
-        # Конвертація часу
-        def ts_to_dt(ts):
-            if not ts:
-                return None
-            try:
-                return datetime.datetime.utcfromtimestamp(ts / 1000.0).replace(tzinfo=datetime.timezone.utc)
-            except (TypeError, ValueError):
-                return None
+        # Встановлюємо поточний час для всіх подій
+        current_time = datetime.datetime.now(datetime.timezone.utc)
 
-        dial_dt = ts_to_dt(call_data.get("dialAt"))
-        bridge_dt = ts_to_dt(call_data.get("bridgeAt"))
-        hangup_dt = ts_to_dt(call_data.get("hangupAt")) or ts_to_dt(call_data.get("serverTime"))
-
-        # Отримуємо або створюємо контакт
+        # Отримуємо номер телефону клієнта
         client_phone = call_data.get("otherLegs", [{}])[0].get("num") or call_data.get("trunkNum")
         if not client_phone:
             return Response({"error": "No client phone"}, status=status.HTTP_400_BAD_REQUEST)
@@ -822,17 +812,16 @@ class PhonetCallEventView(APIView):
             )
             room, _ = Room.objects.get_or_create(user=user, contact=contact)
 
-            # Перевіряємо, чи є дзвінок у базі
             try:
                 call_msg = CallMessage.objects.get(phonet_uuid=uuid)
-                # Оновлюємо існуючий запис
+                # Оновлюємо тільки потрібне поле залежно від події
                 if event == "call.bridge":
-                    call_msg.bridge_at = bridge_dt or call_msg.bridge_at
+                    call_msg.bridge_at = current_time
                 elif event == "call.hangup":
-                    call_msg.hangup_at = hangup_dt or call_msg.hangup_at
+                    call_msg.hangup_at = current_time
                 call_msg.save()
             except CallMessage.DoesNotExist:
-                # Створюємо новий запис
+                # Створюємо новий запис із початковим часом для dial_at
                 interaction = Interaction.objects.create(
                     interaction_type="call",
                     room=room,
@@ -848,19 +837,19 @@ class PhonetCallEventView(APIView):
                     leg_ext=ext,
                     leg_name=leg.get("displayName"),
                     client_phone=client_phone,
-                    dial_at=dial_dt,
-                    bridge_at=bridge_dt if event == "call.bridge" else None,
-                    hangup_at=hangup_dt if event == "call.hangup" else None,
+                    dial_at=current_time if event == "call.dial" else None,
+                    bridge_at=current_time if event == "call.bridge" else None,
+                    hangup_at=current_time if event == "call.hangup" else None,
                 )
 
-            # Формуємо payload
+            # Формуємо payload із актуальними значеннями з call_msg
             payload = {
                 "msg_type": "call",
                 "direction": "incoming" if direction_code == 4 else "outgoing",
                 "event": event,
                 "phone": client_phone,
                 "uuid": uuid,
-                "created_at": interaction.created_at.strftime("%H:%M") if interaction.created_at else "",
+                "created_at": interaction.created_at.strftime("%H:%M") if interaction.created_at else current_time.strftime("%H:%M"),
                 "dial_at": call_msg.dial_at.strftime("%H:%M:%S") if call_msg.dial_at else "",
                 "bridge_at": call_msg.bridge_at.strftime("%H:%M:%S") if call_msg.bridge_at else "",
                 "hangup_at": call_msg.hangup_at.strftime("%H:%M:%S") if call_msg.hangup_at else "",
