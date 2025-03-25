@@ -753,23 +753,24 @@ from celery.result import AsyncResult
 from django.contrib import messages
 
 def telegram_import_log(request, room_id):
+    from sales.models import Room
     task_id = cache.get(f"telegram_import_task_{room_id}")
-    error_message = request.session.pop('telegram_error', None)
+    error_message = cache.get(f"telegram_import_task_{room_id}_error")
+    room = Room.objects.get(pk=room_id)
 
     if task_id:
         task_result = AsyncResult(task_id)
         if task_result.ready():
             result = task_result.result
             if result['success']:
-                messages.success(request,
-                                 f"Успішно отримано: Telegram ID = {result['telegram_id']}, Username = {result['telegram_username']}")
+                messages.success(request, f"Успішно отримано: Telegram ID = {result['telegram_id']}, Username = {result['telegram_username']}")
             else:
-                messages.error(request, result['message'])
+                messages.error(request, f"Помилка: {result['message']}")
         else:
-            messages.info(request, "Задача ще виконується, зачекайте...")
+            messages.info(request, "Задача ще виконується, зачекайте кілька секунд і оновіть сторінку...")
     elif error_message:
-        messages.error(request, error_message)
+        messages.error(request, f"Помилка: {error_message}")
     else:
         messages.error(request, "Немає даних про задачу імпорту")
 
-    return render(request, 'sales/telegram_import_log.html', {'room_id': room_id})
+    return render(request, 'sales/telegram_import_log.html', {'room_id': room_id, 'room': room})
