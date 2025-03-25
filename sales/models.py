@@ -26,6 +26,7 @@ class Contact(models.Model):
     telegram_username = models.CharField(max_length=100, null=True, blank=True, verbose_name="Telegram Username")
     phone = models.CharField(max_length=32, null=True, blank=True, verbose_name="Телефон")
     email = models.EmailField("Email", max_length=254, null=True, blank=True)
+    avatar = models.ImageField("Аватар", upload_to="avatars/", null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.phone:
