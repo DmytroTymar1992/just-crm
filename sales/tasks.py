@@ -630,6 +630,15 @@ def process_phonet_call(call_data):
 
 
 
+from celery import shared_task
+from telethon.sync import TelegramClient
+from telethon.tl.types import InputPhoneContact
+from .models import User, Contact
+import logging
+import asyncio
+
+logger = logging.getLogger(__name__)
+
 # sales/tasks.py
 @shared_task
 def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
