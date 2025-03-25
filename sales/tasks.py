@@ -660,17 +660,21 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.error(result['message'])
         return result
 
+    # Використовуємо один event loop для всіх асинхронних викликів
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     client = TelegramClient(session_file, api_id, api_hash)
     try:
-        client.loop.run_until_complete(client.start(phone=user_phone))
+        # Асинхронний запуск клієнта
+        loop.run_until_complete(client.start(phone=user_phone))
         logger.info(f"Telegram client started for {user_phone}")
 
-        normalized_phone = normalize_phone_number(contact_phone)
-        if not normalized_phone:
+        telegram_phone = contact_phone  # Номер уже нормалізований
+        if not telegram_phone:
             result['message'] = f"Invalid phone number: {contact_phone}"
             logger.warning(result['message'])
             return result
-        telegram_phone = normalized_phone
 
         contact_input = InputPhoneContact(
             client_id=0,
@@ -680,18 +684,16 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         )
 
         logger.info(f"Importing contact: {telegram_phone}")
-        import_result = client.loop.run_until_complete(
-            client(ImportContactsRequest([contact_input]))
-        )
+        import_result = loop.run_until_complete(client(ImportContactsRequest([contact_input])))
         logger.info(f"Imported contact {telegram_phone}: {import_result}")
 
-        entity = client.loop.run_until_complete(client.get_entity(telegram_phone))
+        entity = loop.run_until_complete(client.get_entity(telegram_phone))
         telegram_id = entity.id
         telegram_username = getattr(entity, 'username', None)
         logger.info(f"Retrieved telegram_id={telegram_id}, username={telegram_username} for {telegram_phone}")
 
         # Оновлюємо контакт
-        contact_obj = Contact.objects.filter(phone=normalized_phone).first()
+        contact_obj = Contact.objects.filter(phone=telegram_phone).first()
         if contact_obj:
             needs_save = False
             if telegram_id and contact_obj.telegram_id != telegram_id:
@@ -703,14 +705,14 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
             if needs_save:
                 contact_obj.save()
                 logger.info(
-                    f"Updated Contact {normalized_phone} with telegram_id={telegram_id}, username={telegram_username}")
+                    f"Updated Contact {telegram_phone} with telegram_id={telegram_id}, username={telegram_username}")
             else:
-                logger.info(f"Contact {normalized_phone} already has up-to-date Telegram data")
+                logger.info(f"Contact {telegram_phone} already has up-to-date Telegram data")
             result['success'] = True
             result['telegram_id'] = telegram_id
             result['telegram_username'] = telegram_username
         else:
-            result['message'] = f"No Contact found with phone {normalized_phone}"
+            result['message'] = f"No Contact found with phone {telegram_phone}"
             logger.warning(result['message'])
 
     except ValueError as e:
@@ -720,7 +722,8 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         result['message'] = f"Error importing contact {telegram_phone}: {str(e)}"
         logger.error(result['message'])
     finally:
-        client.loop.run_until_complete(client.disconnect())
+        loop.run_until_complete(client.disconnect())
         logger.info("Telegram client disconnected")
+        loop.close()
 
     return result
