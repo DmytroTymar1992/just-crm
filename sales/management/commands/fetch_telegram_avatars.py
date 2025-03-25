@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 from django.core.files import File
 from sales.models import User, Contact
 from telethon.sync import TelegramClient
-from telethon.tl.functions.photos import GetUserPhotos
 import logging
 import os
 import tempfile
@@ -56,20 +55,18 @@ class Command(BaseCommand):
 
                 self.stdout.write(f"Processing contact: {contact} (ID: {identifier})")
                 try:
-                    # Отримуємо фото профілю
-                    photos = client(GetUserPhotos(user_id=identifier, offset=0, limit=1, max_id=0))
-                    if photos.photos:
-                        photo = photos.photos[0]  # Беремо перше фото (найновіше)
-                        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                            client.download_profile_photo(identifier, file=temp_file.name)
+                    # Завантажуємо аватар профілю
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+                        photo_path = client.download_profile_photo(identifier, file=temp_file.name)
+                        if photo_path:
                             with open(temp_file.name, 'rb') as f:
-                                file_name = f"avatar_{contact.id}_{photo.id}.jpg"
+                                file_name = f"avatar_{contact.id}.jpg"
                                 contact.avatar.save(file_name, File(f))
                                 contact.save()
                             os.unlink(temp_file.name)
-                        self.stdout.write(self.style.SUCCESS(f"Avatar saved for {contact}"))
-                    else:
-                        self.stdout.write(self.style.WARNING(f"No avatar found for {contact}"))
+                            self.stdout.write(self.style.SUCCESS(f"Avatar saved for {contact}"))
+                        else:
+                            self.stdout.write(self.style.WARNING(f"No avatar found for {contact}"))
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Error fetching avatar for {contact}: {str(e)}"))
 
