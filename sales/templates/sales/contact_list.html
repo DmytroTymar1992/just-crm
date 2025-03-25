@@ -510,14 +510,8 @@
       })
       .then(data => {
         if (data.success) {
-          if (contactId === "0" && data.redirect_url) {
-            // Якщо це створення нового контакту, перенаправляємо на redirect_url
-            window.location.href = data.redirect_url;
-          } else {
-            // Якщо це редагування, оновлюємо список і закриваємо модалку
-            searchContacts(searchInput.value);
-            bootstrap.Modal.getInstance(editModal).hide();
-          }
+          searchContacts(searchInput.value); // Оновлюємо список після редагування
+          bootstrap.Modal.getInstance(editModal).hide();
         } else {
           showFormErrors(data.error);
         }

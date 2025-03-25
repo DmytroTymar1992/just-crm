@@ -296,8 +296,6 @@ def search_contacts(request):
     html = render_to_string('sales/contact_card.html', {'contacts': contacts})
     return HttpResponse(html)
 
-
-from .tasks import import_telegram_contact_task
 @login_required
 def create_contact(request):
     if request.method == "POST":
@@ -305,32 +303,32 @@ def create_contact(request):
         if form.is_valid():
             new_contact = form.save()
 
-            # 1. Генеруємо URL для ContactLink
-            company_part = new_contact.company.slug if new_contact.company and new_contact.company.slug else 'null'
+            # 1. Залежно від наявності компанії та її slug:
+            if new_contact.company and new_contact.company.slug:
+                company_part = new_contact.company.slug
+            else:
+                company_part = 'null'  # якщо компанії немає або її slug відсутній
+
+            # 2. Формуємо URL:
             link_url = f"https://www.just-look.com.ua/?utm_company={company_part}_{new_contact.id}"
+
+            # 3. Створюємо запис Link, прив’язаний до контакту
             ContactLink.objects.create(contact=new_contact, url=link_url)
 
-            # 2. Створюємо чат (Room)
-            room = Room.objects.create(user=request.user, contact=new_contact)
-
-            # 3. Запускаємо задачу імпорту Telegram
-            task = import_telegram_contact_task.delay(
-                request.user.id,
-                new_contact.phone or '',
-                new_contact.first_name,
-                new_contact.last_name or ''
+            # 4. Створюємо чат (Room) із контактом
+            room = Room.objects.create(
+                user=request.user,  # Поточний авторизований користувач
+                contact=new_contact,  # Новий контакт
             )
-            # Зберігаємо task_id у кеші
-            cache.set(f"telegram_import_task_{room.id}", task.id, timeout=3600)
 
-            # 4. Записуємо активність менеджера
             ManagerActivity.objects.create(
                 manager=request.user,
                 activity_type='create_contact',
-                contact=new_contact,
+                contact=new_contact,  # Додаємо контакт
+
             )
 
-            # 5. Повертаємо JsonResponse з URL для перенаправлення
+            # Оновлюємо відповідь JSON із даними чату
             return JsonResponse({
                 'success': True,
                 'id': new_contact.id,
@@ -342,9 +340,8 @@ def create_contact(request):
                 'email': new_contact.email or '',
                 'telegram_username': new_contact.telegram_username or '',
                 'telegram_id': new_contact.telegram_id or '',
-                'room_id': room.id,
-                'room_url': f"/sales/{room.id}/",
-                'redirect_url': reverse('telegram_import_log', kwargs={'room_id': room.id})
+                'room_id': room.id,  # ID створеного чату
+                'room_url': f"/sales/{room.id}/"  # URL для переходу в чат (залежить від твоєї маршрутизації)
             })
         else:
             return JsonResponse({'success': False, 'error': form.errors.as_json()}, status=400)
@@ -750,30 +747,3 @@ def contact_detail_view(request, contact_id):
         "other_contacts": other_contacts,
     })
 
-from django.shortcuts import render
-from django.core.cache import cache
-from celery.result import AsyncResult
-from django.contrib import messages
-
-def telegram_import_log(request, room_id):
-    from sales.models import Room
-    task_id = cache.get(f"telegram_import_task_{room_id}")
-    error_message = cache.get(f"telegram_import_task_{room_id}_error")
-    room = Room.objects.get(pk=room_id)
-
-    if task_id:
-        task_result = AsyncResult(task_id)
-        if task_result.ready():
-            result = task_result.result
-            if result['success']:
-                messages.success(request, f"Успішно отримано: Telegram ID = {result['telegram_id']}, Username = {result['telegram_username']}")
-            else:
-                messages.error(request, f"Помилка: {result['message']}")
-        else:
-            messages.info(request, "Задача ще виконується, зачекайте кілька секунд і оновіть сторінку...")
-    elif error_message:
-        messages.error(request, f"Помилка: {error_message}")
-    else:
-        messages.error(request, "Немає даних про задачу імпорту")
-
-    return render(request, 'sales/telegram_import_log.html', {'room_id': room_id, 'room': room})

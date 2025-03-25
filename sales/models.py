@@ -101,21 +101,9 @@ class Room(models.Model):
                     logger.warning(f"Контакт {self.contact} не має номера телефону")
                     cache.set(f"telegram_import_task_{self.pk}_error", "Контакт не має номера телефону", timeout=300)
 
-                # Завжди перенаправляємо на сторінку логів, якщо є request
-                if 'request' in kwargs:
-                    from django.http import HttpResponseRedirect
-                    from django.urls import reverse
-                    logger.info(f"Перенаправляємо на сторінку логів для Room #{self.pk}")
-                    return HttpResponseRedirect(reverse('telegram_import_log', args=[self.pk]))
-
             except Exception as e:
                 logger.error(f"Помилка при запуску задачі для Room #{self.pk}: {str(e)}")
                 cache.set(f"telegram_import_task_{self.pk}_error", str(e), timeout=300)
-                if 'request' in kwargs:
-                    from django.http import HttpResponseRedirect
-                    from django.urls import reverse
-                    logger.info(f"Перенаправляємо на сторінку логів для Room #{self.pk} через помилку")
-                    return HttpResponseRedirect(reverse('telegram_import_log', args=[self.pk]))
 
 
 class Interaction(models.Model):

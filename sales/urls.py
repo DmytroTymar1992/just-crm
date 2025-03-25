@@ -29,7 +29,7 @@ urlpatterns = [
     path("contacts/<int:contact_id>/", contact_detail_view, name="contact_detail"),
     path("contacts/merge_confirm/<int:contact1_id>/<int:contact2_id>/", merge_contacts_confirm_view,
          name="merge_contacts_confirm"),
-    path('telegram-import-log/<int:room_id>/', telegram_import_log, name='telegram_import_log'),
+
 
 
 ]
