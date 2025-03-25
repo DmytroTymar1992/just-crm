@@ -772,6 +772,11 @@ class PhonetCallEventView(APIView):
 
         call_data = request.data
         event = call_data.get("event")
+        uuid = call_data.get("uuid")
+
+        if not uuid:
+            logger.error("Missing uuid in call_data")
+            return Response({"error": "Missing uuid"}, status=status.HTTP_400_BAD_REQUEST)
 
         if event not in ["call.dial", "call.bridge", "call.hangup"]:
             logger.error(f"Invalid event type: {event}")
@@ -779,17 +784,20 @@ class PhonetCallEventView(APIView):
 
         leg = call_data.get("leg", {})
         ext = leg.get("ext")
-        try:
-            user = User.objects.get(profile__phonet_ext=ext)
-            if not user.profile.phonet_enabled:
-                logger.warning(f"Phonet disabled for user {user.id}")
-                return Response({"error": "Phonet disabled for this user"}, status=status.HTTP_400_BAD_REQUEST)
-            call_data["receiver_user_id"] = user.id
-        except User.DoesNotExist:
-            logger.warning(f"No user found for ext={ext}, using default user")
+        if not ext:
+            logger.warning("Missing leg.ext in call_data")
             call_data["receiver_user_id"] = 1  # Default user
+        else:
+            try:
+                user = User.objects.get(profile__phonet_ext=ext)
+                if not user.profile.phonet_enabled:
+                    logger.warning(f"Phonet disabled for user {user.id}")
+                    return Response({"error": "Phonet disabled for this user"}, status=status.HTTP_400_BAD_REQUEST)
+                call_data["receiver_user_id"] = user.id
+            except User.DoesNotExist:
+                logger.warning(f"No user found for ext={ext}, using default user")
+                call_data["receiver_user_id"] = 1  # Default user
 
         process_phonet_call.delay(call_data)
-        logger.info(f"Received Phonet event: {event} for uuid={call_data.get('uuid')}")
-
+        logger.info(f"Received Phonet event: {event} for uuid={uuid}")
         return Response({"status": "success"}, status=status.HTTP_200_OK)
