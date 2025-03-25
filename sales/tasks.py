@@ -633,7 +633,7 @@ def process_phonet_call(call_data):
 from celery import shared_task
 from telethon.sync import TelegramClient
 from telethon.tl.types import InputPhoneContact
-from .models import User, Contact
+from telegram.models import User, Contact
 import logging
 import time
 
@@ -690,12 +690,13 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         # Додаємо контакт
         logger.info(f"Importing contact: {telegram_phone}")
         import_result = client(ImportContactsRequest([contact_input]))
+        logger.info(f"Import result: imported={import_result.imported}, users={import_result.users}")
         if import_result.imported:
             logger.info(f"Contact {telegram_phone} successfully added to Telegram contacts")
             result['imported'] = True
         else:
-            logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: {import_result}")
-            result['message'] = f"Failed to add {telegram_phone} to Telegram contacts"
+            logger.warning(f"Contact {telegram_phone} was not added to Telegram contacts: imported={import_result.imported}, users={import_result.users}")
+            result['message'] = f"Failed to add {telegram_phone} to Telegram contacts: imported={import_result.imported}, users={import_result.users}"
             return result
 
         # Перевіряємо, чи є користувач у результаті імпорту
