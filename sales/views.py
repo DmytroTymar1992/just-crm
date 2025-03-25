@@ -747,3 +747,49 @@ def contact_detail_view(request, contact_id):
         "other_contacts": other_contacts,
     })
 
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import logging
+from .tasks import process_phonet_call
+from django.contrib.auth import get_user_model
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+class PhonetCallEventView(APIView):
+    def post(self, request):
+        allowed_ips = [
+            "89.184.65.208", "89.184.82.130", "89.184.67.228",
+            "89.184.82.191", "89.184.65.137", "95.213.132.131"
+        ]
+        client_ip = request.META.get("REMOTE_ADDR")
+        if client_ip not in allowed_ips:
+            logger.warning(f"Unauthorized request from IP: {client_ip}")
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        call_data = request.data
+        event = call_data.get("event")
+
+        if event not in ["call.dial", "call.bridge", "call.hangup"]:
+            logger.error(f"Invalid event type: {event}")
+            return Response({"error": "Invalid event"}, status=status.HTTP_400_BAD_REQUEST)
+
+        leg = call_data.get("leg", {})
+        ext = leg.get("ext")
+        try:
+            user = User.objects.get(profile__phonet_ext=ext)
+            if not user.profile.phonet_enabled:
+                logger.warning(f"Phonet disabled for user {user.id}")
+                return Response({"error": "Phonet disabled for this user"}, status=status.HTTP_400_BAD_REQUEST)
+            call_data["receiver_user_id"] = user.id
+        except User.DoesNotExist:
+            logger.warning(f"No user found for ext={ext}, using default user")
+            call_data["receiver_user_id"] = 1  # Default user
+
+        process_phonet_call.delay(call_data)
+        logger.info(f"Received Phonet event: {event} for uuid={call_data.get('uuid')}")
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)

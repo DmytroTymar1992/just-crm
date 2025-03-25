@@ -412,62 +412,37 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
 
 @shared_task
 def process_phonet_call(call_data):
-    """
-    Обробляє події від Phonet (call.dial, call.bridge, call.hangup).
-    Очікує, що call_data містить:
-      - event: "call.dial", "call.bridge", "call.hangup"
-      - uuid: унікальний ідентифікатор виклику
-      - parentUuid: ...
-      - lgDirection: 2 (outgoing), 4 (incoming), 1 (internal), ...
-      - leg: {
-          "id": <int>,
-          "ext": <str>,
-          "type": <1,2,4>,
-          "displayName": <str>
-        }
-      - otherLegs: [{
-          "num": <phone>,
-          ...
-        }]
-      - trunkNum, trunkName (можливо)
-      - dialAt, bridgeAt, hangupAt, serverTime (мілісекунди UNIX)
-      - receiver_user_id: ID користувача, для якого цей виклик
-    """
-
     event_type = call_data.get("event")
     uuid = call_data.get("uuid")
     parent_uuid = call_data.get("parentUuid")
-    direction_code = call_data.get("lgDirection")  # 2=outgoing, 4=incoming, ...
+    direction_code = call_data.get("lgDirection")
     receiver_user_id = call_data.get("receiver_user_id")
+    leg = call_data.get("leg", {})
+    leg_ext = leg.get("ext")
 
-    # Логування
-    logger.info(f"Phonet event={event_type} uuid={uuid} direction={direction_code} user={receiver_user_id}")
+    logger.info(f"Processing Phonet event={event_type} uuid={uuid} direction={direction_code} receiver_user_id={receiver_user_id} leg_ext={leg_ext}")
 
-    # 1. Знаходимо користувача
+    # Перевірка користувача
     try:
         user = User.objects.get(id=receiver_user_id)
+        # Додаткова перевірка: чи збігається phonet_ext із leg.ext
+        if user.profile.phonet_ext != leg_ext:
+            logger.warning(f"User {user.id} phonet_ext={user.profile.phonet_ext} does not match leg.ext={leg_ext}")
     except User.DoesNotExist:
         logger.error(f"User with ID={receiver_user_id} does not exist. Skipping call.")
         return
 
-    # 2. Визначаємо номер клієнта
-    # Зазвичай у otherLegs[0].num або trunkNum
     other_legs = call_data.get("otherLegs", [])
     client_phone = None
     if other_legs and isinstance(other_legs, list):
-        # беремо перший otherLeg
         client_phone = other_legs[0].get("num")
-    # Якщо не знайшли, спробуємо trunkNum
     if not client_phone:
         client_phone = call_data.get("trunkNum")
 
-    # Якщо взагалі немає номера - логуємо
     if not client_phone:
         logger.warning(f"No client_phone found in otherLegs/trunkNum for uuid={uuid}, skipping.")
         return
 
-    # 3. Визначаємо sender (хто відправник у Interaction)
-    #    Якщо inbound (4) -> "contact", outbound (2) -> "user"
     if direction_code == 4:
         sender = "contact"
         activity_type = 'call_in'
@@ -475,12 +450,9 @@ def process_phonet_call(call_data):
         sender = "user"
         activity_type = 'call_out'
     else:
-        # Можна окремо обробити 1=internal, 32=paused, 64=unpaused, інші...
-        # Тут поставимо "contact" за замовчуванням
         sender = "contact"
         activity_type = 'call_in'
 
-    # 4. Перетворимо мс у datetime (UTC)
     def ts_to_dt(ts):
         if not ts:
             return None
@@ -493,23 +465,18 @@ def process_phonet_call(call_data):
 
     dial_dt = ts_to_dt(dial_ts)
     bridge_dt = ts_to_dt(bridge_ts)
-    hangup_dt = ts_to_dt(hangup_ts) or ts_to_dt(server_ts)  # якщо hangupAt=0, використовуємо serverTime
+    hangup_dt = ts_to_dt(hangup_ts) or ts_to_dt(server_ts)
 
-    leg = call_data.get("leg", {})
     leg_id = leg.get("id")
-    leg_ext = leg.get("ext")
     leg_name = leg.get("displayName")
 
-    # 5. У транзакції створюємо/оновлюємо Interaction + CallMessage
     with transaction.atomic():
-        # 5.1 Знайти / створити Contact за client_phone
         contact, created = Contact.objects.get_or_create(
             phone=client_phone,
             defaults={"first_name": client_phone}
         )
 
         if created:
-
             if contact.company and contact.company.slug:
                 company_part = contact.company.slug
             else:
@@ -517,21 +484,14 @@ def process_phonet_call(call_data):
             link_url = f"https://www.just-look.com.ua/?utm_company={company_part}_{contact.id}"
             ContactLink.objects.create(contact=contact, url=link_url)
 
-        # 5.2 Знайти / створити Room
-        room, _ = Room.objects.get_or_create(
-            user=user,
-            contact=contact
-        )
+        room, _ = Room.objects.get_or_create(user=user, contact=contact)
 
-        # 5.3 Спробувати знайти існуючий CallMessage за uuid (якщо вже був dial -> тепер bridge/hangup)
-        call_msg = None
         try:
             call_msg = CallMessage.objects.select_related('interaction').get(phonet_uuid=uuid)
         except CallMessage.DoesNotExist:
             call_msg = None
 
         if event_type == "call.dial" and not call_msg:
-            # Якщо це dial, і CallMessage ще не існує – створюємо Interaction + CallMessage
             interaction = Interaction.objects.create(
                 interaction_type="call",
                 room=room,
@@ -552,28 +512,19 @@ def process_phonet_call(call_data):
                 hangup_at=None,
             )
             logger.info(f"Created new Interaction+CallMessage for dial uuid={uuid}.")
-
         else:
-            # Якщо це bridge або hangup, або dial (але вже існує) – оновлюємо поля
             if call_msg:
                 interaction = call_msg.interaction
-                # Якщо приходить "call.dial", але CallMessage вже існує, можливо, це дубль
-                # або Phonet надіслав 2 рази "dial"? Можна логувати.
                 if event_type == "call.dial":
-                    logger.warning(f"call.dial received but call_msg with uuid={uuid} already exists. Possibly duplicated event.")
-
-                # Оновлюємо поля
+                    logger.warning(f"call.dial received but call_msg with uuid={uuid} already exists.")
                 if event_type == "call.bridge":
                     call_msg.bridge_at = bridge_dt or call_msg.bridge_at
                     logger.info(f"Updated call.bridge for uuid={uuid}. bridge_at={bridge_dt}")
                 elif event_type == "call.hangup":
                     call_msg.hangup_at = hangup_dt or call_msg.hangup_at
                     logger.info(f"Updated call.hangup for uuid={uuid}. hangup_at={hangup_dt}")
-                # Якщо хочете, можна щось робити з interaction.is_read, status, тощо
                 call_msg.save()
             else:
-                # Якщо call_msg не знайдено, але event=bridge/hangup – створюємо з нуля
-                # (наприклад, якщо dial подія була пропущена)
                 interaction = Interaction.objects.create(
                     interaction_type="call",
                     room=room,
@@ -594,20 +545,17 @@ def process_phonet_call(call_data):
                     hangup_at=hangup_dt if event_type == "call.hangup" else None,
                 )
 
-
-        # 6. Відправити повідомлення у WebSocket
         channel_layer = get_channel_layer()
         room_group_name = f"sales_room_{room.id}"
 
-        # Сформувати payload для фронту
         payload = {
             "msg_type": "call",
             "direction": "incoming" if direction_code == 4 else "outgoing",
-            "event": event_type,       # call.dial / call.bridge / call.hangup
+            "event": event_type,
             "phone": client_phone,
             "uuid": uuid,
             "created_at": interaction.created_at.strftime("%H:%M"),
-            "duration": call_msg.duration,  # 0, якщо ще не hangup
+            "duration": call_msg.duration,
         }
 
         async_to_sync(channel_layer.group_send)(
@@ -615,11 +563,10 @@ def process_phonet_call(call_data):
             {
                 "type": "chat_message",
                 "payload": payload,
-                "username": "Phonet",  # Або leg_name, або contact.first_name
+                "username": "Phonet",
             }
         )
 
-        # Оновити список кімнат, щоб було видно непрочитане
         user_group_name = f"user_{user.id}"
         async_to_sync(channel_layer.group_send)(
             user_group_name,
