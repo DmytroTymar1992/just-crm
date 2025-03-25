@@ -282,26 +282,41 @@
 }
 
   function renderCallMessage(payload) {
+    const chatLog = document.getElementById('chat-log');
+    const existingMessage = chatLog.querySelector(`[data-uuid="${payload.uuid}"]`);
+
     const tpl = document.getElementById('callMessageTpl').innerHTML;
     let html = tpl
-      .replace('__IS_INCOMING__', payload.sender_type === 'contact' ? '(Вхідний)' : '(Вихідний)')
-      .replace('__CLIENT_PHONE__', payload.phone || '')
-      .replace('__DIAL_AT__', payload.dial_at || '')
-      .replace('__BRIDGE_AT__', payload.bridge_at || '')
-      .replace('__HANGUP_AT__', payload.hangup_at || '')
-      .replace('__TIME__', payload.created_at || '')
-      .replace('__SENDER_CLASS__', payload.sender_type === 'contact' ? 'justify-content-start' : 'justify-content-end')
-      .replace('__ALIGN__', payload.sender_type === 'contact' ? 'text-end' : 'text-start');
-    appendMessage(html);
+        .replace('__IS_INCOMING__', payload.direction === 'incoming' ? '(Вхідний)' : '(Вихідний)')
+        .replace('__CLIENT_PHONE__', payload.phone || '')
+        .replace('__DIAL_AT__', payload.dial_at || '')
+        .replace('__BRIDGE_AT__', payload.bridge_at || '')
+        .replace('__HANGUP_AT__', payload.hangup_at || '')
+        .replace('__TIME__', payload.created_at || '')
+        .replace('__SENDER_CLASS__', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end')
+        .replace('__ALIGN__', payload.direction === 'incoming' ? 'text-end' : 'text-start');
 
-  if (payload.sender_type === 'contact') {
-    const notificationContent = `
-      <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
-      <p class="message-text">Телефон: ${payload.client_phone || ''}</p>
-      <small>${payload.created_at || ''}</small>
-    `;
-    showNotification('call', notificationContent);
-  }
+    if (existingMessage) {
+        // Оновлюємо існуюче повідомлення
+        existingMessage.outerHTML = `<div data-uuid="${payload.uuid}">${html}</div>`;
+    } else {
+        // Додаємо нове повідомлення
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-uuid', payload.uuid);
+        wrapper.innerHTML = html;
+        chatLog.appendChild(wrapper);
+    }
+
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    if (payload.direction === 'incoming' && payload.event === 'call.dial') {
+        const notificationContent = `
+            <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
+            <p class="message-text">Телефон: ${payload.phone || ''}</p>
+            <small>${payload.created_at || ''}</small>
+        `;
+        showNotification('call', notificationContent);
+    }
 }
 
   function renderUnknownMessage(payload) {

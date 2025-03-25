@@ -411,10 +411,11 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
 
 
 @shared_task
+@shared_task
 def process_phonet_call(call_data):
     event_type = call_data.get("event")
     uuid = call_data.get("uuid")
-    parent_uuid = call_data.get("parentUuid")
+    parent_uuid = call_data.get("parentUuid-tour")
     direction_code = call_data.get("lgDirection")
     receiver_user_id = call_data.get("receiver_user_id")
     leg = call_data.get("leg", {})
@@ -425,7 +426,6 @@ def process_phonet_call(call_data):
     # Перевірка користувача
     try:
         user = User.objects.get(id=receiver_user_id)
-        # Додаткова перевірка: чи збігається phonet_ext із leg.ext
         if user.profile.phonet_ext != leg_ext:
             logger.warning(f"User {user.id} phonet_ext={user.profile.phonet_ext} does not match leg.ext={leg_ext}")
     except User.DoesNotExist:
@@ -443,15 +443,8 @@ def process_phonet_call(call_data):
         logger.warning(f"No client_phone found in otherLegs/trunkNum for uuid={uuid}, skipping.")
         return
 
-    if direction_code == 4:
-        sender = "contact"
-        activity_type = 'call_in'
-    elif direction_code == 2:
-        sender = "user"
-        activity_type = 'call_out'
-    else:
-        sender = "contact"
-        activity_type = 'call_in'
+    sender = "contact" if direction_code == 4 else "user"
+    activity_type = 'call_in' if direction_code == 4 else 'call_out'
 
     def ts_to_dt(ts):
         if not ts:
@@ -512,39 +505,37 @@ def process_phonet_call(call_data):
                 hangup_at=None,
             )
             logger.info(f"Created new Interaction+CallMessage for dial uuid={uuid}.")
+        elif call_msg:
+            interaction = call_msg.interaction
+            if event_type == "call.bridge":
+                call_msg.bridge_at = bridge_dt or call_msg.bridge_at
+                logger.info(f"Updated call.bridge for uuid={uuid}. bridge_at={bridge_dt}")
+            elif event_type == "call.hangup":
+                call_msg.hangup_at = hangup_dt or call_msg.hangup_at
+                logger.info(f"Updated call.hangup for uuid={uuid}. hangup_at={hangup_dt}")
+            call_msg.save()
         else:
-            if call_msg:
-                interaction = call_msg.interaction
-                if event_type == "call.dial":
-                    logger.warning(f"call.dial received but call_msg with uuid={uuid} already exists.")
-                if event_type == "call.bridge":
-                    call_msg.bridge_at = bridge_dt or call_msg.bridge_at
-                    logger.info(f"Updated call.bridge for uuid={uuid}. bridge_at={bridge_dt}")
-                elif event_type == "call.hangup":
-                    call_msg.hangup_at = hangup_dt or call_msg.hangup_at
-                    logger.info(f"Updated call.hangup for uuid={uuid}. hangup_at={hangup_dt}")
-                call_msg.save()
-            else:
-                interaction = Interaction.objects.create(
-                    interaction_type="call",
-                    room=room,
-                    sender=sender,
-                    is_read=False,
-                )
-                call_msg = CallMessage.objects.create(
-                    interaction=interaction,
-                    phonet_uuid=uuid,
-                    parent_uuid=parent_uuid,
-                    direction=direction_code,
-                    leg_id=leg_id,
-                    leg_ext=leg_ext,
-                    leg_name=leg_name,
-                    client_phone=client_phone,
-                    dial_at=dial_dt,
-                    bridge_at=bridge_dt if event_type == "call.bridge" else None,
-                    hangup_at=hangup_dt if event_type == "call.hangup" else None,
-                )
+            interaction = Interaction.objects.create(
+                interaction_type="call",
+                room=room,
+                sender=sender,
+                is_read=False,
+            )
+            call_msg = CallMessage.objects.create(
+                interaction=interaction,
+                phonet_uuid=uuid,
+                parent_uuid=parent_uuid,
+                direction=direction_code,
+                leg_id=leg_id,
+                leg_ext=leg_ext,
+                leg_name=leg_name,
+                client_phone=client_phone,
+                dial_at=dial_dt,
+                bridge_at=bridge_dt if event_type == "call.bridge" else None,
+                hangup_at=hangup_dt if event_type == "call.hangup" else None,
+            )
 
+        # Відправляємо повідомлення при кожному евенті
         channel_layer = get_channel_layer()
         room_group_name = f"sales_room_{room.id}"
 
@@ -556,6 +547,9 @@ def process_phonet_call(call_data):
             "uuid": uuid,
             "created_at": interaction.created_at.strftime("%H:%M"),
             "duration": call_msg.duration,
+            "dial_at": dial_dt.strftime("%H:%M:%S") if dial_dt else "",
+            "bridge_at": bridge_dt.strftime("%H:%M:%S") if bridge_dt else "",
+            "hangup_at": hangup_dt.strftime("%H:%M:%S") if hangup_dt else "",
         }
 
         async_to_sync(channel_layer.group_send)(
