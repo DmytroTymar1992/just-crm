@@ -752,11 +752,13 @@ def contact_detail_view(request, contact_id):
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-import logging
-from .tasks import process_phonet_call
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import datetime
+from .models import CallMessage
 
-logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class PhonetCallEventView(APIView):
@@ -767,7 +769,6 @@ class PhonetCallEventView(APIView):
         ]
         client_ip = request.META.get("REMOTE_ADDR")
         if client_ip not in allowed_ips:
-            logger.warning(f"Unauthorized request from IP: {client_ip}")
             return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         call_data = request.data
@@ -775,29 +776,106 @@ class PhonetCallEventView(APIView):
         uuid = call_data.get("uuid")
 
         if not uuid:
-            logger.error("Missing uuid in call_data")
             return Response({"error": "Missing uuid"}, status=status.HTTP_400_BAD_REQUEST)
 
         if event not in ["call.dial", "call.bridge", "call.hangup"]:
-            logger.error(f"Invalid event type: {event}")
             return Response({"error": "Invalid event"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Отримуємо користувача
         leg = call_data.get("leg", {})
         ext = leg.get("ext")
-        if not ext:
-            logger.warning("Missing leg.ext in call_data")
-            call_data["receiver_user_id"] = 1  # Default user
-        else:
+        if ext:
             try:
                 user = User.objects.get(profile__phonet_ext=ext)
                 if not user.profile.phonet_enabled:
-                    logger.warning(f"Phonet disabled for user {user.id}")
                     return Response({"error": "Phonet disabled for this user"}, status=status.HTTP_400_BAD_REQUEST)
-                call_data["receiver_user_id"] = user.id
             except User.DoesNotExist:
-                logger.warning(f"No user found for ext={ext}, using default user")
-                call_data["receiver_user_id"] = 1  # Default user
+                user = User.objects.get(id=1)  # Дефолтний користувач
+        else:
+            user = User.objects.get(id=1)
 
-        process_phonet_call.delay(call_data)
-        logger.info(f"Received Phonet event: {event} for uuid={uuid}")
+        # Конвертація часу
+        def ts_to_dt(ts):
+            if not ts:
+                return None
+            try:
+                return datetime.datetime.utcfromtimestamp(ts / 1000.0).replace(tzinfo=datetime.timezone.utc)
+            except (TypeError, ValueError):
+                return None
+
+        dial_dt = ts_to_dt(call_data.get("dialAt"))
+        bridge_dt = ts_to_dt(call_data.get("bridgeAt"))
+        hangup_dt = ts_to_dt(call_data.get("hangupAt")) or ts_to_dt(call_data.get("serverTime"))
+
+        # Отримуємо або створюємо контакт
+        client_phone = call_data.get("otherLegs", [{}])[0].get("num") or call_data.get("trunkNum")
+        if not client_phone:
+            return Response({"error": "No client phone"}, status=status.HTTP_400_BAD_REQUEST)
+
+        direction_code = call_data.get("lgDirection")
+        sender = "contact" if direction_code == 4 else "user"
+
+        with transaction.atomic():
+            contact, _ = Contact.objects.get_or_create(
+                phone=client_phone,
+                defaults={"first_name": client_phone}
+            )
+            room, _ = Room.objects.get_or_create(user=user, contact=contact)
+
+            # Перевіряємо, чи є дзвінок у базі
+            try:
+                call_msg = CallMessage.objects.get(phonet_uuid=uuid)
+                # Оновлюємо існуючий запис
+                if event == "call.bridge":
+                    call_msg.bridge_at = bridge_dt or call_msg.bridge_at
+                elif event == "call.hangup":
+                    call_msg.hangup_at = hangup_dt or call_msg.hangup_at
+                call_msg.save()
+            except CallMessage.DoesNotExist:
+                # Створюємо новий запис
+                interaction = Interaction.objects.create(
+                    interaction_type="call",
+                    room=room,
+                    sender=sender,
+                    is_read=False,
+                )
+                call_msg = CallMessage.objects.create(
+                    interaction=interaction,
+                    phonet_uuid=uuid,
+                    parent_uuid=call_data.get("parentUuid-tour"),
+                    direction=direction_code,
+                    leg_id=leg.get("id"),
+                    leg_ext=ext,
+                    leg_name=leg.get("displayName"),
+                    client_phone=client_phone,
+                    dial_at=dial_dt,
+                    bridge_at=bridge_dt if event == "call.bridge" else None,
+                    hangup_at=hangup_dt if event == "call.hangup" else None,
+                )
+
+            # Формуємо payload
+            payload = {
+                "msg_type": "call",
+                "direction": "incoming" if direction_code == 4 else "outgoing",
+                "event": event,
+                "phone": client_phone,
+                "uuid": uuid,
+                "created_at": interaction.created_at.strftime("%H:%M") if interaction.created_at else "",
+                "dial_at": call_msg.dial_at.strftime("%H:%M:%S") if call_msg.dial_at else "",
+                "bridge_at": call_msg.bridge_at.strftime("%H:%M:%S") if call_msg.bridge_at else "",
+                "hangup_at": call_msg.hangup_at.strftime("%H:%M:%S") if call_msg.hangup_at else "",
+            }
+
+            # Відправляємо через WebSocket
+            channel_layer = get_channel_layer()
+            room_group_name = f"sales_room_{room.id}"
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    "type": "chat_message",
+                    "payload": payload,
+                    "username": "Phonet",
+                }
+            )
+
         return Response({"status": "success"}, status=status.HTTP_200_OK)
