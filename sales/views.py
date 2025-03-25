@@ -640,7 +640,7 @@ def merge_contacts_confirm_view(request, contact1_id, contact2_id):
         keep_contact_id = request.POST.get("keep_contact")
         keep_self = str(contact1.id) == keep_contact_id
 
-        # Вибираємо основний контакт
+        # Вибираємо основний і дубльований контакти
         primary = contact1 if keep_self else contact2
         secondary = contact2 if keep_self else contact1
 
@@ -653,10 +653,34 @@ def merge_contacts_confirm_view(request, contact1_id, contact2_id):
         primary.phone = request.POST.get(f"contact{'1' if keep_self else '2'}_phone", primary.phone)
         primary.email = request.POST.get(f"contact{'1' if keep_self else '2'}_email", primary.email)
         primary.telegram_username = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_username", primary.telegram_username)
-        primary.telegram_id = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_id", primary.telegram_id)
+        telegram_id = request.POST.get(f"contact{'1' if keep_self else '2'}_telegram_id")
+        primary.telegram_id = int(telegram_id) if telegram_id and telegram_id.strip() else None
 
         try:
-            primary.merge_with(secondary, keep_self=True)  # Використовуємо merge_with для оновлення зв’язків
+            # Зберігаємо оновлені поля перед об'єднанням
+            primary.save()
+
+            # Знаходимо всі чати, пов'язані з обома контактами
+            all_rooms = Room.objects.filter(contact__in=[primary, secondary])
+
+            # Якщо є чати, обробляємо їх
+            if all_rooms.exists():
+                # Вибираємо основний чат (наприклад, найстаріший за created_at)
+                primary_room = all_rooms.order_by('created_at').first()
+                duplicate_rooms = all_rooms.exclude(id=primary_room.id)
+
+                # Оновлюємо contact у всіх чатах на primary (хоча merge_with це зробить пізніше)
+                all_rooms.update(contact=primary)
+
+                # Переносимо повідомлення з дубльованих чатів на основний і видаляємо дублі
+                for dup_room in duplicate_rooms:
+                    interactions_updated = Interaction.objects.filter(room=dup_room).update(room=primary_room)
+                    print(f"Перенесено {interactions_updated} повідомлень з чату ID {dup_room.id} на чат ID {primary_room.id}")
+                    dup_room.delete()  # Видаляємо дубльований чат
+                    print(f"Видалено дубльований чат ID {dup_room.id}")
+
+            # Виконуємо об'єднання контактів
+            primary.merge_with(secondary)
             messages.success(request, f"Контакти успішно об'єднані в {primary}.")
             return redirect("contact_detail", contact_id=primary.id)
         except Exception as e:
@@ -666,7 +690,7 @@ def merge_contacts_confirm_view(request, contact1_id, contact2_id):
     return render(request, "sales/merge_contacts.html", {
         "contact1": contact1,
         "contact2": contact2,
-        "other_contact": contact2 if contact1 else contact1,  # Для шаблону contact_fields.html
+        "other_contact": contact2 if contact1 else contact1,
     })
 
 

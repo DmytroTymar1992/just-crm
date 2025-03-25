@@ -38,11 +38,15 @@ class Contact(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip() or self.phone or self.email or "Безіменний контакт"
 
-    def merge_with(self, other_contact, keep_self=True):
-        primary = self if keep_self else other_contact
-        secondary = other_contact if keep_self else self
+    def merge_with(self, other_contact):
+        """
+        Об'єднує цей контакт (primary) з іншим (secondary).
+        :param other_contact: Контакт, який буде видалений після об'єднання.
+        """
+        primary = self
+        secondary = other_contact
 
-        # Оновлення зв’язків у всіх моделях
+        # Оновлюємо зв’язки у всіх моделях
         from django.apps import apps
         for model in apps.get_models():
             for field in model._meta.get_fields():
@@ -51,7 +55,7 @@ class Contact(models.Model):
                     update_kwargs = {field.name: primary}
                     model.objects.filter(**filter_kwargs).update(**update_kwargs)
 
-        # Збереження основного контакту вже зроблено у view перед викликом
+        # Видаляємо дубльований контакт
         secondary.delete()
 
 
