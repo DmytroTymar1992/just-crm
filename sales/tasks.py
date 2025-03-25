@@ -547,9 +547,9 @@ def process_phonet_call(call_data):
             "uuid": uuid,
             "created_at": interaction.created_at.strftime("%H:%M"),
             "duration": call_msg.duration,
-            "dial_at": dial_dt.strftime("%H:%M:%S") if dial_dt else "",
-            "bridge_at": bridge_dt.strftime("%H:%M:%S") if bridge_dt else "",
-            "hangup_at": hangup_dt.strftime("%H:%M:%S") if hangup_dt else "",
+            "dial_at": call_msg.dial_at.strftime("%H:%M:%S") if call_msg.dial_at else "",
+            "bridge_at": call_msg.bridge_at.strftime("%H:%M:%S") if call_msg.bridge_at else "",
+            "hangup_at": call_msg.hangup_at.strftime("%H:%M:%S") if call_msg.hangup_at else "",
         }
 
         async_to_sync(channel_layer.group_send)(

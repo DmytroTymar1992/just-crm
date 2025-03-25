@@ -284,25 +284,43 @@
   function renderCallMessage(payload) {
     const chatLog = document.getElementById('chat-log');
     const existingMessage = chatLog.querySelector(`[data-uuid="${payload.uuid}"]`);
-
-    console.log('Received payload:', payload); // Логування для діагностики
-
     const tpl = document.getElementById('callMessageTpl').innerHTML;
-    let html = tpl
-        .replace('__IS_INCOMING__', payload.direction === 'incoming' ? '(Вхідний)' : '(Вихідний)')
-        .replace('__CLIENT_PHONE__', payload.phone || '')
-        .replace('__DIAL_AT__', payload.dial_at || '')
-        .replace('__BRIDGE_AT__', payload.bridge_at || '')
-        .replace('__HANGUP_AT__', payload.hangup_at || '')
-        .replace('__TIME__', payload.created_at || '')
-        .replace('__SENDER_CLASS__', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end')
-        .replace('__ALIGN__', payload.direction === 'incoming' ? 'text-end' : 'text-start');
 
+    // Якщо повідомлення вже існує, оновлюємо тільки нові дані
     if (existingMessage) {
-        console.log('Updating existing message for uuid:', payload.uuid);
+        const currentMessage = existingMessage.querySelector('.rounded-3');
+        let dialAt = currentMessage.querySelector('.mt-1').innerHTML.match(/Початок: (.*)<br>/)?.[1] || '';
+        let bridgeAt = currentMessage.querySelector('.mt-1').innerHTML.match(/Підняття слухавки: (.*)<br>/)?.[1] || '';
+        let hangupAt = currentMessage.querySelector('.mt-1').innerHTML.match(/Завершення: (.*)$/m)?.[1] || '';
+
+        // Оновлюємо лише ті поля, які прийшли в новому payload
+        dialAt = payload.dial_at || dialAt;
+        bridgeAt = payload.bridge_at || bridgeAt;
+        hangupAt = payload.hangup_at || hangupAt;
+
+        let html = tpl
+            .replace('__IS_INCOMING__', payload.direction === 'incoming' ? '(Вхідний)' : '(Вихідний)')
+            .replace('__CLIENT_PHONE__', payload.phone || '')
+            .replace('__DIAL_AT__', dialAt)
+            .replace('__BRIDGE_AT__', bridgeAt)
+            .replace('__HANGUP_AT__', hangupAt)
+            .replace('__TIME__', payload.created_at || '')
+            .replace('__SENDER_CLASS__', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end')
+            .replace('__ALIGN__', payload.direction === 'incoming' ? 'text-end' : 'text-start');
+
         existingMessage.outerHTML = `<div data-uuid="${payload.uuid}" class="mb-3 d-flex ${payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end'}">${html}</div>`;
     } else {
-        console.log('Creating new message for uuid:', payload.uuid);
+        // Створюємо нове повідомлення
+        let html = tpl
+            .replace('__IS_INCOMING__', payload.direction === 'incoming' ? '(Вхідний)' : '(Вихідний)')
+            .replace('__CLIENT_PHONE__', payload.phone || '')
+            .replace('__DIAL_AT__', payload.dial_at || '')
+            .replace('__BRIDGE_AT__', payload.bridge_at || '')
+            .replace('__HANGUP_AT__', payload.hangup_at || '')
+            .replace('__TIME__', payload.created_at || '')
+            .replace('__SENDER_CLASS__', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end')
+            .replace('__ALIGN__', payload.direction === 'incoming' ? 'text-end' : 'text-start');
+
         const wrapper = document.createElement('div');
         wrapper.setAttribute('data-uuid', payload.uuid);
         wrapper.classList.add('mb-3', 'd-flex', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end');
@@ -312,6 +330,7 @@
 
     chatLog.scrollTop = chatLog.scrollHeight;
 
+    // Сповіщення для вхідного дзвінка
     if (payload.direction === 'incoming' && payload.event === 'call.dial') {
         const notificationContent = `
             <strong>[CALL] (Вхідний) від ${contactFullName}</strong><br>
