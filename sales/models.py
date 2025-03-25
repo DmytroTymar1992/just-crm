@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from main.utils import normalize_phone_number
 import logging
 from django.apps import apps
+from sales.tasks import import_telegram_contact_task
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -74,8 +75,30 @@ class Room(models.Model):
     def __str__(self):
         return f"Room #{self.pk} (User: {self.user.username} - Contact: {self.contact})"
 
-    #class Meta:
-    #    unique_together = ('user', 'contact')
+    def save(self, *args, **kwargs):
+        # Перевіряємо, чи це створення нового чату (ще немає pk)
+        is_new = self.pk is None
+        super().save(*args, **kwargs)  # Зберігаємо об'єкт
+
+        if is_new:
+            # Викликаємо задачу для імпорту контакту в Telegram
+            try:
+                contact_phone = self.contact.phone
+                first_name = self.contact.first_name
+                last_name = self.contact.last_name or ""
+                if contact_phone:
+                    logger.info(f"Запускаємо задачу import_telegram_contact_task для Room #{self.pk}, контакт: {self.contact}")
+                    import_telegram_contact_task.delay(
+                        self.user.id,
+                        contact_phone,
+                        first_name,
+                        last_name
+                    )
+                    logger.info(f"Задача запущена для Room #{self.pk}: user_id={self.user.id}, phone={contact_phone}")
+                else:
+                    logger.warning(f"Контакт {self.contact} не має номера телефону, пропускаємо імпорт у Telegram")
+            except Exception as e:
+                logger.error(f"Помилка при запуску задачі import_telegram_contact_task для Room #{self.pk}: {str(e)}")
 
 
 class Interaction(models.Model):
