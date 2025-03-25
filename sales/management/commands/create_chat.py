@@ -54,6 +54,7 @@ class Command(BaseCommand):
 
         if task_result.ready():
             result = task_result.result
+            self.stdout.write(f"Raw task result: {result} (type: {type(result)})")  # Додаємо дебаг
             if result and isinstance(result, dict):
                 if result.get('success'):
                     self.stdout.write(self.style.SUCCESS(
@@ -62,7 +63,7 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(self.style.ERROR(f"Telegram import failed: {result.get('message', 'Unknown error')}"))
             else:
-                self.stdout.write(self.style.ERROR("Invalid task result format"))
+                self.stdout.write(self.style.ERROR(f"Invalid task result format: {result}"))
         else:
             self.stdout.write(self.style.WARNING("Task did not complete within 60 seconds"))
             self.stdout.write("Check worker logs for task status")
