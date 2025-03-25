@@ -285,6 +285,8 @@
     const chatLog = document.getElementById('chat-log');
     const existingMessage = chatLog.querySelector(`[data-uuid="${payload.uuid}"]`);
 
+    console.log('Received payload:', payload); // Логування для діагностики
+
     const tpl = document.getElementById('callMessageTpl').innerHTML;
     let html = tpl
         .replace('__IS_INCOMING__', payload.direction === 'incoming' ? '(Вхідний)' : '(Вихідний)')
@@ -297,12 +299,13 @@
         .replace('__ALIGN__', payload.direction === 'incoming' ? 'text-end' : 'text-start');
 
     if (existingMessage) {
-        // Оновлюємо існуюче повідомлення
-        existingMessage.outerHTML = `<div data-uuid="${payload.uuid}">${html}</div>`;
+        console.log('Updating existing message for uuid:', payload.uuid);
+        existingMessage.outerHTML = `<div data-uuid="${payload.uuid}" class="mb-3 d-flex ${payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end'}">${html}</div>`;
     } else {
-        // Додаємо нове повідомлення
+        console.log('Creating new message for uuid:', payload.uuid);
         const wrapper = document.createElement('div');
         wrapper.setAttribute('data-uuid', payload.uuid);
+        wrapper.classList.add('mb-3', 'd-flex', payload.direction === 'incoming' ? 'justify-content-start' : 'justify-content-end');
         wrapper.innerHTML = html;
         chatLog.appendChild(wrapper);
     }
