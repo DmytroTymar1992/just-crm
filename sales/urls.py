@@ -2,6 +2,7 @@
 from django.urls import path
 from .views import *
 from sales_analytics.views import analytics_dashboard
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('<int:room_id>/', chat_room, name='chat_room'),
@@ -30,6 +31,8 @@ urlpatterns = [
     path("contacts/merge_confirm/<int:contact1_id>/<int:contact2_id>/", merge_contacts_confirm_view,
          name="merge_contacts_confirm"),
     path('api/phonet/call-events/', PhonetCallEventView.as_view(), name='phonet-call-events'),
+
+
 
 
 ]

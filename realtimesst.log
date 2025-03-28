@@ -1,0 +1,85 @@
+2025-03-26 12:21:28.691 - RealTimeSTT: realtimestt - INFO - Starting RealTimeSTT
+2025-03-26 12:21:29.019 - RealTimeSTT: realtimestt - INFO - Initializing audio recording (creating pyAudio input stream, sample rate: 16000 buffer size: 512
+2025-03-26 12:21:29.020 - RealTimeSTT: realtimestt - DEBUG - Starting audio data worker with target_sample_rate=16000, buffer_size=512, input_device_index=None
+2025-03-26 12:21:29.020 - RealTimeSTT: realtimestt - DEBUG - Creating PyAudio interface...
+2025-03-26 12:21:29.020 - RealTimeSTT: realtimestt - INFO - Initializing WebRTC voice with Sensitivity 3
+2025-03-26 12:21:29.020 - RealTimeSTT: realtimestt - DEBUG - WebRTC VAD voice activity detection engine initialized successfully
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - DEBUG - Default device retrieval failed: No Default Input Device Available
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - DEBUG - Sample rates to try for device None: [16000, 48000]
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - DEBUG - Attempting to initialize audio stream at 16000 Hz.
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:21:29.037 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:21:32.038 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:21:32.038 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:21:32.039 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:21:32.386 - RealTimeSTT: realtimestt - DEBUG - Silero VAD voice activity detection engine initialized successfully
+2025-03-26 12:21:32.386 - RealTimeSTT: realtimestt - DEBUG - Starting realtime worker
+2025-03-26 12:21:32.386 - RealTimeSTT: realtimestt - DEBUG - Waiting for main transcription model to start
+2025-03-26 12:21:35.041 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:21:35.041 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:21:35.041 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:21:38.042 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:21:38.042 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:21:38.042 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:21:41.043 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:21:41.043 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:21:41.043 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:50:14.497 - RealTimeSTT: realtimestt - INFO - Starting RealTimeSTT
+2025-03-26 12:50:15.177 - RealTimeSTT: realtimestt - INFO - Initializing audio recording (creating pyAudio input stream, sample rate: 16000 buffer size: 512
+2025-03-26 12:50:15.177 - RealTimeSTT: realtimestt - DEBUG - Starting audio data worker with target_sample_rate=16000, buffer_size=512, input_device_index=None
+2025-03-26 12:50:15.178 - RealTimeSTT: realtimestt - INFO - Initializing WebRTC voice with Sensitivity 3
+2025-03-26 12:50:15.178 - RealTimeSTT: realtimestt - DEBUG - Creating PyAudio interface...
+2025-03-26 12:50:15.178 - RealTimeSTT: realtimestt - DEBUG - WebRTC VAD voice activity detection engine initialized successfully
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - DEBUG - Default device retrieval failed: No Default Input Device Available
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - DEBUG - Sample rates to try for device None: [16000, 48000]
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - DEBUG - Attempting to initialize audio stream at 16000 Hz.
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 12:50:15.190 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 12:50:15.491 - RealTimeSTT: realtimestt - DEBUG - Silero VAD voice activity detection engine initialized successfully
+2025-03-26 12:50:15.491 - RealTimeSTT: realtimestt - DEBUG - Starting realtime worker
+2025-03-26 12:50:15.491 - RealTimeSTT: realtimestt - DEBUG - Waiting for main transcription model to start
+2025-03-26 23:33:06.625 - RealTimeSTT: realtimestt - INFO - Starting RealTimeSTT
+2025-03-26 23:33:07.259 - RealTimeSTT: realtimestt - INFO - Initializing audio recording (creating pyAudio input stream, sample rate: 16000 buffer size: 512
+2025-03-26 23:33:07.259 - RealTimeSTT: realtimestt - DEBUG - Starting audio data worker with target_sample_rate=16000, buffer_size=512, input_device_index=None
+2025-03-26 23:33:07.259 - RealTimeSTT: realtimestt - INFO - Initializing WebRTC voice with Sensitivity 3
+2025-03-26 23:33:07.259 - RealTimeSTT: realtimestt - DEBUG - Creating PyAudio interface...
+2025-03-26 23:33:07.259 - RealTimeSTT: realtimestt - DEBUG - WebRTC VAD voice activity detection engine initialized successfully
+2025-03-26 23:33:07.282 - RealTimeSTT: realtimestt - DEBUG - Default device retrieval failed: No Default Input Device Available
+2025-03-26 23:33:07.282 - RealTimeSTT: realtimestt - DEBUG - Sample rates to try for device None: [16000, 48000]
+2025-03-26 23:33:07.283 - RealTimeSTT: realtimestt - DEBUG - Attempting to initialize audio stream at 16000 Hz.
+2025-03-26 23:33:07.283 - RealTimeSTT: realtimestt - DEBUG - Found 0 total audio devices on the system.
+2025-03-26 23:33:07.283 - RealTimeSTT: realtimestt - DEBUG - Available input devices with input channels: []
+2025-03-26 23:33:07.283 - RealTimeSTT: realtimestt - ERROR - Microphone connection failed: No input devices found. Retrying...
+Traceback (most recent call last):
+  File "/home/sus/myenv/lib/python3.12/site-packages/realtimestt/audio_recorder.py", line 1088, in initialize_audio_stream
+    raise Exception("No input devices found")
+Exception: No input devices found
+2025-03-26 23:33:08.110 - RealTimeSTT: realtimestt - DEBUG - Silero VAD voice activity detection engine initialized successfully
+2025-03-26 23:33:08.111 - RealTimeSTT: realtimestt - DEBUG - Starting realtime worker
+2025-03-26 23:33:08.111 - RealTimeSTT: realtimestt - DEBUG - Waiting for main transcription model to start

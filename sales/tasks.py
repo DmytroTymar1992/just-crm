@@ -410,7 +410,7 @@ def send_outgoing_telegram_task(user_id, contact_data, message_text):
     return None
 
 
-@shared_task
+
 @shared_task
 def process_phonet_call(call_data):
     event_type = call_data.get("event")

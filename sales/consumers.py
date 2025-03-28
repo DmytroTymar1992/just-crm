@@ -267,3 +267,9 @@ class RoomListConsumer(AsyncWebsocketConsumer):
             logger.debug("send_room_list_update done")
         except Exception as e:
             logger.error(f"Error in send_room_list_update: {e}")
+
+
+
+
+
+
