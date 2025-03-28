@@ -1,3 +1,4 @@
+# transcription/consumers.py
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -6,6 +7,9 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+# Тимчасове сховище для аудіо (у реальному проєкті краще використовувати базу даних або Redis)
+agent_audio_data = {}
 
 class DesktopAgentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -48,7 +52,15 @@ class DesktopAgentConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         logger.info(f"[AgentConsumer] Received message: {text_data}")
         data = json.loads(text_data)
-        # Тут можна обробляти дані від агента (наприклад, аудіо)
+        if data.get("type") == "audio":
+            # Зберігаємо аудіо для цього користувача
+            user_id = self.user.id
+            agent_audio_data[user_id] = {
+                "audio_length": len(data["data"]),
+                "data": data["data"][:100],  # Обрізаємо для прикладу, щоб не перевантажувати лог
+                "received_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            logger.info(f"[AgentConsumer] Audio received from user {user_id}: {len(data['data'])} samples")
 
     async def agent_command(self, event):
         command = event["command"]
