@@ -757,7 +757,7 @@ from django.db import transaction
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
-from .models import CallMessage
+from .models import CallMessage, Contact, Room, Interaction
 
 User = get_user_model()
 
@@ -794,10 +794,7 @@ class PhonetCallEventView(APIView):
         else:
             user = User.objects.get(id=1)
 
-        # Встановлюємо поточний час для всіх подій
         current_time = datetime.datetime.now(datetime.timezone.utc)
-
-        # Отримуємо номер телефону клієнта
         client_phone = call_data.get("otherLegs", [{}])[0].get("num") or call_data.get("trunkNum")
         if not client_phone:
             return Response({"error": "No client phone"}, status=status.HTTP_400_BAD_REQUEST)
@@ -814,14 +811,12 @@ class PhonetCallEventView(APIView):
 
             try:
                 call_msg = CallMessage.objects.get(phonet_uuid=uuid)
-                # Оновлюємо тільки потрібне поле залежно від події
                 if event == "call.bridge":
                     call_msg.bridge_at = current_time
                 elif event == "call.hangup":
                     call_msg.hangup_at = current_time
                 call_msg.save()
             except CallMessage.DoesNotExist:
-                # Створюємо новий запис із початковим часом для dial_at
                 interaction = Interaction.objects.create(
                     interaction_type="call",
                     room=room,
@@ -842,7 +837,6 @@ class PhonetCallEventView(APIView):
                     hangup_at=current_time if event == "call.hangup" else None,
                 )
 
-            # Формуємо payload із актуальними значеннями з call_msg
             payload = {
                 "msg_type": "call",
                 "direction": "incoming" if direction_code == 4 else "outgoing",
@@ -855,7 +849,6 @@ class PhonetCallEventView(APIView):
                 "hangup_at": call_msg.hangup_at.strftime("%H:%M:%S") if call_msg.hangup_at else "",
             }
 
-            # Відправляємо через WebSocket
             channel_layer = get_channel_layer()
             room_group_name = f"sales_room_{room.id}"
             async_to_sync(channel_layer.group_send)(
@@ -866,5 +859,26 @@ class PhonetCallEventView(APIView):
                     "username": "Phonet",
                 }
             )
+
+            # Відправка команд агенту
+            agent_group_name = f"agent_{user.id}"
+            if event == "call.bridge":
+                async_to_sync(channel_layer.group_send)(
+                    agent_group_name,
+                    {
+                        "type": "agent_command",
+                        "command": "start_streaming",
+                        "details": {"uuid": uuid, "phone": client_phone}
+                    }
+                )
+            elif event == "call.hangup":
+                async_to_sync(channel_layer.group_send)(
+                    agent_group_name,
+                    {
+                        "type": "agent_command",
+                        "command": "stop_streaming",
+                        "details": {"uuid": uuid}
+                    }
+                )
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
