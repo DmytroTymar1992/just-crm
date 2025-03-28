@@ -759,7 +759,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
 from .models import CallMessage, Contact, Room, Interaction
-from transcription.consumers import agent_audio_data  # Імпортуємо з consumers.py
+from .consumers import agent_audio_data
 
 User = get_user_model()
 
@@ -771,6 +771,7 @@ class PhonetCallEventView(APIView):
         ]
         client_ip = request.META.get("REMOTE_ADDR")
         if client_ip not in allowed_ips:
+            agent_audio_data["system"] = {"logs": [{"event": "forbidden", "ip": client_ip, "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]}
             return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         call_data = request.data
@@ -778,9 +779,11 @@ class PhonetCallEventView(APIView):
         uuid = call_data.get("uuid")
 
         if not uuid:
+            agent_audio_data["system"] = {"logs": [{"event": "missing_uuid", "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]}
             return Response({"error": "Missing uuid"}, status=status.HTTP_400_BAD_REQUEST)
 
         if event not in ["call.dial", "call.bridge", "call.hangup"]:
+            agent_audio_data["system"] = {"logs": [{"event": "invalid_event", "value": event, "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]}
             return Response({"error": "Invalid event"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Отримуємо користувача
@@ -790,15 +793,23 @@ class PhonetCallEventView(APIView):
             try:
                 user = User.objects.get(profile__phonet_ext=ext)
                 if not user.profile.phonet_enabled:
+                    agent_audio_data[user.id] = {"logs": [{"event": "phonet_disabled", "ext": ext, "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]}
                     return Response({"error": "Phonet disabled for this user"}, status=status.HTTP_400_BAD_REQUEST)
             except User.DoesNotExist:
                 user = User.objects.get(id=1)  # Дефолтний користувач
+                if 1 not in agent_audio_data:
+                    agent_audio_data[1] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+                agent_audio_data[1]["logs"].append({"event": "user_not_found", "ext": ext, "fallback_to": "id=1", "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
         else:
             user = User.objects.get(id=1)
+            if 1 not in agent_audio_data:
+                agent_audio_data[1] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+            agent_audio_data[1]["logs"].append({"event": "no_ext", "fallback_to": "id=1", "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
 
         current_time = datetime.datetime.now(datetime.timezone.utc)
         client_phone = call_data.get("otherLegs", [{}])[0].get("num") or call_data.get("trunkNum")
         if not client_phone:
+            agent_audio_data[user.id] = {"logs": [{"event": "no_client_phone", "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")}]}
             return Response({"error": "No client phone"}, status=status.HTTP_400_BAD_REQUEST)
 
         direction_code = call_data.get("lgDirection")
@@ -862,8 +873,7 @@ class PhonetCallEventView(APIView):
                 }
             )
 
-            # Логування подій і команд у agent_audio_data
-            agent_group_name = f"agent_{user.id}"
+            # Логування подій і команд
             if user.id not in agent_audio_data:
                 agent_audio_data[user.id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
             agent_audio_data[user.id]["logs"].append({
@@ -876,7 +886,8 @@ class PhonetCallEventView(APIView):
                 "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
             })
 
-            # Відправка команд агенту для вихідних і вхідних дзвінків
+            # Відправка команд агенту
+            agent_group_name = f"agent_{user.id}"
             if event == "call.bridge":
                 command_details = {"uuid": uuid, "phone": client_phone}
                 async_to_sync(channel_layer.group_send)(
