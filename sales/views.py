@@ -779,10 +779,13 @@ class PhonetCallEventView(APIView):
         uuid = call_data.get("uuid")
 
         current_time = datetime.datetime.now(datetime.timezone.utc)
-        log_entry = {"event": "request_received", "data": call_data, "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")}
         if "system" not in agent_audio_data:
             agent_audio_data["system"] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
-        agent_audio_data["system"]["logs"].append(log_entry)
+        agent_audio_data["system"]["logs"].append({
+            "event": "request_received",
+            "data": call_data,
+            "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+        })
 
         if not uuid:
             agent_audio_data["system"]["logs"].append({"event": "missing_uuid", "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -795,6 +798,7 @@ class PhonetCallEventView(APIView):
         # Отримуємо користувача
         leg = call_data.get("leg", {})
         ext = leg.get("ext")
+        agent_audio_data["system"]["logs"].append({"event": "processing_ext", "ext": ext, "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")})
         if ext:
             try:
                 user = User.objects.get(profile__phonet_ext=ext)
@@ -819,6 +823,19 @@ class PhonetCallEventView(APIView):
 
         direction_code = call_data.get("lgDirection")
         sender = "contact" if direction_code == 4 else "user"
+
+        # Логування перед транзакцією
+        if user.id not in agent_audio_data:
+            agent_audio_data[user.id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+        agent_audio_data[user.id]["logs"].append({
+            "event": "processing_call",
+            "user_id": user.id,
+            "username": user.username,
+            "ext": ext,
+            "client_phone": client_phone,
+            "direction": "incoming" if direction_code == 4 else "outgoing",
+            "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+        })
 
         with transaction.atomic():
             contact, _ = Contact.objects.get_or_create(
@@ -878,9 +895,7 @@ class PhonetCallEventView(APIView):
                 }
             )
 
-            # Логування подій і команд
-            if user.id not in agent_audio_data:
-                agent_audio_data[user.id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+            # Логування після збереження в базу
             agent_audio_data[user.id]["logs"].append({
                 "event": event,
                 "user_id": user.id,
@@ -927,5 +942,12 @@ class PhonetCallEventView(APIView):
                     "status": "sent",
                     "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
                 })
+
+        # Логування успішного завершення
+        agent_audio_data[user.id]["logs"].append({
+            "event": "request_completed",
+            "status": "success",
+            "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+        })
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
