@@ -759,7 +759,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
 from .models import CallMessage, Contact, Room, Interaction
-from .consumers import agent_audio_data
+from transcription.consumers import agent_audio_data
 
 User = get_user_model()
 
