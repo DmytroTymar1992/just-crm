@@ -4,11 +4,12 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
+import datetime
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-# Тимчасове сховище для аудіо (у реальному проєкті краще використовувати базу даних або Redis)
+# Тимчасове сховище
 agent_audio_data = {}
 
 class DesktopAgentConsumer(AsyncWebsocketConsumer):
@@ -40,6 +41,15 @@ class DesktopAgentConsumer(AsyncWebsocketConsumer):
                 'type': 'connection_established',
                 'message': f'Welcome Agent for user {self.user.username}!'
             }))
+            # Ініціалізація logs, якщо ще не існує
+            if self.user.id not in agent_audio_data:
+                agent_audio_data[self.user.id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+            agent_audio_data[self.user.id]["logs"].append({
+                "event": "agent_connected",
+                "user_id": self.user.id,
+                "username": self.user.username,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
         else:
             logger.warning(f"[AgentConsumer] Connection rejected: Invalid or non-existent user_id ('{user_id_str}').")
             await self.close(code=4001)
@@ -48,18 +58,31 @@ class DesktopAgentConsumer(AsyncWebsocketConsumer):
         if self.group_name:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
         logger.info(f"[AgentConsumer] Disconnected: User {self.user.username if self.user else 'Unknown'} (Code: {close_code})")
+        if self.user and self.user.id in agent_audio_data:
+            agent_audio_data[self.user.id]["logs"].append({
+                "event": "agent_disconnected",
+                "user_id": self.user.id,
+                "username": self.user.username,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
 
     async def receive(self, text_data):
         logger.info(f"[AgentConsumer] Received message: {text_data}")
         data = json.loads(text_data)
         if data.get("type") == "audio":
-            # Зберігаємо аудіо для цього користувача
             user_id = self.user.id
-            agent_audio_data[user_id] = {
+            if user_id not in agent_audio_data:
+                agent_audio_data[user_id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+            agent_audio_data[user_id].update({
                 "audio_length": len(data["data"]),
-                "data": data["data"][:100],  # Обрізаємо для прикладу, щоб не перевантажувати лог
+                "data": data["data"][:100],  # Обрізаємо для прикладу
                 "received_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            })
+            agent_audio_data[user_id]["logs"].append({
+                "event": "audio_received",
+                "audio_length": len(data["data"]),
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             logger.info(f"[AgentConsumer] Audio received from user {user_id}: {len(data['data'])} samples")
 
     async def agent_command(self, event):
@@ -71,6 +94,13 @@ class DesktopAgentConsumer(AsyncWebsocketConsumer):
             "command": command,
             "details": details
         }))
+        if self.user.id in agent_audio_data:
+            agent_audio_data[self.user.id]["logs"].append({
+                "event": "command_sent",
+                "command": command,
+                "details": details,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
 
     @database_sync_to_async
     def get_user_by_id(self, user_id):

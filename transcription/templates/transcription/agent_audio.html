@@ -2,19 +2,51 @@
 <html>
 <head>
     <title>Agent Audio Data</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
 </head>
 <body>
     <h1>Audio Data from Agents</h1>
     {% if audio_data %}
         {% for user_id, data in audio_data.items %}
             <h2>User ID: {{ user_id }}</h2>
-            <p><strong>Received At:</strong> {{ data.received_at }}</p>
+            <p><strong>Received Audio At:</strong> {{ data.received_at }}</p>
             <p><strong>Audio Length:</strong> {{ data.audio_length }} samples</p>
             <p><strong>Sample Data (first 100):</strong> {{ data.data }}</p>
+            <h3>Event Logs</h3>
+            <table>
+                <tr>
+                    <th>Event/Command</th>
+                    <th>Details</th>
+                    <th>Timestamp</th>
+                </tr>
+                {% for log in data.logs %}
+                    <tr>
+                        <td>{{ log.event|default:log.command }}</td>
+                        <td>
+                            {% if log.details %}
+                                {{ log.details|json_script:"details"|safe }}
+                            {% elif log.audio_length %}
+                                Audio length: {{ log.audio_length }}
+                            {% elif log.username %}
+                                Username: {{ log.username }}, User ID: {{ log.user_id }}
+                            {% elif log.ext %}
+                                Ext: {{ log.ext }}, Phone: {{ log.client_phone }}, Direction: {{ log.direction }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ log.timestamp }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
             <hr>
         {% endfor %}
     {% else %}
-        <p>No audio data received yet.</p>
+        <p>No audio data or events received yet.</p>
     {% endif %}
 </body>
 </html>

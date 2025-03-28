@@ -749,6 +749,7 @@ def contact_detail_view(request, contact_id):
 
 
 
+# your_app/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -758,6 +759,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
 from .models import CallMessage, Contact, Room, Interaction
+from .consumers import agent_audio_data  # Імпортуємо з consumers.py
 
 User = get_user_model()
 
@@ -860,25 +862,52 @@ class PhonetCallEventView(APIView):
                 }
             )
 
-            # Відправка команд агенту
+            # Логування подій і команд у agent_audio_data
             agent_group_name = f"agent_{user.id}"
+            if user.id not in agent_audio_data:
+                agent_audio_data[user.id] = {"logs": [], "audio_length": 0, "data": [], "received_at": ""}
+            agent_audio_data[user.id]["logs"].append({
+                "event": event,
+                "user_id": user.id,
+                "username": user.username,
+                "ext": ext,
+                "client_phone": client_phone,
+                "direction": "incoming" if direction_code == 4 else "outgoing",
+                "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+            # Відправка команд агенту для вихідних і вхідних дзвінків
             if event == "call.bridge":
+                command_details = {"uuid": uuid, "phone": client_phone}
                 async_to_sync(channel_layer.group_send)(
                     agent_group_name,
                     {
                         "type": "agent_command",
                         "command": "start_streaming",
-                        "details": {"uuid": uuid, "phone": client_phone}
+                        "details": command_details
                     }
                 )
+                agent_audio_data[user.id]["logs"].append({
+                    "command": "start_streaming",
+                    "group": agent_group_name,
+                    "details": command_details,
+                    "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+                })
             elif event == "call.hangup":
+                command_details = {"uuid": uuid}
                 async_to_sync(channel_layer.group_send)(
                     agent_group_name,
                     {
                         "type": "agent_command",
                         "command": "stop_streaming",
-                        "details": {"uuid": uuid}
+                        "details": command_details
                     }
                 )
+                agent_audio_data[user.id]["logs"].append({
+                    "command": "stop_streaming",
+                    "group": agent_group_name,
+                    "details": command_details,
+                    "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S")
+                })
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
