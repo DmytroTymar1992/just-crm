@@ -25,7 +25,15 @@
                 </tr>
                 {% for log in data.logs %}
                     <tr>
-                        <td>{{ log.event|default:log.command }}</td>
+                        <td>
+                            {% if log.event %}
+                                {{ log.event }}
+                            {% elif log.command %}
+                                {{ log.command }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </td>
                         <td>
                             {% if log.details %}
                                 {{ log.details|json_script:"details"|safe }}
