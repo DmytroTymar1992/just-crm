@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'main',
     'sales.apps.SalesConfig',
     'celery',
+    'django_celery_beat',
     'sales_analytics',
     'transcription',
 
