@@ -54,7 +54,7 @@
                                         <a href="{% url 'company_detail' company.pk %}">{{ company.name }}</a>
                                     </td>
                                     <td>
-                                        {{ company.responsible_user.get_full_name|default:company.responsible_user.username }}
+                                        {{ company.responsible.get_full_name|default:company.responsible.username }}
                                     </td>
                                 </tr>
                             {% endfor %}
