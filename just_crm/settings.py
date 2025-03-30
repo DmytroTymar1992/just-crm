@@ -177,7 +177,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULE = {
     'check-company-status-every-15-minutes': {
         'task': 'sales.tasks.check_company_task_status_for_users', # Правильний шлях до задачі
-        'schedule': 900.0,  # 15 хвилин * 60 секунд
+        'schedule': 90.0,  # 15 хвилин * 60 секунд
         # 'args': (arg1, arg2), # Якщо потрібні аргументи
     },
 }
