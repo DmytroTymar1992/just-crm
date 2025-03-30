@@ -117,7 +117,7 @@ def companies_needs_attention_list(request):
     # Базовий запит: знаходимо компанії, де НЕМАЄ контактів з незавершеними завданнями
     # Тобто, виключаємо компанії, де Є хоча б один контакт з is_completed=False
     companies_query = Company.objects.exclude(
-        contact__tasks__is_completed=False
+        contacts__tasks__is_completed=False  # Замінили 'contact' на 'contacts'
     )
 
     # Обробка фільтру за користувачем з GET-параметра
