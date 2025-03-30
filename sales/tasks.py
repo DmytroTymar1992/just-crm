@@ -736,7 +736,7 @@ def check_company_task_status_for_users():
             # у якого є хоча б одна НЕЗАВЕРШЕНА задача (is_completed=False).
             # Використовуємо 'tasks__' через related_name='tasks' у Task.contact.
             needs_attention = Company.objects.filter(
-                responsible_user=user
+                responsible=user
             ).exclude(
                 Exists(Contact.objects.filter(
                     company=OuterRef('pk'),
