@@ -217,7 +217,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
         {# Можна додати посилання на сторінку компаній або на спеціальну сторінку зі списком таких компаній #}
-        <a href="{% url 'sales_analytics:companies_needs_attention_list' %}?responsible_user={{ user.id }}" class="btn btn-primary">Перейти до списку компаній</a>
+        <a href="{% url 'sales_analytics:companies_needs_attention_list' %}?responsible={{ user.id }}" class="btn btn-primary">Перейти до списку компаній</a>
       </div>
     </div>
   </div>
@@ -348,26 +348,23 @@
 }
   </script>
   <script>
-    // Запускаємо код після повного завантаження DOM
-    document.addEventListener('DOMContentLoaded', function() {
-        // Перевіряємо змінну з контексту Django
-        {% if show_attention_modal %}
-            console.log("Потрібно показати модальне вікно уваги."); // Для відладки
-            // Знаходимо елемент модального вікна за його ID
-            var attentionModalElement = document.getElementById('attentionModal');
-            if (attentionModalElement) {
-                 // Створюємо екземпляр модального вікна Bootstrap
-                var attentionModal = new bootstrap.Modal(attentionModalElement);
-                // Показуємо модальне вікно
-                attentionModal.show();
-            } else {
-                console.error("Не знайдено HTML елемент модального вікна з ID 'attentionModal'"); // Для відладки
-            }
-        {% else %}
-            // console.log("Модальне вікно уваги не потрібне."); // Для відладки (можна розкоментувати)
-        {% endif %}
-    });
-</script>
+      document.addEventListener('DOMContentLoaded', function() {
+          // Використовуємо with для зручності доступу до імені поточного view
+          {% with current_view_name=request.resolver_match.view_name %}
+              {# Перевіряємо прапорець ТА чи поточний view НЕ є сторінкою зі списком #}
+              {% if show_attention_modal and current_view_name != 'sales_analytics:companies_needs_attention_list' %}
+                  console.log("Потрібно показати модальне вікно уваги (не на сторінці списку).");
+                  var attentionModalElement = document.getElementById('attentionModal');
+                  if (attentionModalElement) {
+                      var attentionModal = new bootstrap.Modal(attentionModalElement);
+                      attentionModal.show();
+                  } else {
+                      console.error("Не знайдено HTML елемент модального вікна з ID 'attentionModal'");
+                  }
+              {% endif %}
+          {% endwith %}
+      });
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
