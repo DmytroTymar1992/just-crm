@@ -1,6 +1,6 @@
 # crm_app/urls.py
 from django.urls import path
-from . import views # Переконайтесь, що імпортуєте ваші views
+from .views import  *
 
 
 urlpatterns = [
