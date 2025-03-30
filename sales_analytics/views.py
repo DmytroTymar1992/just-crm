@@ -132,7 +132,7 @@ def companies_needs_attention_list(request):
             selected_user_id = None # Скидаємо, щоб у шаблоні не вибралось нічого некоректного
 
     # Оптимізуємо запит та впорядковуємо
-    companies_list = companies_query.select_related('responsible_user').order_by('name')
+    companies_list = companies_query.select_related('responsible').order_by('name')
 
     context = {
         'companies': companies_list,
