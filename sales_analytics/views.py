@@ -121,12 +121,12 @@ def companies_needs_attention_list(request):
     )
 
     # Обробка фільтру за користувачем з GET-параметра
-    selected_user_id_str = request.GET.get('responsible_user')
+    selected_user_id_str = request.GET.get('responsible')
     selected_user_id = None
     if selected_user_id_str:
         try:
             selected_user_id = int(selected_user_id_str)
-            companies_query = companies_query.filter(responsible_user_id=selected_user_id)
+            companies_query = companies_query.filter(responsible_id=selected_user_id)
         except (ValueError, TypeError):
             # Якщо передано невалідне значення ID, ігноруємо фільтр
             selected_user_id = None # Скидаємо, щоб у шаблоні не вибралось нічого некоректного
