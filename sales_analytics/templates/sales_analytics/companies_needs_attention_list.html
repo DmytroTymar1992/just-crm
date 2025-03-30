@@ -1,0 +1,72 @@
+{% extends "sales/base-sales.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ page_title }}</h2>
+    <p class="text-muted">Список компаній, де у жодного контакту немає запланованих (незавершених) завдань.</p>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Фільтр</h5>
+            <form method="get" action="{% url 'crm_app:companies_needs_attention_list' %}" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="responsible_user_filter" class="form-label">Відповідальний користувач:</label>
+                    <select name="responsible_user" id="responsible_user_filter" class="form-select">
+                        <option value="">----- Всі користувачі -----</option>
+                        {% for user in users_for_filter %}
+                            <option value="{{ user.id }}" {% if user.id == selected_user_id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-primary">Фільтрувати</button>
+                    <a href="{% url 'crm_app:companies_needs_attention_list' %}" class="btn btn-secondary ms-2">Скинути фільтр</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Знайдені компанії
+        </div>
+        <div class="card-body">
+            {% if companies %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Назва компанії</th>
+                                <th>Відповідальний</th>
+                                {# Можна додати інші колонки за потреби #}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in companies %}
+                                <tr>
+                                    <td>
+                                        {# Замініть 'company_detail' на ваш URL для деталей компанії, якщо є #}
+                                        <a href="{% url 'company_detail' company.pk %}">{{ company.name }}</a>
+                                    </td>
+                                    <td>
+                                        {{ company.responsible_user.get_full_name|default:company.responsible_user.username }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    Не знайдено компаній, що відповідають вашим критеріям фільтрації та потребують уваги.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

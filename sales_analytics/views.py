@@ -97,3 +97,48 @@ def analytics_dashboard(request):
         'log_entries': log_entries,
     }
     return render(request, 'sales_analytics/analytics_dashboard.html', context)
+
+
+@login_required # Захищаємо сторінку, доступ тільки для залогінених
+def companies_needs_attention_list(request):
+    """
+    Відображає список компаній, що потребують уваги (немає незавершених завдань у контактів),
+    з можливістю фільтрації за відповідальним користувачем.
+    """
+
+    # Отримуємо список користувачів для фільтру.
+    # Можна взяти всіх активних, або тільки тих, хто є відповідальним хоч за одну компанію
+    users_for_filter = User.objects.filter(is_active=True).order_by('last_name', 'first_name')
+    # Або, для ефективності, якщо багато користувачів:
+    # responsible_user_ids = Company.objects.values_list('responsible_user_id', flat=True).distinct()
+    # users_for_filter = User.objects.filter(pk__in=responsible_user_ids, is_active=True).order_by('last_name', 'first_name')
+
+
+    # Базовий запит: знаходимо компанії, де НЕМАЄ контактів з незавершеними завданнями
+    # Тобто, виключаємо компанії, де Є хоча б один контакт з is_completed=False
+    companies_query = Company.objects.exclude(
+        contact__tasks__is_completed=False
+    )
+
+    # Обробка фільтру за користувачем з GET-параметра
+    selected_user_id_str = request.GET.get('responsible_user')
+    selected_user_id = None
+    if selected_user_id_str:
+        try:
+            selected_user_id = int(selected_user_id_str)
+            companies_query = companies_query.filter(responsible_user_id=selected_user_id)
+        except (ValueError, TypeError):
+            # Якщо передано невалідне значення ID, ігноруємо фільтр
+            selected_user_id = None # Скидаємо, щоб у шаблоні не вибралось нічого некоректного
+
+    # Оптимізуємо запит та впорядковуємо
+    companies_list = companies_query.select_related('responsible_user').order_by('name')
+
+    context = {
+        'companies': companies_list,
+        'users_for_filter': users_for_filter,
+        'selected_user_id': selected_user_id, # Передаємо ID для виділення у фільтрі
+        'page_title': 'Компанії без активних завдань' # Заголовок сторінки
+    }
+
+    return render(request, 'sales_analytics/companies_needs_attention_list.html', context)
