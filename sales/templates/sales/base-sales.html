@@ -201,6 +201,27 @@
       </main>
     </div>
   </div>
+  <div class="modal fade" id="attentionModal" tabindex="-1" aria-labelledby="attentionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="attentionModalLabel">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Увага!
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Знайдено компанії, за які ви відповідальні, де у жодного з контактів немає запланованих (незавершених) завдань.</p>
+        <p>Рекомендується перевірити ці компанії та запланувати необхідні дії.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+        {# Можна додати посилання на сторінку компаній або на спеціальну сторінку зі списком таких компаній #}
+        <a href="{% url 'company_list' %}" class="btn btn-primary">Перейти до списку компаній</a>
+      </div>
+    </div>
+  </div>
+</div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Додаємо Choices.js перед вашим extra_js -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -326,6 +347,27 @@
   });
 }
   </script>
+  <script>
+    // Запускаємо код після повного завантаження DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        // Перевіряємо змінну з контексту Django
+        {% if show_attention_modal %}
+            console.log("Потрібно показати модальне вікно уваги."); // Для відладки
+            // Знаходимо елемент модального вікна за його ID
+            var attentionModalElement = document.getElementById('attentionModal');
+            if (attentionModalElement) {
+                 // Створюємо екземпляр модального вікна Bootstrap
+                var attentionModal = new bootstrap.Modal(attentionModalElement);
+                // Показуємо модальне вікно
+                attentionModal.show();
+            } else {
+                console.error("Не знайдено HTML елемент модального вікна з ID 'attentionModal'"); // Для відладки
+            }
+        {% else %}
+            // console.log("Модальне вікно уваги не потрібне."); // Для відладки (можна розкоментувати)
+        {% endif %}
+    });
+</script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

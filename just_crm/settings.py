@@ -71,6 +71,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                'sales.context_processors.attention_notification_processor',
             ],
         },
     },
@@ -171,6 +173,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+CELERY_BEAT_SCHEDULE = {
+    'check-company-status-every-15-minutes': {
+        'task': 'sales.tasks.check_company_task_status_for_users', # Правильний шлях до задачі
+        'schedule': 900.0,  # 15 хвилин * 60 секунд
+        # 'args': (arg1, arg2), # Якщо потрібні аргументи
+    },
+}
 
 ASGI_APPLICATION = 'just_crm.asgi.application'
 

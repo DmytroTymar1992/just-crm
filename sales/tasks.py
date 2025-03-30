@@ -710,3 +710,54 @@ def import_telegram_contact_task(user_id, contact_phone, first_name, last_name):
         logger.info("Telegram client disconnected")
 
     return result
+
+
+from django.contrib.auth.models import User
+from django.db.models import Exists, OuterRef
+from .models import Contact, Task
+from main.models import UserProfile, Company
+logger = logging.getLogger(__name__)
+
+@shared_task(name="check_company_task_status_for_users")
+def check_company_task_status_for_users():
+    """
+    Періодично перевіряє для всіх активних користувачів,
+    чи є у них компанії, де ЖОДЕН з контактів НЕ МАЄ НЕЗАВЕРШЕНИХ завдань.
+    """
+    logger.info("Starting periodic check for companies needing attention (ignoring completed tasks)...")
+
+    users = User.objects.filter(is_active=True).prefetch_related('profile')
+
+    updated_count = 0
+    for user in users:
+        try:
+            # Знаходимо компанії, за які відповідає користувач,
+            # і ВИКЛЮЧАЄМО ті, для яких ІСНУЄ хоча б один контакт,
+            # у якого є хоча б одна НЕЗАВЕРШЕНА задача (is_completed=False).
+            # Використовуємо 'tasks__' через related_name='tasks' у Task.contact.
+            needs_attention = Company.objects.filter(
+                responsible_user=user
+            ).exclude(
+                Exists(Contact.objects.filter(
+                    company=OuterRef('pk'),
+                    tasks__is_completed=False # <--- ОСНОВНА ЗМІНА ТУТ
+                ))
+            ).exists()
+
+            # Подальше оновлення прапорця у профілі користувача залишається таким самим
+            profile, created = UserProfile.objects.get_or_create(user=user)
+
+            if profile.has_companies_needing_attention != needs_attention:
+                profile.has_companies_needing_attention = needs_attention
+                profile.save(update_fields=['has_companies_needing_attention'])
+                updated_count += 1
+                logger.debug(f"Updated attention flag for user {user.username} to {needs_attention}")
+            elif created:
+                 profile.has_companies_needing_attention = needs_attention
+                 profile.save(update_fields=['has_companies_needing_attention'])
+                 logger.debug(f"Initialized attention flag for new profile user {user.username} to {needs_attention}")
+
+        except Exception as e:
+            logger.error(f"Error processing user {user.username}: {e}", exc_info=True)
+
+    logger.info(f"Finished periodic check (ignoring completed tasks). Updated flags for {updated_count} users.")

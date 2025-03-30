@@ -77,6 +77,8 @@ class UserProfile(models.Model):
     phonet_ext = models.CharField(max_length=32, null=True, blank=True, help_text="Внутрішній номер (ext) співробітника в Phonet")
     phonet_enabled = models.BooleanField(default=False, help_text="Активувати прослуховування викликів для цього користувача?")
 
+    has_companies_needing_attention = models.BooleanField(default=False, db_index=True)
+
     def __str__(self):
         return f"Profile of {self.user.username}"
 
