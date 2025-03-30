@@ -215,7 +215,7 @@
         <p>Рекомендується перевірити ці компанії та запланувати необхідні дії.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+        <button type="button" class="btn btn-info" id="snoozeAttentionModalBtn">Нагадати пізніше</button>
         {# Можна додати посилання на сторінку компаній або на спеціальну сторінку зі списком таких компаній #}
         <a href="{% url 'sales_analytics:companies_needs_attention_list' %}?responsible={{ user.id }}" class="btn btn-primary">Перейти до списку компаній</a>
       </div>
@@ -348,23 +348,68 @@
 }
   </script>
   <script>
-      document.addEventListener('DOMContentLoaded', function() {
-          // Використовуємо with для зручності доступу до імені поточного view
-          {% with current_view_name=request.resolver_match.view_name %}
-              {# Перевіряємо прапорець ТА чи поточний view НЕ є сторінкою зі списком #}
-              {% if show_attention_modal and current_view_name != 'sales_analytics:companies_needs_attention_list' %}
-                  console.log("Потрібно показати модальне вікно уваги (не на сторінці списку).");
-                  var attentionModalElement = document.getElementById('attentionModal');
-                  if (attentionModalElement) {
-                      var attentionModal = new bootstrap.Modal(attentionModalElement);
-                      attentionModal.show();
-                  } else {
-                      console.error("Не знайдено HTML елемент модального вікна з ID 'attentionModal'");
-                  }
-              {% endif %}
-          {% endwith %}
-      });
-  </script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const attentionModalElement = document.getElementById('attentionModal');
+        const snoozeButton = document.getElementById('snoozeAttentionModalBtn');
+        const storageKey = 'attentionModalSnoozeUntil'; // Ключ для localStorage
+        let attentionModalInstance = null; // Зберігатимемо екземпляр модалки Bootstrap
+
+        if (attentionModalElement) {
+            // Створюємо екземпляр модального вікна Bootstrap
+            attentionModalInstance = new bootstrap.Modal(attentionModalElement);
+
+            // --- Перевірка статусу "Нагадати пізніше" (Snooze) ---
+            const snoozeUntilTimestamp = localStorage.getItem(storageKey);
+            const now = Date.now(); // Поточний час у мілісекундах
+            let isSnoozed = false;
+
+            if (snoozeUntilTimestamp && now < parseInt(snoozeUntilTimestamp, 10)) {
+                // Якщо мітка часу існує і вона ще не пройшла
+                isSnoozed = true;
+                // console.log('Модалка на паузі до:', new Date(parseInt(snoozeUntilTimestamp, 10))); // Для відладки
+            } else if (snoozeUntilTimestamp) {
+                 // Якщо час паузи минув, видаляємо запис з localStorage
+                 localStorage.removeItem(storageKey);
+                 // console.log('Час паузи для модалки минув.'); // Для відладки
+            }
+
+            // --- Логіка показу модального вікна ---
+            // Використовуємо with для зручності доступу до імені поточного view
+            {% with current_view_name=request.resolver_match.view_name %}
+                {# Перевіряємо прапорець, чи НЕ на сторінці списку, ТА чи НЕ на паузі #}
+                {% if show_attention_modal and current_view_name != 'sales_analytics:companies_needs_attention_list' %}
+                    if (!isSnoozed) {
+                        // Показуємо модальне вікно тільки якщо НЕ на паузі
+                        console.log("Потрібно показати модальне вікно уваги (не на сторінці списку, не на паузі).");
+                        attentionModalInstance.show();
+                    }
+                {% endif %}
+            {% endwith %}
+
+            // --- Обробник для кнопки "Нагадати пізніше" ---
+            if (snoozeButton) {
+                snoozeButton.addEventListener('click', function() {
+                    const snoozeMinutes = 15;
+                    // Обчислюємо час закінчення паузи (поточний час + 15 хвилин у мілісекундах)
+                    const expirationTimestamp = Date.now() + snoozeMinutes * 60 * 1000;
+                    // Зберігаємо час закінчення паузи в localStorage
+                    localStorage.setItem(storageKey, expirationTimestamp.toString());
+                    console.log('Ставимо модалку на паузу до:', new Date(expirationTimestamp)); // Для відладки
+
+                    // Ховаємо модальне вікно
+                    if (attentionModalInstance) {
+                        attentionModalInstance.hide();
+                    }
+                });
+            } else {
+                 console.error("Не знайдено кнопку 'Нагадати пізніше' (ID: snoozeAttentionModalBtn)");
+            }
+
+        } else {
+             console.error("Не знайдено HTML елемент модального вікна з ID 'attentionModal'");
+        }
+    });
+</script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
