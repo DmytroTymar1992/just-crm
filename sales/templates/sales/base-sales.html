@@ -217,7 +217,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
         {# Можна додати посилання на сторінку компаній або на спеціальну сторінку зі списком таких компаній #}
-        <a href="{% url 'company_list' %}" class="btn btn-primary">Перейти до списку компаній</a>
+        <a href="{% url 'sales_analytics:companies_needs_attention_list' %}?responsible_user={{ user.id }}" class="btn btn-primary">Перейти до списку компаній</a>
       </div>
     </div>
   </div>
