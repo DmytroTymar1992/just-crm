@@ -36,31 +36,35 @@
           </a>
 
           {% if task_info.task %}
-            <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border"
-                 title="Задача: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})">
+    <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border"
+         title="Задача: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})">
 
-                <span class="task-icon me-1">
-                    {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
-                    {% if task_info.task.task_type == 'email' %}<i class="bi bi-envelope-at"></i>{% endif %}
-                    {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
-                    {# Додайте інші типи, якщо є #}
-                </span>
+        {# Іконка зліва, не стискається #}
+        <span class="task-icon me-2 flex-shrink-0"> {# Збільшив me-1 до me-2 для відступу #}
+            {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
+            {% if task_info.task.task_type == 'email' %}<i class="bi bi-envelope-at"></i>{% endif %}
+            {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
+            {# Додайте інші типи, якщо є #}
+        </span>
 
-                <span class="task-target text-truncate" style="max-width: 150px; display: inline-block; vertical-align: middle;">
-                    {{ task_info.task.target }}
-                </span>
+        {# Обертка для цілі та дати, розташованих у колонку #}
+        <div class="task-text-wrapper d-flex flex-column justify-content-center lh-sm"> {# lh-sm для компактності рядків #}
+            <span class="task-target text-truncate" style="max-width: 150px; display: inline-block;">
+                {{ task_info.task.target }}
+            </span>
+            <small class="task-date" style="white-space: nowrap; font-size: 0.85em;"> {# Трохи менший шрифт для дати #}
+                {{ task_info.task.task_date|date:"d.m" }}
+            </small>
+        </div>
 
-                <small class="task-date ms-1 ps-1 border-start" style="white-space: nowrap;">
-                    {{ task_info.task.task_date|date:"d.m" }}
-                </small>
-            </div>
-        {% else %}
-            {# ... Кнопка "Створити задачу" ... #}
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
-                <i class="bi bi-plus-circle"></i>
-                <span class="d-none d-md-inline ms-1">Створити задачу</span>
-            </button>
-        {% endif %}
+    </div>
+{% else %}
+    {# ... Кнопка "Створити задачу" ... #}
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
+        <i class="bi bi-plus-circle"></i>
+        <span class="d-none d-md-inline ms-1">Створити задачу</span>
+    </button>
+{% endif %}
 
           <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
               <i class="bi bi-envelope"></i>
@@ -119,6 +123,7 @@
 
 {% block extra_css %}
 <style>
+  /* Стилі для Скролбарів та Поля Вводу (Без змін) */
   #chat-log, #contacts-container {
     background: #f8f9fa;
   }
@@ -133,130 +138,144 @@
     background: #e9ecef;
   }
   #chat-message-input {
-  resize: vertical; /* Дозволяє змінювати висоту, але не ширину */
-  min-height: 40px; /* Мінімальна висота */
-  max-height: 150px; /* Максимальна висота */
-  overflow-y: auto; /* Додає прокрутку, якщо текст перевищує max-height */
-}
+    resize: vertical;
+    min-height: 40px;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  /* --- Анімації Блимання (Без змін) --- */
+  @keyframes blink-red {
+      0%, 100% { background-color: rgba(220, 53, 69, 0.25); border-color: rgba(220, 53, 69, 0.45); }
+      50% { background-color: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.25); }
+  }
+
+  @keyframes blink-green {
+      0%, 100% { background-color: rgba(25, 135, 84, 0.2); border-color: rgba(25, 135, 84, 0.4); }
+      50% { background-color: rgba(25, 135, 84, 0.1); border-color: rgba(25, 135, 84, 0.25); }
+  }
+
+  /* --- Стилізація Блоку Задачі (Оновлено) --- */
+  .task-display {
+      /* Зменшені відступи (Залишаємо) */
+      padding-top: 0.2rem !important;
+      padding-bottom: 0.2rem !important;
+      padding-left: 0.6rem !important;
+      padding-right: 0.6rem !important;
+
+      /* Базовий розмір шрифту (Залишаємо) */
+      font-size: 0.8rem;
+      /* line-height: 1.2; */ /* Закоментовано, використовуємо lh-sm в HTML або в .task-text-wrapper */
+
+      cursor: default;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      max-width: 250px; /* Максимальна ширина всього блоку */
+      overflow: hidden; /* Ховаємо те, що виходить за межі */
+      vertical-align: middle; /* Для вирівнювання з сусідніми кнопками */
+  }
+
+  /* Стилізація іконки всередині блоку задачі */
+  .task-display .task-icon {
+      display: inline-flex; /* Вирівнюємо вміст іконки */
+      align-items: center;  /* Центруємо по вертикалі */
+      align-self: center;   /* Центруємо саму іконку відносно батьківського flex-контейнера */
+      flex-shrink: 0;     /* Забороняємо стискатися */
+  }
+  .task-display .task-icon i {
+      /* font-size: 1em; */ /* Можна налаштувати розмір іконки, якщо потрібно */
+      line-height: 1;     /* Уникаємо зайвої висоти рядка від іконки */
+      vertical-align: middle; /* Додаткове вирівнювання */
+  }
+
+  /* Новий блок для тексту (ціль + дата) */
+  .task-text-wrapper {
+     line-height: 1.15; /* Компактна висота рядка (альтернатива lh-sm в HTML) */
+     overflow: hidden;    /* Обрізаємо вміст, якщо виходить за межі */
+     /* margin-left: 0.2rem; /* Можна додати невеликий відступ від іконки */
+  }
+
+  /* Ціль задачі */
+  .task-display .task-target {
+      display: inline-block;  /* Дозволяє задати max-width */
+      max-width: 150px;       /* Обмежуємо ширину цілі (Налаштуйте!) */
+      /* vertical-align: middle; */ /* Не потрібний для flex-column */
+      white-space: nowrap;      /* Заборона переносу */
+      overflow: hidden;         /* Ховаємо те, що не влізло */
+      text-overflow: ellipsis;  /* Додаємо три крапки */
+  }
+
+  /* Дата задачі */
+  .task-display .task-date {
+      font-size: 0.85em; /* Робимо трохи меншим */
+      white-space: nowrap; /* Заборона переносу дати */
+      /* vertical-align: middle; */ /* Не потрібний для flex-column */
+  }
+
+  /* --- Стилі для Статусів Задач (Оновлено) --- */
+
+  /* Статус: Протермінована */
+  .task-overdue {
+      color: #a71d2a;
+      border: 1px solid rgba(220, 53, 69, 0.45) !important;
+      background-color: rgba(220, 53, 69, 0.25);
+      animation: blink-red 1.5s infinite;
+  }
+  .task-overdue .task-icon i { /* Колір іконки */
+      color: #dc3545;
+  }
+  .task-overdue .task-date { /* Колір дати */
+      color: #dc3545;
+  }
+  /* .task-overdue .border-start ... - Правило видалено */
+
+  /* Статус: Сьогодні */
+  .task-today {
+      color: #0a3622;
+      border: 1px solid rgba(25, 135, 84, 0.4) !important;
+      background-color: rgba(25, 135, 84, 0.2);
+      animation: blink-green 2.5s infinite;
+  }
+  .task-today .task-icon i { /* Колір іконки */
+      color: #198754;
+  }
+  .task-today .task-date { /* Колір дати */
+      color: #198754;
+  }
+  /* .task-today .border-start ... - Правило видалено */
+
+  /* Статус: Майбутня */
+  .task-future {
+      color: #664d03;
+      border: 1px solid rgba(255, 193, 7, 0.4) !important;
+      background-color: rgba(255, 193, 7, 0.15);
+  }
+  .task-future .task-icon i { /* Колір іконки */
+      color: #ffc107;
+  }
+  .task-future .task-date { /* Колір дати */
+      color: #ffc107;
+  }
+  /* .task-future .border-start ... - Правило видалено */
 
 
-  /* --- Анімації Блимання --- */
-@keyframes blink-red {
-    0%, 100% { background-color: rgba(220, 53, 69, 0.25); border-color: rgba(220, 53, 69, 0.45); }
-    50% { background-color: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.25); }
-}
+  /* --- Обрізання Інших Елементів (Без змін) --- */
 
-@keyframes blink-green {
-    0%, 100% { background-color: rgba(25, 135, 84, 0.2); border-color: rgba(25, 135, 84, 0.4); }
-    50% { background-color: rgba(25, 135, 84, 0.1); border-color: rgba(25, 135, 84, 0.25); }
-}
+  /* Обрізання для назви компанії */
+  .contact-info > a > small.text-truncate {
+      display: inline-block;
+      max-width: 250px; /* Налаштуйте максимальну ширину компанії */
+  }
 
-/* --- Стилізація Блоку Задачі --- */
-.task-display {
-    /* Зменшуємо вертикальні відступи, як у btn-sm */
-    padding-top: 0.2rem !important;    /* Трохи менше стандартного .25rem */
-    padding-bottom: 0.2rem !important; /* Трохи менше стандартного .25rem */
-    padding-left: 0.6rem !important;   /* Горизонтальні можна залишити трохи більшими */
-    padding-right: 0.6rem !important;
+  /* Загальний стиль для task-icon, якщо використовується поза .task-display (Без змін) */
+  /* Якщо .task-icon використовується тільки всередині .task-display, це правило можна видалити,
+     оскільки стилі вже визначені в `.task-display .task-icon` */
+  .task-icon {
+      display: inline-flex;
+      align-items: center;
+  }
 
-    /* Зменшуємо базовий розмір шрифту */
-    font-size: 0.8rem; /* Трохи менше стандартного .875rem для btn-sm, щоб вмістити все */
-    line-height: 1.2;  /* Зменшена висота рядка для компактності */
+  /* Видалено дублююче/загальне правило для .task-target */
 
-    cursor: default;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-    max-width: 250px;
-    overflow: hidden;
-
-    /* Додаємо для кращого вирівнювання з кнопками */
-    vertical-align: middle; /* Спробувати вирівняти сам блок */
-}
-
-.task-display .task-icon i {
-    font-size: 0.9em; /* 90% від нового font-size батьківського блоку */
-    vertical-align: middle; /* Додаткове вирівнювання */
-}
-
-/* Залишаємо обрізання цілі */
-.task-display .task-target {
-    display: inline-block;
-    vertical-align: middle;
-    max-width: 150px; /* Або інше значення */
-}
-
-/* Стилі для дати */
-.task-display .task-date {
-    font-size: 0.9em; /* 90% від нового font-size батьківського блоку */
-    white-space: nowrap;
-    vertical-align: middle; /* Додаткове вирівнювання */
-}
-
-/* Статус: Протермінована */
-/* Переконайтесь, що кольори для статусів застосовуються коректно */
-.task-overdue {
-    color: #a71d2a;
-    border: 1px solid rgba(220, 53, 69, 0.45) !important;
-    background-color: rgba(220, 53, 69, 0.25);
-    animation: blink-red 1.5s infinite;
-}
-.task-overdue .task-icon i,
-.task-overdue .task-date {
-    color: #dc3545;
-}
-.task-overdue .border-start {
-    border-color: rgba(220, 53, 69, 0.3) !important;
-}
-
-
-/* Статус: Сьогодні */
-.task-today {
-    color: #0a3622; /* Темно-зелений текст */
-    border: 1px solid rgba(25, 135, 84, 0.4) !important;
-    background-color: rgba(25, 135, 84, 0.2);
-    animation: blink-green 2.5s infinite;
-}
-.task-today .task-icon i,
-.task-today .task-date {
-    color: #198754; /* Яскравіший зелений для акцентів */
-}
-.task-today .border-start {
-    border-color: rgba(25, 135, 84, 0.3) !important;
-}
-
-/* Статус: Майбутня */
-.task-future {
-    color: #664d03; /* Темно-жовтий текст */
-    border: 1px solid rgba(255, 193, 7, 0.4) !important;
-    background-color: rgba(255, 193, 7, 0.15);
-    /* Без анімації */
-}
-.task-future .task-icon i,
-.task-future .task-date {
-    color: #ffc107; /* Яскравіший жовтий */
-}
-.task-future .border-start {
-    border-color: rgba(255, 193, 7, 0.3) !important;
-}
-
-/* --- Обрізання тексту всередині task-display --- */
-.task-target {
-    display: inline-block; /* Важливо для роботи max-width і text-truncate */
-    vertical-align: middle; /* Вирівнювання по вертикалі */
-    max-width: 150px; /* !!! Налаштуйте максимальну ширину цілі !!! */
-    /* text-truncate додає потрібні overflow, white-space, text-overflow */
-}
-
-/* Обрізання для назви компанії (приклад) */
-.contact-info > a > small.text-truncate {
-    display: inline-block; /* Або block, залежно від контексту */
-    max-width: 250px; /* !!! Налаштуйте максимальну ширину компанії !!! */
-}
-
-/* Додаткові стилі для іконок типів задач */
-.task-icon {
-    display: inline-flex;
-    align-items: center;
-}
 </style>
 {% endblock %}
 
