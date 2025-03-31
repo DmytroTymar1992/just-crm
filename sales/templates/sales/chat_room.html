@@ -14,43 +14,56 @@
 
   <!-- Центральна колонка: Чат -->
   <div class="d-flex flex-column flex-grow-1">
-    <!-- Заголовок діалогу -->
-    <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">
-        <span class="fw-bold text-dark">{{ room.contact.first_name }} {{ room.contact.last_name }}</span>
-        {% if room.contact.company %}
-          <a href="{% url 'company_detail' room.contact.company.id %}">
-          <small class="text-muted d-block">{{ room.contact.company.name }}</small>
-          </a>
-        {% endif %}
-      </h5>
-        <a href="sip:{{room.contact.phone}}">Подзвонити</a>
-        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#taskModal">
-          <i class="bi bi-plus-circle me-1"></i> Створити задачу
-        </button>
-      <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal">
-        <i class="bi bi-envelope me-1"></i> Написати Email
-      </button>
-    </div>
+  <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center gap-3">
 
-    <!-- Кнопка "Завантажити ще" (старіші повідомлення) -->
-    <button id="load-more-btn"
-            class="btn btn-outline-secondary btn-sm w-100 text-center border-0"
-            style="display: none; border-radius: 0;"
-    >
-      Завантажити ще
-    </button>
-
-    <!-- Лог чату -->
-    <div id="chat-log" class="flex-grow-1 overflow-auto p-3" style="background: #f8f9fa;">
-        {% if page_obj %}
-      {% include "sales/partials/chat_messages.html" with interactions=page_obj.object_list %}
-        {% else %}
-        <div class="p-3 text-muted">
-        Повідомлень ще немає
+      <div class="flex-grow-1 overflow-hidden me-2">
+          <h5 class="mb-0 text-truncate" title="{{ room.contact.first_name }}{% if room.contact.last_name %} {{ room.contact.last_name }}{% endif %}">
+              <span class="fw-bold text-dark">
+                  {{ room.contact.first_name }}
+                  {% if room.contact.last_name %}
+                      {{ room.contact.last_name }}
+                  {% endif %}
+              </span>
+          </h5>
+          {% if room.contact.company %}
+              <a href="{% url 'company_detail' room.contact.company.id %}" class="text-decoration-none">
+                  <small class="text-muted d-block text-truncate" title="{{ room.contact.company.name }}">
+                      {{ room.contact.company.name }}
+                  </small>
+              </a>
+          {% endif %}
       </div>
-        {% endif %}
-    </div>
+
+      <div class="d-flex align-items-center flex-shrink-0 gap-2">
+          <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center" title="Подзвонити">
+              <i class="bi bi-telephone me-1"></i>
+              <span class="d-none d-md-inline">Подзвонити</span> </a>
+          <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
+              <i class="bi bi-plus-circle me-1"></i>
+              <span class="d-none d-md-inline">Створити задачу</span> </button>
+          <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
+              <i class="bi bi-envelope me-1"></i>
+              <span class="d-none d-md-inline">Написати Email</span> </button>
+      </div>
+  </div>
+
+  <button id="load-more-btn"
+          class="btn btn-outline-secondary btn-sm w-100 text-center border-0"
+          style="display: none; border-radius: 0;"
+  >
+      Завантажити ще
+  </button>
+
+  <div id="chat-log" class="flex-grow-1 overflow-auto p-3" style="background: #f8f9fa;">
+      {% if page_obj %}
+          {% include "sales/partials/chat_messages.html" with interactions=page_obj.object_list %}
+      {% else %}
+          <div class="p-3 text-muted">
+              Повідомлень ще немає
+          </div>
+      {% endif %}
+  </div>
+</div>
 
     <!-- Форма для відправки -->
     <div class="p-3 bg-white border-top shadow-sm">
