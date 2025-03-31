@@ -69,98 +69,82 @@
 
       <!-- Додаємо пагінацію -->
       <div id="pagination-container" class="mt-4">
-        {% if page_obj.has_other_pages %}
-          <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-              {% if page_obj.has_previous %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
-                    <span aria-hidden="true">«</span>
-                  </a>
+          {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+              <ul class="pagination justify-content-center">
+                <!-- Попередня сторінка -->
+                {% if page_obj.has_previous %}
+                  <li class="page-item">
+                    < consideration href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
+                      <span aria-hidden="true">«</span>
+                    </a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link">«</span>
+                  </li>
+                {% endif %}
+
+                <!-- Перша сторінка -->
+                <li class="page-item {% if page_obj.number == 1 %}active{% endif %}">
+                  <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">1</a>
                 </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link">«</span>
-                </li>
-              {% endif %}
-              {% for num in page_obj.paginator.page_range %}
-                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                  <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
-                </li>
-              {% endfor %}
-              {% if page_obj.has_next %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
-                    <span aria-hidden="true">»</span>
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link">»</span>
-                </li>
-              {% endif %}
-            </ul>
-          </nav>
-        {% endif %}
-      </div>
+
+                <!-- Точки, якщо є пропуск перед сусідніми сторінками -->
+                {% if page_obj.number > 4 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                {% endif %}
+
+                <!-- Сусідні сторінки (обмежуємо діапазон) -->
+                {% for num in page_obj.paginator.page_range %}
+                  {% if num > page_obj.number|add:-3 and num < page_obj.number|add:3 and num != 1 and num != page_obj.paginator.num_pages %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                      <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+
+                <!-- Точки, якщо є пропуск перед останньою сторінкою -->
+                {% if page_obj.number < page_obj.paginator.num_pages|add:-3 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                {% endif %}
+
+                <!-- Остання сторінка -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                  <li class="page-item {% if page_obj.number == page_obj.paginator.num_pages %}active{% endif %}">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ page_obj.paginator.num_pages }}</a>
+                  </li>
+                {% endif %}
+
+                <!-- Наступна сторінка -->
+                {% if page_obj.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
+                      <span aria-hidden="true">»</span>
+                    </a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link">»</span>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        </div>
     </div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
-<style>
-  /* Контейнер компаній */
-  #companies-container {
-    background: #f5f6f8;
-  }
-  #companies-container::-webkit-scrollbar {
-    width: 6px;
-  }
-  #companies-container::-webkit-scrollbar-thumb {
-    background-color: #ced4da;
-    border-radius: 3px;
-  }
-  #companies-container::-webkit-scrollbar-track {
-    background: #e9ecef;
-  }
-
-  /* Картки */
-  .card {
-    border-radius: 10px;
-    background: #ffffff;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
-  }
-  .company-name:hover {
-    color: #007bff !important;
-  }
-  .company-details p {
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-  }
-  .company-details .text-muted a {
-    color: #6c757d;
-  }
-  .company-details .text-muted a:hover {
-    color: #007bff;
-  }
-
-  /* Кнопка */
-  .btn-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    border: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-  }
-</style>
+  <link rel="stylesheet" href="{% static 'main/css/company.css' %}">
 {% endblock %}
+
 
 {% block extra_js %}
 <script>

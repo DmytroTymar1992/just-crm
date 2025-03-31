@@ -1,0 +1,99 @@
+/* Контейнер компаній */
+  #companies-container {
+    background: #f5f6f8;
+  }
+  #companies-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  #companies-container::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 3px;
+  }
+  #companies-container::-webkit-scrollbar-track {
+    background: #e9ecef;
+  }
+
+  /* Картки */
+  .card {
+    border-radius: 10px;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  .company-name:hover {
+    color: #007bff !important;
+  }
+  .company-details p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .company-details .text-muted a {
+    color: #6c757d;
+  }
+  .company-details .text-muted a:hover {
+    color: #007bff;
+  }
+
+  /* Кнопка */
+  .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+
+  /* Пагінатор */
+  .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
+.pagination .page-link {
+  color: #007bff;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.pagination .page-link:hover {
+  background: #f8f9fa;
+  color: #0056b3;
+}
+
+.pagination .page-item.active .page-link {
+  background: #007bff;
+  color: #ffffff;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  background: transparent;
+  cursor: not-allowed;
+}
+
+/* Стиль для "..." */
+.pagination .page-item.disabled .page-link {
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+
+/* Адаптивність */
+@media (max-width: 576px) {
+  .pagination .page-link {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+}
