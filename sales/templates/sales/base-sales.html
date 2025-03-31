@@ -270,32 +270,34 @@
     }
 
     rooms.forEach(r => {
+      // Створюємо <a>, яке обгортає <li>
+      let a = document.createElement("a");
+      a.href = `/sales/${r.room_id}/`;
+      a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
+
       let li = document.createElement("li");
       li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "px-3", "py-2", "border-bottom");
       if (r.room_id == currentRoomId) {
         li.classList.add("bg-primary-subtle");
       }
 
-      let a = document.createElement("a");
-      a.href = `/sales/${r.room_id}/`;
-      a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
-
+      // Додаємо назву компанії, якщо є
       if (r.company_name) {
         let small = document.createElement("small");
         small.classList.add("text-muted");
         small.textContent = r.company_name;
-        a.appendChild(small);
+        li.appendChild(small);
       }
 
+      // Додаємо ім’я контакту
       let span = document.createElement("span");
       span.textContent = `${r.first_name} ${r.last_name || ''}`;
       if (r.room_id == currentRoomId) {
         span.classList.add("fw-semibold");
       }
-      a.appendChild(span);
+      li.appendChild(span);
 
-      li.appendChild(a);
-
+      // Додаємо бейдж із кількістю непрочитаних
       if (r.unread_count > 0) {
         let badge = document.createElement("span");
         badge.classList.add("badge", "bg-primary", "rounded-pill");
@@ -303,7 +305,9 @@
         li.appendChild(badge);
       }
 
-      roomListUl.appendChild(li);
+      // Вставляємо <li> у <a>, а потім <a> у <ul>
+      a.appendChild(li);
+      roomListUl.appendChild(a);
     });
 
     console.log('Room list UI updated successfully');
