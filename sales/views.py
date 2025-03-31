@@ -297,6 +297,29 @@ def search_contacts(request):
     return HttpResponse(html)
 
 @login_required
+def search_companies(request):
+    query = request.GET.get("q", "").strip()
+    if query:
+        companies = Company.objects.filter(
+            Q(name__icontains=query) |
+            Q(work_id__icontains=query) |
+            Q(robota_id__icontains=query)
+        ).distinct()
+    else:
+        companies = Company.objects.all()
+
+    paginator = Paginator(companies, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    html = render_to_string('sales/partials/companies_list_partial.html', {
+        'companies': page_obj,
+        'page_obj': page_obj,
+        'request': request  # Передаємо request для збереження параметрів у пагінації
+    })
+    return HttpResponse(html)
+
+@login_required
 def create_contact(request):
     if request.method == "POST":
         form = ContactForm(request.POST)

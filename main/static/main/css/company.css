@@ -48,6 +48,26 @@
     box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
   }
 
+  /* Пошук */
+  #company-search {
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+
+#companies-container {
+  background: #f8f9fa;
+}
+
+#companies-container::-webkit-scrollbar {
+  width: 6px;
+}
+#companies-container::-webkit-scrollbar-thumb {
+  background-color: #adb5bd;
+  border-radius: 3px;
+}
+#companies-container::-webkit-scrollbar-track {
+  background: #e9ecef;
+}
+
   /* Пагінатор */
   .pagination {
   display: flex;

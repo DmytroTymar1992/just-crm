@@ -21,6 +21,7 @@ urlpatterns = [
     path('edit_task/', edit_task, name='edit_task'),
     path('chats/', chats_view, name='chats'),
     path('contacts/search/', search_contacts, name='contact_search'),
+    path('companies/search/', search_companies, name='search_companies'),
     path('contacts/create_chat/<int:contact_id>/', create_chat_room, name='create_chat_room'),
     path('<int:room_id>/vacancies/', get_company_vacancies, name='get_company_vacancies'),
 
