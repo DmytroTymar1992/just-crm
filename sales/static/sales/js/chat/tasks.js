@@ -18,7 +18,7 @@ function createTask() {
       'X-CSRFToken': getCsrfToken(),
     },
     body: JSON.stringify({
-      room_id: roomId,
+      room_id: window.chatData.roomId,
       task_type: taskType,
       task_date: taskDate,
       target: taskTarget,

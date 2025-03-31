@@ -1,13 +1,8 @@
-const currentUser = "{{ request.user.username }}";
-const roomId = "{{ room_id }}";
-const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + roomId + '/');
-const chatUrl = `/sales/${roomId}/`;
-const contactFirstName = "{{ room.contact.first_name|escapejs }}";
-const contactLastName = "{{ room.contact.last_name|default:''|escapejs }}";
-const contactFullName = `${contactFirstName} ${contactLastName}`.trim() || "Контакт";
+const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + window.chatData.roomId + '/');
+const chatUrl = `/sales/${window.chatData.roomId}/`;
 
 chatSocket.onopen = function(e) {
-  console.log('Chat WebSocket connection opened for room:', roomId);
+  console.log('Chat WebSocket connection opened for room:', window.chatData.roomId);
 };
 
 chatSocket.onmessage = function(e) {
@@ -15,7 +10,7 @@ chatSocket.onmessage = function(e) {
   console.log('Chat WebSocket message received:', data);
   const username = data.username || 'User';
   const payload = data.payload || {};
-  handleIncomingPayload(username, payload); // Імпортується з chat_messages.js
+  handleIncomingPayload(username, payload); // З chat_messages.js
 };
 
 chatSocket.onclose = function(e) {
@@ -29,5 +24,5 @@ chatSocket.onerror = function(e) {
 document.addEventListener("DOMContentLoaded", function() {
   const chatLog = document.getElementById("chat-log");
   if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
-  loadVacancies(); // Імпортується з vacancies.js
+  loadVacancies(); // З vacancies.js
 });

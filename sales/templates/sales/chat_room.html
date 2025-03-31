@@ -118,10 +118,14 @@
 <!-- Додаємо початкові значення для load_more.js -->
 <script>
   window.chatData = {
+    currentUser: "{{ request.user.username|escapejs }}",
+    roomId: "{{ room_id|escapejs }}",
+    contactFirstName: "{{ room.contact.first_name|escapejs }}",
+    contactLastName: "{{ room.contact.last_name|default:''|escapejs }}",
     currentPage: {{ page_obj.number|default:1 }},
-    hasPrevious: {{ page_obj.has_previous|yesno:"true,false"|default:"false" }},
-    roomId: "{{ room_id }}"
+    hasPrevious: {{ page_obj.has_previous|yesno:"true,false"|default:"false" }}
   };
+  window.chatData.contactFullName = `${window.chatData.contactFirstName} ${window.chatData.contactLastName}`.trim() || "Контакт";
 </script>
 <script src="{% static 'sales/js/chat/load_more.js' %}"></script>
 <script src="{% static 'sales/js/chat/utils.js' %}"></script>

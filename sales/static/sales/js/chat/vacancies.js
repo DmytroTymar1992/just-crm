@@ -1,6 +1,6 @@
 function loadVacancies() {
   const vacanciesList = document.getElementById('vacancies-list');
-  fetch(`/sales/${roomId}/vacancies/`)
+  fetch(`/sales/${window.chatData.roomId}/vacancies/`)
     .then(response => response.json())
     .then(data => {
       if (data.success) {
