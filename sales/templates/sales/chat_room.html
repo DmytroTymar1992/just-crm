@@ -12,12 +12,8 @@
     </div>
   </div>
 
-  <!-- Центральна колонка: Чат -->
-  <div class="d-flex flex-column flex-grow-1">
-  <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center gap-3">
-
-      <div class="flex-grow-1 overflow-hidden me-2">
-          <h5 class="mb-0 text-truncate" title="{{ room.contact.first_name }}{% if room.contact.last_name %} {{ room.contact.last_name }}{% endif %}">
+  <div class="d-flex flex-column flex-grow-1 vh-100"> <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center flex-shrink-0">
+      <div class="contact-info me-3 overflow-hidden"> <h5 class="mb-0 text-truncate" title="{{ room.contact.first_name }}{% if room.contact.last_name %} {{ room.contact.last_name }}{% endif %}">
               <span class="fw-bold text-dark">
                   {{ room.contact.first_name }}
                   {% if room.contact.last_name %}
@@ -26,31 +22,26 @@
               </span>
           </h5>
           {% if room.contact.company %}
-              <a href="{% url 'company_detail' room.contact.company.id %}" class="text-decoration-none">
-                  <small class="text-muted d-block text-truncate" title="{{ room.contact.company.name }}">
-                      {{ room.contact.company.name }}
-                  </small>
-              </a>
+              <a href="{% url 'company_detail' room.contact.company.id %}" class="text-decoration-none" title="{{ room.contact.company.name }}">
+                  <small class="text-muted d-block text-truncate">{{ room.contact.company.name }}</small> </a>
           {% endif %}
       </div>
 
-      <div class="d-flex align-items-center flex-shrink-0 gap-2">
-          <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center" title="Подзвонити">
-              <i class="bi bi-telephone me-1"></i>
-              <span class="d-none d-md-inline">Подзвонити</span> </a>
-          <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
-              <i class="bi bi-plus-circle me-1"></i>
-              <span class="d-none d-md-inline">Створити задачу</span> </button>
-          <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
-              <i class="bi bi-envelope me-1"></i>
-              <span class="d-none d-md-inline">Написати Email</span> </button>
+      <div class="header-actions d-flex align-items-center flex-shrink-0 gap-2"> <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
+              <i class="bi bi-telephone"></i>
+              <span class="d-none d-md-inline ms-1">Подзвонити</span> </a>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
+              <i class="bi bi-plus-circle"></i>
+              <span class="d-none d-md-inline ms-1">Створити задачу</span> </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
+              <i class="bi bi-envelope"></i>
+               <span class="d-none d-md-inline ms-1">Написати Email</span> </button>
       </div>
   </div>
 
   <button id="load-more-btn"
-          class="btn btn-outline-secondary btn-sm w-100 text-center border-0"
-          style="display: none; border-radius: 0;"
-  >
+          class="btn btn-outline-secondary btn-sm w-100 text-center border-0 flex-shrink-0"
+          style="display: none; border-radius: 0;">
       Завантажити ще
   </button>
 
@@ -58,23 +49,20 @@
       {% if page_obj %}
           {% include "sales/partials/chat_messages.html" with interactions=page_obj.object_list %}
       {% else %}
-          <div class="p-3 text-muted">
-              Повідомлень ще немає
+          <div class="p-3 text-muted text-center h-100 d-flex align-items-center justify-content-center"> Повідомлень ще немає
           </div>
       {% endif %}
   </div>
-</div>
 
-    <!-- Форма для відправки -->
-    <div class="p-3 bg-white border-top shadow-sm">
-  <div class="input-group">
-    <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="1"></textarea>
-    <button id="chat-message-submit" class="btn btn-primary" type="button">
-      <i class="bi bi-send me-1"></i> Надіслати
-    </button>
+  <div class="p-3 bg-white border-top shadow-sm flex-shrink-0">
+      <div class="input-group">
+          <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="1" style="resize: none;"></textarea> <button id="chat-message-submit" class="btn btn-primary" type="button">
+              <i class="bi bi-send"></i>
+              <span class="d-none d-sm-inline ms-1">Надіслати</span> </button>
+      </div>
   </div>
+
 </div>
-  </div>
 
 
   <!-- Права колонка: Вакансії компанії -->
