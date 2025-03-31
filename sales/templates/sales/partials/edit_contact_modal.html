@@ -1,0 +1,57 @@
+<div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="editContactModalLabel">Редагувати контакт</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-contact-form" method="post" action="{% url 'edit_contact' 0 %}" data-contact-id="0">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div id="form-errors" class="alert alert-danger" style="display: none;"></div>
+          <div class="mb-3">
+            <label for="first_name" class="form-label">Ім'я</label>
+            <input type="text" class="form-control" id="first_name" name="first_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="last_name" class="form-label">Прізвище</label>
+            <input type="text" class="form-control" id="last_name" name="last_name">
+          </div>
+          <div class="mb-3">
+            <label for="position" class="form-label">Посада</label>
+            <input type="text" class="form-control" id="position" name="position">
+          </div>
+          <div class="mb-3">
+            <label for="company" class="form-label">Компанія</label>
+            <select class="form-select" id="company" name="company">
+              <option value="">— Без компанії —</option>
+              {% for company in companies %}
+                <option value="{{ company.id }}" data-name="{{ company.name }}">{{ company.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="phone" class="form-label">Телефон</label>
+            <input type="text" class="form-control" id="phone" name="phone">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email">
+          </div>
+          <div class="mb-3">
+            <label for="telegram_username" class="form-label">Telegram Username</label>
+            <input type="text" class="form-control" id="telegram_username" name="telegram_username">
+          </div>
+          <div class="mb-3">
+            <label for="telegram_id" class="form-label">Telegram ID</label>
+            <input type="number" class="form-control" id="telegram_id" name="telegram_id">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+          <button type="submit" class="btn btn-primary" id="save-contact-changes">Зберегти зміни</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

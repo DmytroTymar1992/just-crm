@@ -293,7 +293,7 @@ def search_contacts(request):
         contacts = Contact.objects.all()
 
     # Рендеримо карточки через шаблон
-    html = render_to_string('sales/contact_card.html', {'contacts': contacts})
+    html = render_to_string('sales/partials/contacts_list_partial.html', {'contacts': contacts})
     return HttpResponse(html)
 
 @login_required
