@@ -78,6 +78,7 @@
   {% if page_obj.has_other_pages %}
     <nav aria-label="Page navigation" class="mt-4">
       <ul class="pagination justify-content-center">
+        <!-- Попередня сторінка -->
         {% if page_obj.has_previous %}
           <li class="page-item">
             <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
@@ -89,11 +90,43 @@
             <span class="page-link">«</span>
           </li>
         {% endif %}
-        {% for num in page_obj.paginator.page_range %}
-          <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+
+        <!-- Перша сторінка -->
+        <li class="page-item {% if page_obj.number == 1 %}active{% endif %}">
+          <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">1</a>
+        </li>
+
+        <!-- Точки, якщо є пропуск -->
+        {% if page_obj.number > 4 %}
+          <li class="page-item disabled">
+            <span class="page-link">...</span>
           </li>
+        {% endif %}
+
+        <!-- Сусідні сторінки -->
+        {% for num in page_obj.paginator.page_range %}
+          {% if num > page_obj.number|add:-3 and num < page_obj.number|add:3 and num != 1 and num != page_obj.paginator.num_pages %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+              <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+            </li>
+          {% endif %}
         {% endfor %}
+
+        <!-- Точки перед останньою -->
+        {% if page_obj.number < page_obj.paginator.num_pages|add:-3 %}
+          <li class="page-item disabled">
+            <span class="page-link">...</span>
+          </li>
+        {% endif %}
+
+        <!-- Остання сторінка -->
+        {% if page_obj.paginator.num_pages > 1 %}
+          <li class="page-item {% if page_obj.number == page_obj.paginator.num_pages %}active{% endif %}">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- Наступна сторінка -->
         {% if page_obj.has_next %}
           <li class="page-item">
             <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">

@@ -123,21 +123,51 @@
 }
 
 /* Пагінація */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Відстань між кнопками */
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
 .pagination .page-link {
   color: #007bff;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 4px;
   transition: background 0.2s ease, color 0.2s ease;
 }
+
 .pagination .page-link:hover {
   background: #f8f9fa;
   color: #0056b3;
 }
+
 .pagination .page-item.active .page-link {
   background: #007bff;
   color: #ffffff;
 }
+
 .pagination .page-item.disabled .page-link {
   color: #6c757d;
   background: transparent;
+  cursor: not-allowed;
+}
+
+/* Стиль для "..." */
+.pagination .page-item.disabled .page-link.ellipsis {
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+
+/* Адаптивність */
+@media (max-width: 576px) {
+  .pagination .page-link {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
 }
