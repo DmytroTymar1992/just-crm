@@ -110,12 +110,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'sales/js/chat/chat_main.js' %}"></script>
-<script src="{% static 'sales/js/chat/chat_messages.js' %}"></script>
-<script src="{% static 'sales/js/chat/vacancies.js' %}"></script>
-<script src="{% static 'sales/js/chat/tasks.js' %}"></script>
-
-<!-- Додаємо початкові значення для load_more.js -->
 <script>
   window.chatData = {
     currentUser: "{{ request.user.username|escapejs }}",
@@ -127,6 +121,13 @@
   };
   window.chatData.contactFullName = `${window.chatData.contactFirstName} ${window.chatData.contactLastName}`.trim() || "Контакт";
 </script>
+<script src="{% static 'sales/js/chat/chat_main.js' %}"></script>
+<script src="{% static 'sales/js/chat/chat_messages.js' %}"></script>
+<script src="{% static 'sales/js/chat/vacancies.js' %}"></script>
+<script src="{% static 'sales/js/chat/tasks.js' %}"></script>
+
+<!-- Додаємо початкові значення для load_more.js -->
+
 <script src="{% static 'sales/js/chat/load_more.js' %}"></script>
 <script src="{% static 'sales/js/chat/utils.js' %}"></script>
 {% include "sales/partials/message_templates.html" %}
