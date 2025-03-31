@@ -13,7 +13,7 @@
   </div>
 
   <div class="d-flex flex-column flex-grow-1 vh-100"> <div class="p-3 border-bottom bg-white shadow-sm d-flex justify-content-between align-items-center flex-shrink-0">
-      <div class="contact-info me-3 overflow-hidden"> <h5 class="mb-0 text-truncate" title="{{ room.contact.first_name }}{% if room.contact.last_name %} {{ room.contact.last_name }}{% endif %}">
+      <div class="contact-info me-2 overflow-hidden flex-grow-1"> <h5 class="mb-0 text-truncate" title="{{ room.contact.first_name }}{% if room.contact.last_name %} {{ room.contact.last_name }}{% endif %}">
               <span class="fw-bold text-dark">
                   {{ room.contact.first_name }}
                   {% if room.contact.last_name %}
@@ -23,20 +23,51 @@
           </h5>
           {% if room.contact.company %}
               <a href="{% url 'company_detail' room.contact.company.id %}" class="text-decoration-none" title="{{ room.contact.company.name }}">
-                  <small class="text-muted d-block text-truncate">{{ room.contact.company.name }}</small> </a>
+                   <small class="text-muted d-block text-truncate" style="max-width: 250px;"> {{ room.contact.company.name }}
+                  </small>
+              </a>
           {% endif %}
       </div>
 
-      <div class="header-actions d-flex align-items-center flex-shrink-0 gap-2"> <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
+      <div class="header-actions d-flex align-items-center flex-shrink-0 gap-2">
+
+          <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
               <i class="bi bi-telephone"></i>
-              <span class="d-none d-md-inline ms-1">Подзвонити</span> </a>
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
-              <i class="bi bi-plus-circle"></i>
-              <span class="d-none d-md-inline ms-1">Створити задачу</span> </button>
+          </a>
+
+          {% if task_info.task %}
+              <div class="task-display {{ task_info.status_class }} d-flex align-items-center p-1 px-2 rounded border"
+                   title="Задача: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})">
+
+                  <span class="task-icon me-1">
+                     {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
+                     {% if task_info.task.task_type == 'email' %}<i class="bi bi-envelope-at"></i>{% endif %}
+                     {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
+                     {# Додайте інші типи, якщо є #}
+                  </span>
+
+                  <span class="task-target text-truncate" style="max-width: 150px; display: inline-block; vertical-align: middle;">
+                      {{ task_info.task.target }}
+                  </span>
+
+                  <small class="task-date ms-1 ps-1 border-start" style="white-space: nowrap;">
+                      {{ task_info.task.task_date|date:"d.m" }} {# Тільки день і місяць для економії місця #}
+                  </small>
+
+                  </div>
+          {% else %}
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
+                  <i class="bi bi-plus-circle"></i>
+                  <span class="d-none d-md-inline ms-1">Створити задачу</span>
+              </button>
+          {% endif %}
+
           <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
               <i class="bi bi-envelope"></i>
-               <span class="d-none d-md-inline ms-1">Написати Email</span> </button>
+          </button>
+
       </div>
+  </div>
   </div>
 
   <button id="load-more-btn"
@@ -106,6 +137,94 @@
   min-height: 40px; /* Мінімальна висота */
   max-height: 150px; /* Максимальна висота */
   overflow-y: auto; /* Додає прокрутку, якщо текст перевищує max-height */
+}
+
+
+  /* --- Анімації Блимання --- */
+@keyframes blink-red {
+    0%, 100% { background-color: rgba(220, 53, 69, 0.25); border-color: rgba(220, 53, 69, 0.45); }
+    50% { background-color: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.25); }
+}
+
+@keyframes blink-green {
+    0%, 100% { background-color: rgba(25, 135, 84, 0.2); border-color: rgba(25, 135, 84, 0.4); }
+    50% { background-color: rgba(25, 135, 84, 0.1); border-color: rgba(25, 135, 84, 0.25); }
+}
+
+/* --- Стилізація Блоку Задачі --- */
+.task-display {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    cursor: default; /* Змінити, якщо це посилання на задачу */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    max-width: 250px; /* Загальне обмеження ширини блоку задачі */
+    overflow: hidden; /* Ховаємо все, що не влазить */
+}
+
+/* Статус: Протермінована */
+.task-overdue {
+    color: #a71d2a; /* Темно-червоний текст */
+    border: 1px solid rgba(220, 53, 69, 0.45) !important;
+    background-color: rgba(220, 53, 69, 0.25);
+    animation: blink-red 1.5s infinite;
+}
+.task-overdue .task-icon i,
+.task-overdue .task-date {
+    color: #dc3545; /* Яскравіший червоний для акцентів */
+}
+.task-overdue .border-start {
+    border-color: rgba(220, 53, 69, 0.3) !important;
+}
+
+
+/* Статус: Сьогодні */
+.task-today {
+    color: #0a3622; /* Темно-зелений текст */
+    border: 1px solid rgba(25, 135, 84, 0.4) !important;
+    background-color: rgba(25, 135, 84, 0.2);
+    animation: blink-green 2.5s infinite;
+}
+.task-today .task-icon i,
+.task-today .task-date {
+    color: #198754; /* Яскравіший зелений для акцентів */
+}
+.task-today .border-start {
+    border-color: rgba(25, 135, 84, 0.3) !important;
+}
+
+/* Статус: Майбутня */
+.task-future {
+    color: #664d03; /* Темно-жовтий текст */
+    border: 1px solid rgba(255, 193, 7, 0.4) !important;
+    background-color: rgba(255, 193, 7, 0.15);
+    /* Без анімації */
+}
+.task-future .task-icon i,
+.task-future .task-date {
+    color: #ffc107; /* Яскравіший жовтий */
+}
+.task-future .border-start {
+    border-color: rgba(255, 193, 7, 0.3) !important;
+}
+
+/* --- Обрізання тексту всередині task-display --- */
+.task-target {
+    display: inline-block; /* Важливо для роботи max-width і text-truncate */
+    vertical-align: middle; /* Вирівнювання по вертикалі */
+    max-width: 150px; /* !!! Налаштуйте максимальну ширину цілі !!! */
+    /* text-truncate додає потрібні overflow, white-space, text-overflow */
+}
+
+/* Обрізання для назви компанії (приклад) */
+.contact-info > a > small.text-truncate {
+    display: inline-block; /* Або block, залежно від контексту */
+    max-width: 250px; /* !!! Налаштуйте максимальну ширину компанії !!! */
+}
+
+/* Додаткові стилі для іконок типів задач */
+.task-icon {
+    display: inline-flex;
+    align-items: center;
 }
 </style>
 {% endblock %}

@@ -33,6 +33,37 @@ def chat_room(request, room_id):
     room = get_object_or_404(Room, pk=room_id)
     interactions_qs = room.interactions.order_by('created_at')
     paginator = Paginator(interactions_qs, 20)
+    contact = room.contact
+
+    today = timezone.now().date()
+    relevant_task = Task.objects.filter(
+        user=request.user,  # Поточний користувач
+        contact=contact,  # Контакт з поточної кімнати
+        is_completed=False  # Тільки незавершені задачі
+    ).order_by('task_date').first()  # Беремо найближчу за датою виконання
+
+    task_info = {
+        'task': None,
+        'status_class': '',  # CSS клас для стилізації в шаблоні
+    }
+
+    if relevant_task:
+        task_info['task'] = relevant_task
+        # Перетворюємо дату/час задачі на просто дату для порівняння
+        # Якщо task_date - це DateTimeField з підтримкою часових поясів (aware), краще конвертувати так:
+        # task_date_only = relevant_task.task_date.astimezone(timezone.get_current_timezone()).date()
+        # Якщо task_date - це DateTimeField без підтримки часових поясів (naive), то:
+        task_date_only = relevant_task.task_date.date()
+
+        if task_date_only < today:
+            # Протермінована задача
+            task_info['status_class'] = 'task-overdue'
+        elif task_date_only == today:
+            # Задача на сьогодні
+            task_info['status_class'] = 'task-today'
+        else:
+            # Задача на майбутнє
+            task_info['status_class'] = 'task-future'
 
     # Якщо взагалі немає повідомлень => num_pages = 0
     if paginator.num_pages == 0:
@@ -63,6 +94,7 @@ def chat_room(request, room_id):
         'room': room,
         'page_obj': page_obj,
         'rooms_for_user': rooms_for_user,
+        'task_info': task_info,
     })
 
 @login_required
