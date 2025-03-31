@@ -344,14 +344,22 @@
   }
 </style>
 {% endblock %}
+
+
 {% block extra_js %}
   {# Бібліотека Choices.js #}
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script>
+        window.AppConfig = {
+            createContactUrl: "{% url 'create_contact' %}"
+        };
+    </script>
 
   {# Ваші розділені скрипти #}
-  <script src="{% static 'sales/js/contact_utils.js' %}"></script>
-  <script src="{% static 'sales/js/contact_choices.js' %}"></script>
-  <script src="{% static 'sales/js/contact_modal.js' %}"></script> {# Залежить від utils, choices #}
-  <script src="{% static 'sales/js/contact_search.js' %}"></script> {# Залежить від modal (для bindEditButtons) #}
-  <script src="{% static 'sales/js/contacts_init.js' %}"></script>   {# Має бути останнім для ініціалізації #}
+  <script src="{% static 'sales/js/init.js' %}"></script>
+  <script src="{% static 'sales/js/choices-config.js' %}"></script>
+  <script src="{% static 'sales/js/search.js' %}"></script> {# Залежить від utils, choices #}
+  <script src="{% static 'sales/js/add-contact.js' %}"></script> {# Залежить від modal (для bindEditButtons) #}
+  <script src="{% static 'sales/js/edit-contact.js' %}"></script>   {# Має бути останнім для ініціалізації #}
+    <script src="{% static 'sales/js/form-submit.js' %}"></script>
 {% endblock %}
