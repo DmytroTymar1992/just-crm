@@ -31,40 +31,46 @@
 
       <div class="header-actions d-flex align-items-center flex-shrink-0 gap-2">
 
+
+
+          {% if task_info.task %}
+            <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border js-edit-task-trigger"  {# Додано клас js-edit-task-trigger #}
+                  title="Редагувати задачу: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})"
+                  data-bs-toggle="modal"                 {# Вмикаємо модалку Bootstrap #}
+                  data-bs-target="#editTaskModal"         {# Вказуємо ID модалки #}
+                  data-task-id="{{ task_info.task.id }}"  {# Передаємо ID задачі #}
+                  style="cursor: pointer;"              {# Робимо курсор як для посилання #}
+                  >
+
+                {# Іконка зліва, не стискається #}
+                <span class="task-icon me-2 flex-shrink-0"> {# Збільшив me-1 до me-2 для відступу #}
+                    {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
+                    {% if task_info.task.task_type == 'email' %}<i class="bi bi-envelope-at"></i>{% endif %}
+                    {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
+                    {# Додайте інші типи, якщо є #}
+                </span>
+
+                {# Обертка для цілі та дати, розташованих у колонку #}
+                <div class="task-text-wrapper d-flex flex-column justify-content-center lh-sm"> {# lh-sm для компактності рядків #}
+                    <span class="task-target text-truncate" style="max-width: 150px; display: inline-block;">
+                        {{ task_info.task.target }}
+                    </span>
+                    <small class="task-date" style="white-space: nowrap; font-size: 0.85em;"> {# Трохи менший шрифт для дати #}
+                        {{ task_info.task.task_date|date:"d.m" }}
+                    </small>
+                </div>
+
+            </div>
+        {% else %}
+            {# ... Кнопка "Створити задачу" ... #}
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
+                <i class="bi bi-plus-circle"></i>
+                <span class="d-none d-md-inline ms-1">Створити задачу</span>
+            </button>
+        {% endif %}
           <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
               <i class="bi bi-telephone"></i>
           </a>
-
-          {% if task_info.task %}
-    <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border"
-         title="Задача: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})">
-
-        {# Іконка зліва, не стискається #}
-        <span class="task-icon me-2 flex-shrink-0"> {# Збільшив me-1 до me-2 для відступу #}
-            {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
-            {% if task_info.task.task_type == 'email' %}<i class="bi bi-envelope-at"></i>{% endif %}
-            {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
-            {# Додайте інші типи, якщо є #}
-        </span>
-
-        {# Обертка для цілі та дати, розташованих у колонку #}
-        <div class="task-text-wrapper d-flex flex-column justify-content-center lh-sm"> {# lh-sm для компактності рядків #}
-            <span class="task-target text-truncate" style="max-width: 150px; display: inline-block;">
-                {{ task_info.task.target }}
-            </span>
-            <small class="task-date" style="white-space: nowrap; font-size: 0.85em;"> {# Трохи менший шрифт для дати #}
-                {{ task_info.task.task_date|date:"d.m" }}
-            </small>
-        </div>
-
-    </div>
-{% else %}
-    {# ... Кнопка "Створити задачу" ... #}
-    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
-        <i class="bi bi-plus-circle"></i>
-        <span class="d-none d-md-inline ms-1">Створити задачу</span>
-    </button>
-{% endif %}
 
           <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#emailModal" title="Написати Email">
               <i class="bi bi-envelope"></i>
@@ -119,6 +125,7 @@
 
 {% include "sales/partials/email_modal.html" %}
 {% include "sales/partials/task_modal.html" %}
+{% include "sales/partials/edit_task_modal.html" %}
 {% endblock %}
 
 {% block extra_css %}
@@ -218,7 +225,7 @@
       color: #a71d2a;
       border: 1px solid rgba(220, 53, 69, 0.45) !important;
       background-color: rgba(220, 53, 69, 0.25);
-      animation: blink-red 1.5s infinite;
+      animation: blink-red 0.5s infinite;
   }
   .task-overdue .task-icon i { /* Колір іконки */
       color: #dc3545;
@@ -233,7 +240,7 @@
       color: #0a3622;
       border: 1px solid rgba(25, 135, 84, 0.4) !important;
       background-color: rgba(25, 135, 84, 0.2);
-      animation: blink-green 2.5s infinite;
+      animation: blink-green 1.5s infinite;
   }
   .task-today .task-icon i { /* Колір іконки */
       color: #198754;
@@ -300,5 +307,6 @@
 
 <script src="{% static 'sales/js/chat/load_more.js' %}"></script>
 <script src="{% static 'sales/js/chat/utils.js' %}"></script>
+<script src="{% static 'sales/js/kanban/task_modal_handler.js' %}"></script>
 {% include "sales/partials/message_templates.html" %}
 {% endblock %}
