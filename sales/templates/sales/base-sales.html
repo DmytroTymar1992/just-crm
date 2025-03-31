@@ -229,89 +229,86 @@
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
-    const currentRoomId = "{{ room_id|default_if_none:'' }}";
+  const roomListSocket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
+  const currentRoomId = "{{ room_id|default_if_none:'' }}";
 
-    roomListSocket.onopen = function() {
-      console.log('Room list WebSocket connection opened');
-    };
+  roomListSocket.onopen = function() {
+    console.log('Room list WebSocket connection opened');
+  };
 
-    roomListSocket.onmessage = function(e) {
-      console.log('Room list WebSocket message received:', e.data);
-      const data = JSON.parse(e.data);
-      if (data.type === 'room_list') {
-        console.log('Updating room list with:', data.rooms);
-        updateRoomListUI(data.rooms);
-      }
-    };
-
-    roomListSocket.onclose = function(e) {
-      console.log('Room list socket closed unexpectedly:', e);
-    };
-
-    roomListSocket.onerror = function(e) {
-      console.error('Room list socket error:', e);
-    };
-
-    function updateRoomListUI(rooms) {
-      const roomListUl = document.getElementById("room-list");
-      if (!roomListUl) {
-        console.error('Element with id "room-list" not found');
-        return;
-      }
-
-      roomListUl.innerHTML = "";
-      if (rooms.length === 0) {
-        let li = document.createElement("li");
-        li.classList.add("list-group-item", "text-muted", "text-center", "py-3", "border-0");
-        li.textContent = "Немає листів";
-        roomListUl.appendChild(li);
-        return;
-      }
-
-      rooms.forEach(r => {
-        let li = document.createElement("li");
-        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "px-3", "py-2", "border-bottom");
-
-        let a = document.createElement("a");
-        a.href = `/sales/${r.room_id}/`;
-        a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
-        if (r.room_id == currentRoomId) {
-          li.classList.add("bg-primary-subtle");
-          a.classList.add("fw-semibold");
-        }
-
-        let div = document.createElement("div");
-        if (r.company_name) {
-          let small = document.createElement("small");
-          small.classList.add("text-muted");
-          small.textContent = r.company_name;
-          div.appendChild(small);
-
-          let br = document.createElement("br");
-          div.appendChild(br);
-        }
-
-        let span = document.createElement("span");
-        span.textContent = `${r.first_name} ${r.last_name || ''}`;
-        div.appendChild(span);
-
-        a.appendChild(div);
-        li.appendChild(a);
-
-        if (r.unread_count > 0) {
-          let badge = document.createElement("span");
-          badge.classList.add("badge", "bg-primary", "rounded-pill");
-          badge.textContent = r.unread_count;
-          li.appendChild(badge);
-        }
-
-        roomListUl.appendChild(li);
-      });
-
-      console.log('Room list UI updated successfully');
+  roomListSocket.onmessage = function(e) {
+    console.log('Room list WebSocket message received:', e.data);
+    const data = JSON.parse(e.data);
+    if (data.type === 'room_list') {
+      console.log('Updating room list with:', data.rooms);
+      updateRoomListUI(data.rooms);
     }
-  </script>
+  };
+
+  roomListSocket.onclose = function(e) {
+    console.log('Room list socket closed unexpectedly:', e);
+  };
+
+  roomListSocket.onerror = function(e) {
+    console.error('Room list socket error:', e);
+  };
+
+  function updateRoomListUI(rooms) {
+    const roomListUl = document.getElementById("room-list");
+    if (!roomListUl) {
+      console.error('Element with id "room-list" not found');
+      return;
+    }
+
+    roomListUl.innerHTML = "";
+    if (rooms.length === 0) {
+      let li = document.createElement("li");
+      li.classList.add("list-group-item", "text-muted", "text-center", "py-3", "border-0");
+      li.textContent = "Немає листів";
+      roomListUl.appendChild(li);
+      return;
+    }
+
+    rooms.forEach(r => {
+      let li = document.createElement("li");
+      li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "px-3", "py-2", "border-bottom");
+      if (r.room_id == currentRoomId) {
+        li.classList.add("bg-primary-subtle");
+      }
+
+      let a = document.createElement("a");
+      a.href = `/sales/${r.room_id}/`;
+      a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
+
+      if (r.company_name) {
+        let small = document.createElement("small");
+        small.classList.add("text-muted");
+        small.textContent = r.company_name;
+        a.appendChild(small);
+      }
+
+      let span = document.createElement("span");
+      span.textContent = `${r.first_name} ${r.last_name || ''}`;
+      if (r.room_id == currentRoomId) {
+        span.classList.add("fw-semibold");
+      }
+      a.appendChild(span);
+
+      li.appendChild(a);
+
+      if (r.unread_count > 0) {
+        let badge = document.createElement("span");
+        badge.classList.add("badge", "bg-primary", "rounded-pill");
+        badge.textContent = r.unread_count;
+        li.appendChild(badge);
+      }
+
+      roomListUl.appendChild(li);
+    });
+
+    console.log('Room list UI updated successfully');
+  }
+</script>
   <script>
       function showNotification(type, content) {
   const notificationContainer = document.getElementById('notification-container');
