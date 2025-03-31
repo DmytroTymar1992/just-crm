@@ -273,7 +273,6 @@
       // Створюємо <a>, яке обгортає <li>
       let a = document.createElement("a");
       a.href = `/sales/${r.room_id}/`;
-      a.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
 
       let li = document.createElement("li");
       li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "px-3", "py-2", "border-bottom");
@@ -281,12 +280,16 @@
         li.classList.add("bg-primary-subtle");
       }
 
+      // Додаємо <div> із вмістом
+      let div = document.createElement("div");
+      div.classList.add("text-decoration-none", "text-dark", "d-flex", "flex-column");
+
       // Додаємо назву компанії, якщо є
       if (r.company_name) {
         let small = document.createElement("small");
         small.classList.add("text-muted");
         small.textContent = r.company_name;
-        li.appendChild(small);
+        div.appendChild(small);
       }
 
       // Додаємо ім’я контакту
@@ -295,7 +298,10 @@
       if (r.room_id == currentRoomId) {
         span.classList.add("fw-semibold");
       }
-      li.appendChild(span);
+      div.appendChild(span);
+
+      // Вставляємо <div> у <li>
+      li.appendChild(div);
 
       // Додаємо бейдж із кількістю непрочитаних
       if (r.unread_count > 0) {
