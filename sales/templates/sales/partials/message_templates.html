@@ -1,0 +1,35 @@
+<script type="text/x-template" id="emailMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+      <div class="text-success fw-semibold mb-1">Email</div>
+      <div class="bg-warning-subtle p-2 rounded mb-2"><strong>Тема:</strong> __SUBJECT__</div>
+      <p class="text-dark mb-0">__BODY__</p>
+      <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>
+
+<script type="text/x-template" id="telegramMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: __BG_COLOR__; __BORDER__;">
+      <div class="text-primary fw-semibold mb-1">Telegram</div>
+      <p class="text-dark mb-0">__BODY__</p>
+      <small class="text-muted d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>
+
+<script type="text/x-template" id="callMessageTpl">
+  <div class="mb-3 d-flex __SENDER_CLASS__">
+    <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+      <div class="fw-semibold">[CALL] __IS_INCOMING__</div>
+      <div class="mt-1">
+        Телефон клієнта: __CLIENT_PHONE__<br>
+        Початок: __DIAL_AT__<br>
+        Підняття слухавки: __BRIDGE_AT__<br>
+        Завершення: __HANGUP_AT__
+      </div>
+      <small class="d-block __ALIGN__ mt-2">__TIME__</small>
+    </div>
+  </div>
+</script>

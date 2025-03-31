@@ -1,0 +1,40 @@
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Створити задачу</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="task-form">
+          <div class="mb-3">
+            <label for="task-type" class="form-label">Тип задачі</label>
+            <select id="task-type" class="form-select" required>
+              <option value="call">Дзвінок</option>
+              <option value="email">Лист</option>
+              <option value="message">Повідомлення</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="task-date" class="form-label">Дата задачі</label>
+            <input type="datetime-local" id="task-date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="task-target" class="form-label">Ціль</label>
+            <input type="text" id="task-target" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="task-description" class="form-label">Опис</label>
+            <textarea id="task-description" class="form-control" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary" id="task-submit">
+          <i class="bi bi-plus-circle me-1"></i> Створити
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

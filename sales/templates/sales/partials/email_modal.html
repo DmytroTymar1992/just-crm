@@ -1,0 +1,22 @@
+<div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Надіслати Email</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <textarea id="email-message-input" class="form-control" rows="4" placeholder="Введіть текст листа..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary" id="email-message-submit">
+          <i class="bi bi-envelope me-1"></i> Надіслати
+        </button>
+        <button type="button" class="btn btn-success" id="email-template-submit">
+          <i class="bi bi-envelope-check me-1"></i> Надіслати шаблон листа
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
