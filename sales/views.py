@@ -55,7 +55,7 @@ def chat_room(request, room_id):
                 filter=Q(interactions__is_read=False, interactions__sender='contact')
             )
         )
-        .order_by('-latest_interaction')
+        .order_by('-latest_interaction')[:25]
     )
 
     return render(request, 'sales/chat_room.html', {
@@ -77,7 +77,7 @@ def chats_view(request):
                 filter=Q(interactions__is_read=False, interactions__sender='contact')
             )
         )
-        .order_by('-latest_interaction')
+        .order_by('-latest_interaction')[:25]
     )
 
     return render(request, 'sales/chat_room.html', {
