@@ -5,7 +5,13 @@
         {% if r.contact.company %}
           <small class="text-muted">{{ r.contact.company.name }}</small>
         {% endif %}
-        <span class="{% if r.id == room.id %}fw-semibold{% endif %}">{{ r.contact.first_name }} {{ r.contact.last_name }}</span>
+        <span class="{% if r.id == room.id %}fw-semibold{% endif %}">
+            {{ r.contact.first_name }}
+            {% if r.contact.last_name %}
+            {{ r.contact.last_name }}
+            {% else %}
+            {% endif %}
+        </span>
       </a>
       {% if r.unread_count > 0 %}
         <span class="badge bg-primary rounded-pill">{{ r.unread_count }}</span>
