@@ -1,10 +1,15 @@
+const editForm = document.getElementById("edit-contact-form");
+const editModal = document.getElementById("editContactModal");
+const formErrors = document.getElementById("form-errors");
+const companySelect = document.getElementById("company");
+
 function bindEditButtons() {
     document.querySelectorAll(".edit-contact-btn").forEach(button => {
         button.addEventListener("click", function() {
             const contactId = this.dataset.contactId;
             const card = this.closest(".contact-card");
 
-            editForm.action = `/sales/contacts/edit/${contactId}/`;
+            editForm.action = `${editForm.dataset.editUrl}${contactId}/`; // Використовуємо data-атрибут
             editForm.dataset.contactId = contactId;
 
             if (formErrors) {

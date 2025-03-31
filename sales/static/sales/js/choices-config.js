@@ -1,3 +1,5 @@
+const companySelect = document.getElementById("company");
+
 const companyChoices = new Choices(companySelect, {
     searchEnabled: true,
     searchPlaceholderValue: "Пошук компанії...",

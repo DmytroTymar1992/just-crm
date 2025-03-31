@@ -1,3 +1,8 @@
+const editForm = document.getElementById("edit-contact-form");
+const editModal = document.getElementById("editContactModal");
+const formErrors = document.getElementById("form-errors");
+const searchInput = document.getElementById("contact-search");
+
 editForm.addEventListener("submit", function(e) {
     e.preventDefault();
     const contactId = this.dataset.contactId;

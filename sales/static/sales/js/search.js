@@ -1,3 +1,6 @@
+const searchInput = document.getElementById("contact-search");
+const contactsList = document.getElementById("contacts-list");
+
 if (searchInput) {
     let debounceTimer;
     searchInput.addEventListener("input", function(e) {
