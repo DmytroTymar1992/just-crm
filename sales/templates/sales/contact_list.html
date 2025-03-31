@@ -349,9 +349,9 @@
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
   {# Ваші розділені скрипти #}
-  <script src="{% static 'js/contact_utils.js' %}"></script>
-  <script src="{% static 'js/contact_choices.js' %}"></script>
-  <script src="{% static 'js/contact_modal.js' %}"></script> {# Залежить від utils, choices #}
-  <script src="{% static 'js/contact_search.js' %}"></script> {# Залежить від modal (для bindEditButtons) #}
-  <script src="{% static 'js/contacts_init.js' %}"></script>   {# Має бути останнім для ініціалізації #}
+  <script src="{% static 'sales/js/contact_utils.js' %}"></script>
+  <script src="{% static 'sales/js/contact_choices.js' %}"></script>
+  <script src="{% static 'sales/js/contact_modal.js' %}"></script> {# Залежить від utils, choices #}
+  <script src="{% static 'sales/js/contact_search.js' %}"></script> {# Залежить від modal (для bindEditButtons) #}
+  <script src="{% static 'sales/js/contacts_init.js' %}"></script>   {# Має бути останнім для ініціалізації #}
 {% endblock %}
