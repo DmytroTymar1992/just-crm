@@ -3,7 +3,7 @@ window.contactApp = window.contactApp || {}; // Ensure namespace exists
 
 window.contactApp.searchContacts = function(query) {
   const contactsList = document.getElementById("contacts-list");
-  const searchUrl = document.getElementById('contact-search-form')?.dataset.searchUrl || '/sales/contacts/search/'; // Get URL from data attribute or fallback
+  const searchUrl = document.getElementById('contact-search-form')?.dataset.searchUrl || '/sales/contacts/contacts/search/'; // Get URL from data attribute or fallback
 
   if (!contactsList) {
     console.error("Contacts list element (#contacts-list) not found.");
