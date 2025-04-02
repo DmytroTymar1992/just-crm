@@ -339,3 +339,11 @@ class Task(models.Model):
     class Meta:
         verbose_name = "Задача"
         verbose_name_plural = "Задачі"
+
+
+class TaskTransfer(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='transfers')
+    created_at = models.DateTimeField(auto_now_add=True)  # Дата створення запису
+    reason = models.TextField()  # Причина перенесення
+    from_date = models.DateTimeField()  # З якої дати перенесено
+    to_date = models.DateTimeField()  # На яку дату перенесено

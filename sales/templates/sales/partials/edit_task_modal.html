@@ -1,48 +1,68 @@
-<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg">
-      <div class="modal-header bg-primary-gradient text-white">
-        <h5 class="modal-title">Редагувати задачу</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="edit-task-form">
-          {% csrf_token %} {# Додаємо CSRF токен всередину форми, якщо його немає #}
-          <input type="hidden" id="edit-task-id">
-          <div class="mb-3">
-            <label for="edit-task-type" class="form-label">Тип задачі</label>
-            <select id="edit-task-type" name="task_type" class="form-select" required>
-              <option value="call">Дзвінок</option>
-              <option value="email">Лист</option>
-              <option value="message">Повідомлення</option>
-              {# Додайте інші типи з моделі Task, якщо потрібно #}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="edit-task-date" class="form-label">Дата задачі</label>
-            <input type="datetime-local" id="edit-task-date" name="task_date" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label for="edit-task-target" class="form-label">Ціль</label>
-            <input type="text" id="edit-task-target" name="target" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label for="edit-task-description" class="form-label">Опис</label>
-            <textarea id="edit-task-description" name="description" class="form-control" rows="3"></textarea>
-          </div>
-          {# Можливо, додати поле для is_completed? Залежить від логіки #}
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
-        <button type="button" class="btn btn-primary" id="edit-task-submit">
-          <i class="bi bi-save me-1"></i> Зберегти
-        </button>
-         {# Опціонально: кнопка "Завершити задачу" в модалці #}
-         <button type="button" class="btn btn-success ms-2" id="complete-task-modal-btn" style="display: none;">
-            <i class="bi bi-check-lg me-1"></i> Завершити
-         </button>
-      </div>
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true" data-contact-id="{{ contact.id }}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-primary-gradient text-white">
+                <h5 class="modal-title">Редагувати задачу</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-task-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit-task-id">
+                    <input type="hidden" id="edit-contact-id"> <!-- Нове поле для contact_id -->
+                    <div id="main-section">
+                        <div class="mb-3">
+                            <label for="edit-task-type" class="form-label">Тип задачі</label>
+                            <select id="edit-task-type" name="task_type" class="form-select" required>
+                                <option value="call">Дзвінок</option>
+                                <option value="email">Лист</option>
+                                <option value="message">Повідомлення</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="edit-task-target" class="form-label">Ціль</label>
+                            <input type="text" id="edit-task-target" name="target" class="form-control" required autocomplete="off">
+                            <div id="edit-target-suggestions" class="suggestions-list" style="display: none; position: absolute; z-index: 1000; width: 100%; max-height: 150px; overflow-y: auto; background: #fff; border: 1px solid #d1d5db; border-radius: 5px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);"></div>
+                            <small id="edit-target-warning" class="text-danger" style="display: none;">Дуже довга назва</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-task-description" class="form-label">Опис</label>
+                            <textarea id="edit-task-description" name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Виконати задачу</label>
+                            <div class="slider-container" style="position: relative; width: 100%; height: 50px; background: #e9ecef; border-radius: 25px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                <input type="range" id="task-complete-slider" min="0" max="100" value="0" style="width: 100%; height: 50px; position: absolute; top: 0; left: 0; margin: 0; padding: 0; z-index: 2; opacity: 0; cursor: pointer;">
+                                <div class="slider-track" style="position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(to right, #28a745, #34c759); border-radius: 25px;"></div>
+                                <div class="slider-thumb" style="position: absolute; top: 50%; left: 0; width: 40px; height: 40px; background: #fff; border: 2px solid #28a745; border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                <span class="slider-label" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #495057; font-weight: 500; z-index: 0; pointer-events: none;">Перетягніть до кінця</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="transfer-section" style="display: none;">
+                        <div class="mb-3">
+                            <label for="transfer-task-date" class="form-label">Перенести на дату</label>
+                            <input type="text" id="transfer-task-date" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="transfer-reason" class="form-label">Причина перенесення</label>
+                            <textarea id="transfer-reason" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                <button type="button" class="btn btn-primary" id="edit-task-submit">
+                    <i class="bi bi-save me-1"></i> Зберегти
+                </button>
+                <button type="button" class="btn btn-warning" id="toggle-transfer-btn">
+                    <i class="bi bi-arrow-right me-1"></i> Перенести задачу
+                </button>
+                <button type="button" class="btn btn-warning" id="transfer-task-submit" style="display: none;">
+                    <i class="bi bi-arrow-right me-1"></i> Перенести
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>

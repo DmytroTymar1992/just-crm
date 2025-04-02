@@ -55,12 +55,11 @@
                 </div>
             </div>
         {% else %}
-            {# ... Кнопка "Створити задачу" ... #}
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal" title="Створити задачу">
-                <i class="bi bi-plus-circle"></i>
-                <span class="d-none d-md-inline ms-1">Створити задачу</span>
-            </button>
-        {% endif %}
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="create-task-btn" title="Створити задачу">
+                  <i class="bi bi-plus-circle"></i>
+                  <span class="d-none d-md-inline ms-1">Створити задачу</span>
+              </button>
+          {% endif %}
           <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
               <i class="bi bi-telephone"></i>
           </a>
@@ -119,6 +118,7 @@
 {% include "sales/partials/email_modal.html" %}
 {% include "sales/partials/task_modal.html" %}
 {% include "sales/partials/edit_task_modal.html" %}
+{% include "sales/partials/task_new.html" %}
 {% endblock %}
 
 {% block extra_css %}
@@ -131,6 +131,7 @@
   window.chatData = {
     currentUser: "{{ request.user.username|escapejs }}",
     roomId: "{{ room_id|escapejs }}",
+    contactId: "{{ room.contact.id|escapejs }}",  // Додаємо contact_id
     contactFirstName: "{{ room.contact.first_name|escapejs }}",
     contactLastName: "{{ room.contact.last_name|default:''|escapejs }}",
     currentPage: {{ page_obj.number|default:1 }},
@@ -141,7 +142,7 @@
 <script src="{% static 'sales/js/chat/chat_main.js' %}"></script>
 <script src="{% static 'sales/js/chat/chat_messages.js' %}"></script>
 <script src="{% static 'sales/js/chat/vacancies.js' %}"></script>
-<script src="{% static 'sales/js/chat/tasks.js' %}"></script>
+
 
 <!-- Додаємо початкові значення для load_more.js -->
 
@@ -150,9 +151,9 @@
 
     <!-- крипти повязані з редагуванням задачі -->
 <script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
-<script src="{% static 'sales/js/kanban/completeTask.js' %}"></script>
+
 <script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
-<script src="{% static 'sales/js/kanban/editTaskSubmit.js' %}"></script>
+
 
 {% include "sales/partials/message_templates.html" %}
 {% endblock %}

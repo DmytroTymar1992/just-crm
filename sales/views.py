@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Room, Interaction, Contact, Vacancy, ContactLink, Task
+from .models import Room, Interaction, Contact, Vacancy, ContactLink, Task, TaskTransfer
 from django.db.models import Max, Count, Q, F, Subquery, OuterRef, IntegerField
 from main.models import Company
 from django.core.paginator import Paginator
@@ -482,46 +482,61 @@ def create_task(request):
     try:
         # Перевіряємо, чи є тіло запиту
         if not request.body:
+            print("Error: Тіло запиту порожнє")
             return JsonResponse({'success': False, 'error': 'Тіло запиту порожнє'}, status=400)
 
         # Парсимо JSON-дані
         data = json.loads(request.body)
 
         # Отримуємо дані з запиту
-        room_id = data.get('room_id')
+        contact_id = data.get('contact_id')
         task_type = data.get('task_type')
         task_date_str = data.get('task_date')  # Отримуємо task_date як рядок
         target = data.get('target')
         description = data.get('description')
 
-        # Перевірка обов’язкових полів
-        if not all([room_id, task_type, task_date_str, target]):
-            return JsonResponse({'success': False, 'error': 'Не всі обов’язкові поля заповнені'}, status=400)
+        # Перевірка обов’язкових полів та збір відсутніх
+        missing_fields = []
+        if not contact_id:
+            missing_fields.append("contact_id")
+        if not task_type:
+            missing_fields.append("task_type")
+        if not task_date_str:
+            missing_fields.append("task_date")
+        if not target:
+            missing_fields.append("target")
+        if missing_fields:
+            print("Missing fields in create_task:", missing_fields)
+            return JsonResponse({'success': False, 'error': f'Не всі обов’язкові поля заповнені: {", ".join(missing_fields)}'}, status=400)
 
         # Перевірка коректності task_type
         valid_task_types = [choice[0] for choice in Task.TASK_TYPE_CHOICES]
         if task_type not in valid_task_types:
+            print("Error: Невірний тип задачі", task_type)
             return JsonResponse({'success': False, 'error': 'Невірний тип задачі'}, status=400)
 
-        # Отримуємо кімнату
+        # Отримуємо контакт
         try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Кімната не знайдена'}, status=404)
+            contact = Contact.objects.get(id=contact_id)
+        except Contact.DoesNotExist:
+            print("Error: Контакт не знайдено, contact_id =", contact_id)
+            return JsonResponse({'success': False, 'error': 'Контакт не знайдено'}, status=404)
 
         # Перевірка, чи користувач авторизований
         if not request.user.is_authenticated:
+            print("Error: Користувач не авторизований")
             return JsonResponse({'success': False, 'error': 'Користувач не авторизований'}, status=403)
 
         # Конвертуємо task_date із рядка в datetime
         task_date = parse_datetime(task_date_str)
         if task_date is None:
+            print("Error: Невірний формат дати", task_date_str)
             return JsonResponse({'success': False, 'error': 'Невірний формат дати'}, status=400)
 
         # Створюємо задачу
         task = Task.objects.create(
             task_date=task_date,  # Передаємо об’єкт datetime
-            contact=room.contact,
+            contact=contact,
             user=request.user,
             task_type=task_type,
             target=target,
@@ -532,9 +547,9 @@ def create_task(request):
         ManagerActivity.objects.create(
             manager=request.user,
             activity_type='create_task',
-            contact=room.contact,
+            contact=contact,
             task=task,
-            company=room.contact.company if room.contact.company else None  # Додаємо компанію, якщо є
+            company=contact.company if contact.company else None
         )
 
         return JsonResponse({
@@ -542,11 +557,13 @@ def create_task(request):
             'task_id': task.id,
             'task_type': task.task_type,
             'target': task.target,
-            'task_date': task.task_date.isoformat(),  # Тепер це точно datetime
+            'task_date': task.task_date.isoformat(),
         })
     except json.JSONDecodeError:
+        print("Error: Невірний формат JSON")
         return JsonResponse({'success': False, 'error': 'Невірний формат JSON'}, status=400)
     except Exception as e:
+        print("Exception in create_task:", str(e))
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
@@ -684,6 +701,52 @@ def edit_task(request):
     except Task.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
     except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def transfer_task(request):
+    try:
+        data = json.loads(request.body)
+        task_id = data.get('task_id')
+        new_task_date = data.get('new_task_date')
+        reason = data.get('reason')
+
+        if not all([task_id, new_task_date, reason]):
+            return JsonResponse({'success': False, 'error': 'Не всі обов’язкові поля заповнені'}, status=400)
+
+        task = Task.objects.get(id=task_id, user=request.user)
+        old_task_date = task.task_date
+
+        # Логуємо вхідну дату для діагностики
+        logger.info(f"Received new_task_date: {new_task_date}")
+
+        # Спробуємо розпарсити дату
+        try:
+            new_task_date_parsed = parse_datetime(new_task_date)
+        except ValueError as e:
+            logger.error(f"Failed to parse date {new_task_date}: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Невірний формат дати'}, status=400)
+
+        if new_task_date_parsed is None:
+            return JsonResponse({'success': False, 'error': 'Невірний формат дати'}, status=400)
+
+        task.task_date = new_task_date_parsed
+        task.save()
+
+        TaskTransfer.objects.create(
+            task=task,
+            reason=reason,
+            from_date=old_task_date,
+            to_date=new_task_date_parsed
+        )
+
+        return JsonResponse({'success': True})
+    except Task.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Задача не знайдена'}, status=404)
+    except Exception as e:
+        logger.error(f"Error in transfer_task: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 

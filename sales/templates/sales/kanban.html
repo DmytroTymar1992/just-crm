@@ -16,14 +16,12 @@
       </div>
       <div class="kanban-body" id="overdue-tasks">
         {% for task in overdue_tasks %}
-          <div class="kanban-card" data-task-id="{{ task.id }}">
+          <div class="kanban-card" data-task-id="{{ task.id }}" data-contact-id="{{ task.contact.id }}">
             <div class="card-content">
               <div class="card-header">
-                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                  <i class="bi bi-check"></i>
-                </button>
+
                 <h6 class="card-title">
-                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}">{{ task.target }}</a>
                 </h6>
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
@@ -51,14 +49,12 @@
       </div>
       <div class="kanban-body" id="today-tasks">
         {% for task in today_tasks %}
-          <div class="kanban-card" data-task-id="{{ task.id }}">
+          <div class="kanban-card" data-task-id="{{ task.id }}" data-contact-id="{{ task.contact.id }}">
             <div class="card-content">
               <div class="card-header">
-                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                  <i class="bi bi-check"></i>
-                </button>
+
                 <h6 class="card-title">
-                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}">{{ task.target }}</a>
                 </h6>
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
@@ -86,14 +82,12 @@
       </div>
       <div class="kanban-body" id="tomorrow-tasks">
         {% for task in tomorrow_tasks %}
-          <div class="kanban-card" data-task-id="{{ task.id }}">
+          <div class="kanban-card" data-task-id="{{ task.id }}" data-contact-id="{{ task.contact.id }}">
             <div class="card-content">
               <div class="card-header">
-                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                  <i class="bi bi-check"></i>
-                </button>
+
                 <h6 class="card-title">
-                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}">{{ task.target }}</a>
                 </h6>
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
@@ -121,14 +115,11 @@
       </div>
       <div class="kanban-body" id="this-week-tasks">
         {% for task in this_week_tasks %}
-          <div class="kanban-card" data-task-id="{{ task.id }}">
+          <div class="kanban-card" data-task-id="{{ task.id }}" data-contact-id="{{ task.contact.id }}">
             <div class="card-content">
               <div class="card-header">
-                <button class="btn btn-sm btn-outline-light complete-task-btn" data-task-id="{{ task.id }}" title="Позначити як виконану">
-                  <i class="bi bi-check"></i>
-                </button>
                 <h6 class="card-title">
-                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}" data-bs-toggle="modal" data-bs-target="#editTaskModal">{{ task.target }}</a>
+                  <a href="#" class="edit-task-target text-decoration-none" data-task-id="{{ task.id }}">{{ task.target }}</a>
                 </h6>
               </div>
               <p class="card-text">{{ task.description|truncatechars:50 }}</p>
@@ -153,13 +144,16 @@
 
 <!-- Модальне вікно для редагування задачі -->
 {% include "sales/partials/edit_task_modal.html" %}
+{% include "sales/partials/task_new.html" %}
+    {% include "sales/partials/task_modal.html" %}
 {% endblock %}
 
 
 
 {% block extra_js %}
     <script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
-    <script src="{% static 'sales/js/kanban/completeTask.js' %}"></script>
+
     <script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
-    <script src="{% static 'sales/js/kanban/editTaskSubmit.js' %}"></script>
+    <script src="{% static 'sales/js/chat/tasks.js' %}"></script>
+
 {% endblock %}

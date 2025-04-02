@@ -1,0 +1,18 @@
+<div class="modal fade" id="suggestNewTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Задача виконана!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Бажаєте створити нову задачу для цього контакту?</p>
+                <input type="hidden" id="contact-id"> <!-- Змінено з suggest-contact-id -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Ні</button>
+                <button type="button" class="btn btn-primary" id="create-new-task-btn">Так, створити</button>
+            </div>
+        </div>
+    </div>
+</div>
