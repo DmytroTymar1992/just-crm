@@ -31,17 +31,12 @@
 
       <div class="header-actions d-flex align-items-center flex-shrink-0 gap-2">
 
-
-
           {% if task_info.task %}
-            <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border js-edit-task-trigger"  {# Додано клас js-edit-task-trigger #}
+            <div class="task-display {{ task_info.status_class }} d-flex align-items-center rounded border edit-task-target"  {# Змінено js-edit-task-trigger на edit-task-target #}
                   title="Редагувати задачу: {{ task_info.task.target }} ({{ task_info.task.task_date|date:'d.m.Y' }})"
-                  data-bs-toggle="modal"                 {# Вмикаємо модалку Bootstrap #}
-                  data-bs-target="#editTaskModal"         {# Вказуємо ID модалки #}
-                  data-task-id="{{ task_info.task.id }}"  {# Передаємо ID задачі #}
+                  data-task-id="{{ task_info.task.id }}"  {# Залишаємо ID задачі #}
                   style="cursor: pointer;"              {# Робимо курсор як для посилання #}
                   >
-
                 {# Іконка зліва, не стискається #}
                 <span class="task-icon me-2 flex-shrink-0"> {# Збільшив me-1 до me-2 для відступу #}
                     {% if task_info.task.task_type == 'call' %}<i class="bi bi-telephone-outbound"></i>{% endif %}
@@ -49,7 +44,6 @@
                     {% if task_info.task.task_type == 'message' %}<i class="bi bi-chat-dots"></i>{% endif %}
                     {# Додайте інші типи, якщо є #}
                 </span>
-
                 {# Обертка для цілі та дати, розташованих у колонку #}
                 <div class="task-text-wrapper d-flex flex-column justify-content-center lh-sm"> {# lh-sm для компактності рядків #}
                     <span class="task-target text-truncate" style="max-width: 150px; display: inline-block;">
@@ -59,7 +53,6 @@
                         {{ task_info.task.task_date|date:"d.m" }}
                     </small>
                 </div>
-
             </div>
         {% else %}
             {# ... Кнопка "Створити задачу" ... #}
@@ -153,6 +146,12 @@
 
 <script src="{% static 'sales/js/chat/load_more.js' %}"></script>
 <script src="{% static 'sales/js/chat/utils.js' %}"></script>
+
+    <!-- крипти повязані з редагуванням задачі -->
+<script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
+<script src="{% static 'sales/js/kanban/completeTask.js' %}"></script>
+<script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
+<script src="{% static 'sales/js/kanban/editTaskSubmit.js' %}"></script>
 
 {% include "sales/partials/message_templates.html" %}
 {% endblock %}
