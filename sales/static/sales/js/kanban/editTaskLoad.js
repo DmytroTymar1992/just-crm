@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", function() {
             if (data.success) {
               document.querySelector('#edit-task-id').value = taskId;
               document.querySelector('#edit-task-type').value = data.task_type;
-              document.querySelector('#edit-task-date').value = data.task_date;
+              // Обрізаємо дату до формату YYYY-MM-DDTHH:MM
+              const formattedDate = data.task_date.slice(0, 16); // "2025-04-01T14:30"
+              document.querySelector('#edit-task-date').value = formattedDate;
               document.querySelector('#edit-task-target').value = data.target;
               document.querySelector('#edit-task-description').value = data.description || '';
             } else {
