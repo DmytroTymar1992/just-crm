@@ -1,8 +1,11 @@
 {% extends "sales/base-sales.html" %}
 {% load static %}
-
+<head>
 {% block title %}Канбан-дошка{% endblock %}
-
+{% block extra_css %}
+    <script src="{% static 'main/css/kanban.css' %}"></script>
+{% endblock %}
+</head>
 {% block content %}
 <div class="kanban-container">
   <div class="kanban-board">
@@ -152,9 +155,7 @@
 {% include "sales/partials/edit_task_modal.html" %}
 {% endblock %}
 
-{% block extra_css %}
-<script src="{% static 'main/css/kanban.css' %}"></script>
-{% endblock %}
+
 
 {% block extra_js %}
     <script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
