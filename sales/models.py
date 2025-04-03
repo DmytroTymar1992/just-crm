@@ -28,6 +28,12 @@ class Contact(models.Model):
     email = models.EmailField("Email", max_length=254, null=True, blank=True)
     avatar = models.ImageField("Аватар", upload_to="avatars/", null=True, blank=True)
 
+    is_from_site = models.BooleanField(default=False, verbose_name="З сайту")
+    is_processed = models.BooleanField(default=True, verbose_name="Оброблений")
+    user_id = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="ID користувача з сайту")
+    is_registered = models.BooleanField(default=False, verbose_name="Зареєстрований")
+    has_visited_site = models.BooleanField(default=False, verbose_name="Відвідував сайт")
+
     def save(self, *args, **kwargs):
         if self.phone:
             normalized_phone = normalize_phone_number(self.phone)
