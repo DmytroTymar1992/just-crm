@@ -11,7 +11,11 @@ class VisitorSerializer(serializers.ModelSerializer):
 
 class ContactSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
-        queryset=Company.objects.all(), source='company', write_only=True, required=False
+        queryset=Company.objects.all(),
+        source='company',
+        write_only=True,
+        required=False,  # Дозволяємо null
+        allow_null=True  # Дозволяємо null
     )
 
     class Meta:
