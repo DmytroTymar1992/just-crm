@@ -203,3 +203,9 @@ CHANNEL_LAYERS = {
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = ''
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.just-look.com.ua',  # Домен сайту
+    'https://just-look.com.ua',      # Додай без www, якщо є варіанти
+]
