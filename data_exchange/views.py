@@ -6,6 +6,7 @@ from .serializers import VisitorSerializer, ContactSerializer, SeekerSerializer
 from sales.models import Contact, ContactLink
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 
 class VisitorCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
@@ -33,6 +34,7 @@ class VisitorCreateAPIView(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+@method_decorator([csrf_exempt, require_http_methods(["POST"])], name='dispatch')
 class UserCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
         role = request.data.get('role')
