@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'sales_analytics',
     'transcription',
+    'data_exchange',
+    'site_management',
 
     'channels',
 ]
@@ -175,11 +177,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
+# Розклад задач
 CELERY_BEAT_SCHEDULE = {
     'check-company-status-every-15-minutes': {
-        'task': 'sales.tasks.check_company_task_status_for_users', # Правильний шлях до задачі
-        'schedule': 90.0,  # 15 хвилин * 60 секунд
-        # 'args': (arg1, arg2), # Якщо потрібні аргументи
+        'task': 'sales.tasks.check_company_task_status_for_users',
+        'schedule': 900.0,
+    },
+    'fetch-visitors-every-15-minutes': {
+        'task': 'data_exchange.tasks.fetch_visitors_data',
+        'schedule': 900.0,
     },
 }
 

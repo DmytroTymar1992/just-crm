@@ -95,6 +95,7 @@ def chat_room(request, room_id):
         'page_obj': page_obj,
         'rooms_for_user': rooms_for_user,
         'task_info': task_info,
+        'contact_links': room.contact.contactlink_set.all(),
     })
 
 @login_required

@@ -60,6 +60,13 @@
                   <span class="d-none d-md-inline ms-1">Створити задачу</span>
               </button>
           {% endif %}
+          {% if contact_links %}
+                <button type="button" class="btn btn-outline-info btn-sm copy-link-btn"
+                        title="Скопіювати посилання"
+                        data-link="{{ contact_links.0.url }}">
+                    <i class="bi bi-link-45deg"></i>
+                </button>
+            {% endif %}
           <a href="sip:{{room.contact.phone}}" class="btn btn-outline-success btn-sm" title="Подзвонити">
               <i class="bi bi-telephone"></i>
           </a>
@@ -149,7 +156,9 @@
 <script src="{% static 'sales/js/chat/load_more.js' %}"></script>
 <script src="{% static 'sales/js/chat/utils.js' %}"></script>
 
-    <!-- крипти повязані з редагуванням задачі -->
+<script src="{% static 'sales/js/copy_link.js' %}"></script>
+
+    <!-- скрипти повязані з редагуванням задачі -->
 <script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
 
 <script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
