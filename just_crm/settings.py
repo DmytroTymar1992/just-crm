@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'transcription',
     'data_exchange',
     'site_management',
+    'rest_framework',
 
     'channels',
 ]

@@ -14,6 +14,7 @@ urlpatterns = [
     path('sales_analytics/', include('sales_analytics.urls')),
 
     path('sales/', include('sales.urls')),
+    path('data-exchange/', include('data_exchange.urls')),
 ]# Додаємо обробку статичних файлів (тільки для розробки)
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
