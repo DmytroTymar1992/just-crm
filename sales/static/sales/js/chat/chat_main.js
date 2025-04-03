@@ -1,4 +1,6 @@
-const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/sales/' + window.chatData.roomId + '/');
+
+const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+const chatSocket = new WebSocket(protocol + window.location.host + '/ws/sales/' + window.chatData.roomId + '/');
 const chatUrl = `/sales/${window.chatData.roomId}/`;
 
 chatSocket.onopen = function(e) {
