@@ -4,7 +4,8 @@ from rest_framework import status
 from .models import Visitor
 from .serializers import VisitorSerializer, ContactSerializer, SeekerSerializer
 from sales.models import Contact, ContactLink
-
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class VisitorCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
@@ -31,6 +32,7 @@ class VisitorCreateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class UserCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
         role = request.data.get('role')
