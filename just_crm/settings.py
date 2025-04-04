@@ -219,3 +219,20 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.just-look.com.ua',  # Домен сайту
     'https://just-look.com.ua',      # Додай без www, якщо є варіанти
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': '/root/just-crm/crm.log',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['file'],
+            'level': 'INFO',
+        },
+    },
+}

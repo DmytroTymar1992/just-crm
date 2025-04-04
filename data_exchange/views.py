@@ -33,58 +33,55 @@ class VisitorCreateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+import logging
+logger = logging.getLogger(__name__)
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .serializers import ContactSerializer
+
 @method_decorator([csrf_exempt, require_http_methods(["POST"])], name='dispatch')
 class UserCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
+        logger.info(f"Received request: method={request.method}, data={request.data}")
         role = request.data.get('role')
         if role == 'employer':
-            # Перевіряємо, чи є контакт із таким email
             email = request.data.get('email')
             existing_contact = Contact.objects.filter(email=email).first()
-
             if existing_contact:
-                # Оновлюємо існуючий контакт
                 existing_contact.user_id = request.data.get('user_id')
-                existing_contact.is_from_site = False  # Залишаємо False, бо контакт уже був у CRM
-                existing_contact.is_registered = True  # Встановлюємо True
-                existing_contact.is_processed = True  # Залишаємо True (за замовчуванням)
-                existing_contact.has_visited_site = True  # Оновлюємо, бо прийшов із сайту
+                existing_contact.is_from_site = False
+                existing_contact.is_registered = True
+                existing_contact.is_processed = True
+                existing_contact.has_visited_site = True
                 existing_contact.save()
                 serializer = ContactSerializer(existing_contact)
-                return Response({"message": "Employer updated successfully", "data": serializer.data},
-                                status=status.HTTP_200_OK)
+                logger.info(f"Updated employer: {serializer.data}")
+                return Response({"message": "Employer updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
             else:
-                # Створюємо новий контакт
                 data = {
                     'first_name': request.data.get('first_name'),
                     'last_name': request.data.get('last_name'),
                     'phone': request.data.get('phone'),
                     'email': email,
                     'user_id': request.data.get('user_id'),
-                    'company_id': None,  # Додайте, якщо передаватимете компанію
-                    'is_from_site': True,  # Новий контакт із сайту
-                    'is_processed': False,  # Новий контакт не оброблений
-                    'is_registered': True,  # Новий контакт із сайту зареєстрований
-                    'has_visited_site': True  # Прийшов із сайту
+                    'company_id': None,
+                    'is_from_site': True,
+                    'is_processed': False,
+                    'is_registered': True,
+                    'has_visited_site': True
                 }
                 serializer = ContactSerializer(data=data)
-
-        elif role == 'seeker':
-            # Для пошуковців створюємо Seeker
-            data = {
-                'user_id': request.data.get('user_id'),
-                'first_name': request.data.get('first_name'),
-                'last_name': request.data.get('last_name'),
-                'phone': request.data.get('phone'),
-                'email': request.data.get('email')
-            }
-            serializer = SeekerSerializer(data=data)
-        else:
-            return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": f"{role.capitalize()} created successfully", "data": serializer.data},
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                if serializer.is_valid():
+                    serializer.save()
+                    logger.info(f"Created employer: {serializer.data}")
+                    return Response({"message": "Employer created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+                logger.error(f"Validation failed: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        logger.warning(f"Invalid role: {role}")
+        return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
