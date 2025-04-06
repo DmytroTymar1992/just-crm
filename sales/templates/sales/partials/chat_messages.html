@@ -71,7 +71,7 @@
       </div>
     {% endif %}
   {% elif item.interaction_type == "chat" %}
-    {% if item.is_system %}
+    {% if item.sender == "system" %}
       <!-- Системне повідомлення (наприклад, "Користувач відвідав сайт") -->
       <div class="mb-3 d-flex justify-content-center">
         <div class="p-2 rounded-3 shadow-sm text-center" style="max-width: 70%; background: #fff3cd; border: 2px solid #ffc107; color: #856404;">
