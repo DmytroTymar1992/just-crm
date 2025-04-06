@@ -1,149 +1,323 @@
 {# sales/partials/chat_messages.html #}
+
+{% comment %}
+  Додайте цей блок CSS у ваш основний CSS файл або в тег <style> на сторінці.
+  Переконайтесь, що Font Awesome підключено (наприклад, через CDN).
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endcomment %}
+
+<style>
+  .chat-container {
+    padding: 15px;
+    /* Можете додати фон для всього контейнера чату */
+    /* background-color: #f8f9fa; */
+  }
+
+  .chat-day-group .chat-date-separator {
+    text-align: center;
+    margin: 25px 0 15px;
+  }
+
+  .chat-date-separator span {
+    background-color: #e9ecef; /* Світло-сірий фон */
+    color: #6c757d;           /* Темно-сірий текст */
+    padding: 6px 18px;
+    border-radius: 15px;       /* Більш заокруглені краї */
+    font-size: 0.85em;
+    font-weight: 500;
+  }
+
+  .message {
+    display: flex; /* Використовуємо flex для вирівнювання */
+    margin-bottom: 15px;
+    max-width: 75%; /* Трохи ширші повідомлення */
+    word-wrap: break-word; /* Перенос слів */
+  }
+
+  .message-in {
+    justify-content: flex-start; /* Вхідні зліва */
+  }
+
+  .message-out {
+    justify-content: flex-end; /* Вихідні справа */
+    margin-left: auto; /* Важливо для правильного вирівнювання */
+  }
+
+  .message-content {
+    padding: 12px 18px;
+    border-radius: 18px; /* Заокруглені бульбашки */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Легка тінь */
+    position: relative; /* Для позиціонування часу */
+  }
+
+  /* Стилі для ВХІДНИХ повідомлень */
+  .message-in .message-content {
+    background-color: #ffffff; /* Білий фон */
+    border: 1px solid #e9ecef; /* Тонка рамка */
+    border-bottom-left-radius: 5px; /* Гостріший кут біля "хвостика" */
+  }
+
+  /* Стилі для ВИХІДНИХ повідомлень */
+  .message-out .message-content {
+    /* Можна використовувати градієнт для "молодіжності" */
+    background-image: linear-gradient(to bottom right, #007bff, #0056b3);
+    color: #ffffff; /* Білий текст */
+    border-bottom-right-radius: 5px; /* Гостріший кут біля "хвостика" */
+  }
+  .message-out .message-timestamp {
+     color: #e0e0e0; /* Світліший час для темного фону */
+  }
+   .message-out .message-type,
+   .message-out .message-subject strong,
+   .message-out .message-body,
+   .message-out .text-muted, /* Час теж */
+   .message-out .call-description p,
+   .message-out .edit-description,
+   .message-out .add-description,
+   .message-out strong /* Тема email */
+    {
+      color: #ffffff !important; /* Перевизначення кольору тексту для вихідних */
+   }
+  .message-out .message-subject {
+    background-color: rgba(255, 255, 255, 0.15); /* Напівпрозорий фон для теми */
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+  }
+   .message-out a, .message-out .btn-link { /* Посилання */
+      color: #cce5ff; /* Світло-блакитний для посилань */
+   }
+   .message-out .text-warning { /* Іконка редагування */
+      color: #ffc107 !important;
+   }
+   .message-out .text-success { /* Іконка додавання */
+       color: #9ef0bc !important; /* Світліший зелений */
+   }
+
+
+  /* Стилізація типів повідомлень */
+  .message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+  .message-header i {
+      margin-right: 8px; /* Відступ для іконки */
+  }
+  .message-type {
+      font-weight: 600; /* Напівжирний */
+  }
+
+  /* Конкретні кольори та іконки для типів */
+  .message-email .message-header i { color: #28a745; } /* Зелений для email */
+  .message-email .message-type { color: #28a745; }
+  .message-out.message-email .message-content { background-image: linear-gradient(to bottom right, #28a745, #218838); } /* Зелений градієнт */
+
+  .message-telegram .message-header i { color: #007bff; } /* Синій для telegram */
+  .message-telegram .message-type { color: #007bff; }
+  .message-out.message-telegram .message-content { background-image: linear-gradient(to bottom right, #007bff, #0056b3); } /* Синій градієнт (за замовчуванням) */
+
+  .message-call .message-header i { color: #17a2b8; } /* Бірюзовий для дзвінків */
+  .message-call .message-type { color: #17a2b8; }
+  .message-out.message-call .message-content { background-image: linear-gradient(to bottom right, #17a2b8, #117a8b); } /* Бірюзовий градієнт */
+
+  .message-chat .message-header i { color: #6c757d; } /* Сірий для чату */
+  .message-chat .message-type { color: #6c757d; }
+  .message-out.message-chat .message-content { background-image: linear-gradient(to bottom right, #6c757d, #5a6268); } /* Сірий градієнт */
+
+  .message-subject {
+      background-color: #f8f9fa; /* Світлий фон для теми листа */
+      border-left: 3px solid #ffc107; /* Жовтий акцент */
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+  }
+
+  .message-body {
+    line-height: 1.5; /* Покращена читабельність */
+  }
+
+  .message-timestamp {
+    font-size: 0.75em; /* Менший розмір часу */
+    margin-top: 8px;
+    display: block;
+    text-align: right; /* Час справа */
+  }
+  .message-in .message-timestamp {
+    color: #6c757d; /* Сірий колір часу для вхідних */
+  }
+
+  /* Системні повідомлення */
+  .message-system {
+    justify-content: center; /* По центру */
+    margin: 20px 0;
+    max-width: 100%;
+  }
+  .message-system .message-content {
+    background-color: #fff3cd; /* Жовтуватий фон */
+    color: #856404;         /* Темно-жовтий текст */
+    border: 1px solid #ffeeba; /* Світло-жовта рамка */
+    border-radius: 8px;      /* Менш заокруглені */
+    text-align: center;
+    box-shadow: none;        /* Без тіні */
+    width: auto; /* Автоматична ширина */
+    max-width: 80%; /* Обмеження ширини */
+  }
+   .message-system .message-header i { color: #ffc107; } /* Жовта іконка */
+   .message-system .message-type { color: #856404; }
+   .message-system .message-body { font-weight: 500; }
+   .message-system .message-timestamp { text-align: center; font-size: 0.75em; margin-top: 5px; }
+
+   /* Стилізація опису дзвінків */
+   .call-description {
+     margin-top: 10px;
+     font-size: 0.9em;
+   }
+   .call-description p { margin-bottom: 5px; }
+   .edit-description, .add-description {
+     cursor: pointer;
+     margin-left: 5px;
+     font-size: 1.1em; /* Трохи більші іконки */
+     display: inline-block; /* Щоб margin працював */
+   }
+    .message-out .call-description .text-warning { color: #ffc107 !important; } /* Жовтий */
+    .message-out .call-description .text-success { color: #9ef0bc !important; } /* Світло-зелений */
+    .message-in .call-description .text-warning { color: #ffc107 !important; }
+    .message-in .call-description .text-success { color: #28a745 !important; }
+
+   .description-form {
+     margin-top: 10px;
+   }
+   .description-form textarea {
+     margin-bottom: 5px;
+     background-color: rgba(255, 255, 255, 0.9); /* Ледь прозорий фон для поля вводу */
+     color: #333; /* Темний текст у полі вводу */
+   }
+    .message-out .description-form textarea {
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #212529;
+    }
+   .description-form .btn {
+     margin-right: 5px;
+     font-size: 0.85em;
+     padding: 4px 8px;
+   }
+</style>
+
+<div class="chat-container"> {# Додано загальний контейнер #}
 {% for item in interactions %}
   {% ifchanged item.created_at.date %}
     {% if not forloop.first %}
-      </div> <!-- Закриваємо попередній блок дня -->
-    {% endif %}
+      </div> {% endif %}
     <div class="chat-day-group">
-      <div class="text-center my-3">
-        <span class="badge bg-secondary rounded-pill px-3 py-2">
-          {{ item.created_at|date:"d.m.Y" }}
-        </span>
+      <div class="chat-date-separator">
+        <span>{{ item.created_at|date:"d F Y" }}</span> {# Більш читабельний формат дати #}
       </div>
   {% endifchanged %}
 
-  {% if item.interaction_type == "email" %}
-    {% if item.sender == "contact" %}
-      <div class="mb-3 d-flex justify-content-start">
-        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #28a745;">
-          <div class="text-success fw-semibold mb-1">Email</div>
-          <div class="bg-warning-subtle p-2 rounded mb-2">
-            <strong>Тема:</strong> {{ item.email_message.subject }}
-          </div>
-          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
-          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
+  {% with interaction_type=item.interaction_type sender_class=item.sender|yesno:"message-in,message-out" %}
+
+  {# --- Email --- #}
+  {% if interaction_type == "email" %}
+    <div class="message {{ sender_class }} message-email">
+      <div class="message-content">
+        <div class="message-header">
+          <i class="fas fa-envelope"></i>
+          <span class="message-type">Email</span>
         </div>
-      </div>
-    {% else %}
-      <div class="mb-3 d-flex justify-content-end">
-        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e9f7ef; border-right: 4px solid #28a745;">
-          <div class="text-success fw-semibold mb-1">Email</div>
-          <div class="bg-warning-subtle p-2 rounded mb-2">
-            <strong>Тема:</strong> {{ item.email_message.subject }}
-          </div>
-          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
-          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
+        {% if item.email_message.subject %}
+        <div class="message-subject">
+          <strong>Тема:</strong> {{ item.email_message.subject }}
         </div>
+        {% endif %}
+        <p class="message-body mb-0">{{ item.email_message.body|linebreaks }}</p>
+        <small class="message-timestamp text-muted">{{ item.created_at|date:"H:i" }}</small>
       </div>
-    {% endif %}
-  {% elif item.interaction_type == "telegram" %}
-    {% if item.sender == "contact" %}
-      <div class="mb-3 d-flex justify-content-start">
-        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #007bff;">
-          <div class="text-primary fw-semibold mb-1">Telegram</div>
-          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
-          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
+    </div>
+
+  {# --- Telegram --- #}
+  {% elif interaction_type == "telegram" %}
+    <div class="message {{ sender_class }} message-telegram">
+      <div class="message-content">
+        <div class="message-header">
+          <i class="fab fa-telegram-plane"></i>
+          <span class="message-type">Telegram</span>
         </div>
+        <p class="message-body mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
+        <small class="message-timestamp text-muted">{{ item.created_at|date:"H:i" }}</small>
       </div>
-    {% else %}
-      <div class="mb-3 d-flex justify-content-end">
-        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e6f0fa; border-right: 4px solid #007bff;">
-          <div class="text-primary fw-semibold mb-1">Telegram</div>
-          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
-          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
-        </div>
-      </div>
-    {% endif %}
-  {% elif item.interaction_type == "call" %}
-    {% if item.sender == "contact" %}
-      <div class="mb-3 d-flex justify-content-start">
-        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
-          <div class="fw-semibold">
-            {% if item.call_message.bridge_at %}
-              Дзвінок тривав - {{ item.call_message.duration|floatformat:0 }} сек
+    </div>
+
+  {# --- Call --- #}
+  {% elif interaction_type == "call" %}
+    <div class="message {{ sender_class }} message-call">
+      <div class="message-content">
+        <div class="message-header">
+          <i class="fas fa-phone-alt"></i>
+          <span class="message-type">
+            {% if item.sender == "contact" %}
+                {% if item.call_message.bridge_at %}Вхідний дзвінок{% else %}Пропущений{% endif %}
             {% else %}
-              Пропущено
+                {% if item.call_message.bridge_at %}Вихідний дзвінок{% else %}Скасований виклик{% endif %}
             {% endif %}
-          </div>
-          <div class="mt-1">
-            Телефон клієнта: {{ item.call_message.client_phone }}
-            <div class="call-description mt-2">
-              {% if item.call_message.description %}
-                <p class="mb-0">{{ item.call_message.description|linebreaks }}</p>
-                <span class="edit-description text-warning cursor-pointer" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
-              {% else %}
-                <span class="add-description text-success cursor-pointer" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
-              {% endif %}
-              <div class="description-form mt-2" style="display: none;">
-                <textarea class="form-control" rows="2" placeholder="Додати опис дзвінка">{{ item.call_message.description|default_if_none:"" }}</textarea>
-                <button class="btn btn-sm btn-primary mt-2 save-call-description" data-interaction-id="{{ item.id }}">Зберегти</button>
-                <button class="btn btn-sm btn-secondary mt-2 cancel-edit">Скасувати</button>
-              </div>
+          </span>
+        </div>
+        <div class="message-body">
+            {% if item.call_message.bridge_at %}
+                <span class="d-block mb-1"><i class="fas fa-clock me-1"></i> Тривалість: {{ item.call_message.duration|floatformat:0 }} сек</span>
+            {% endif %}
+
+          <div class="call-description">
+            {% if item.call_message.description %}
+              <p class="mb-1">{{ item.call_message.description|linebreaks }}</p>
+              <span class="edit-description text-warning cursor-pointer" data-interaction-id="{{ item.id }}" title="Редагувати опис"><i class="fas fa-pencil-alt"></i></span>
+            {% else %}
+              <span class="add-description text-success cursor-pointer" data-interaction-id="{{ item.id }}" title="Додати опис"><i class="fas fa-plus-circle"></i> Додати опис</span>
+            {% endif %}
+            <div class="description-form mt-2" style="display: none;">
+              <textarea class="form-control form-control-sm" rows="2" placeholder="Додати опис дзвінка">{{ item.call_message.description|default_if_none:"" }}</textarea>
+              <button class="btn btn-sm btn-primary mt-1 save-call-description" data-interaction-id="{{ item.id }}"><i class="fas fa-save me-1"></i>Зберегти</button>
+              <button class="btn btn-sm btn-secondary mt-1 cancel-edit"><i class="fas fa-times me-1"></i>Скасувати</button>
             </div>
           </div>
-          <small class="d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
+        <small class="message-timestamp text-muted">{{ item.created_at|date:"H:i" }}</small>
       </div>
-    {% else %}
-      <div class="mb-3 d-flex justify-content-end">
-        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
-          <div class="fw-semibold">
-            {% if item.call_message.bridge_at %}
-              Дзвінок тривав - {{ item.call_message.duration|floatformat:0 }} сек
-            {% else %}
-              Скасований виклик
-            {% endif %}
-          </div>
-          <div class="mt-1">
-            Телефон клієнта: {{ item.call_message.client_phone }}
-            <div class="call-description mt-2">
-              {% if item.call_message.description %}
-                <p class="mb-0">{{ item.call_message.description|linebreaks }}</p>
-                <span class="edit-description text-warning cursor-pointer" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
-              {% else %}
-                <span class="add-description text-success cursor-pointer" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
-              {% endif %}
-              <div class="description-form mt-2" style="display: none;">
-                <textarea class="form-control" rows="2" placeholder="Додати опис дзвінка">{{ item.call_message.description|default_if_none:"" }}</textarea>
-                <button class="btn btn-sm btn-primary mt-2 save-call-description" data-interaction-id="{{ item.id }}">Зберегти</button>
-                <button class="btn btn-sm btn-secondary mt-2 cancel-edit">Скасувати</button>
-              </div>
-            </div>
-          </div>
-          <small class="d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
-        </div>
-      </div>
-    {% endif %}
-  {% elif item.interaction_type == "chat" %}
+    </div>
+
+  {# --- Chat / System --- #}
+  {% elif interaction_type == "chat" %}
     {% if item.is_system %}
-      <div class="mb-3 d-flex justify-content-center">
-        <div class="p-2 rounded-3 shadow-sm text-center" style="max-width: 70%; background: #fff3cd; border: 2px solid #ffc107; color: #856404;">
-          <p class="mb-0 fw-semibold">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-          <small class="d-block mt-1">{{ item.created_at|date:"H:i" }}</small>
+      <div class="message message-system">
+         <div class="message-content">
+            <div class="message-header justify-content-center"> {# Центруємо заголовок системного повідомлення #}
+                <i class="fas fa-info-circle"></i>
+                <span class="message-type ms-1">Системне повідомлення</span>
+            </div>
+            <p class="message-body mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+            <small class="message-timestamp">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% else %}
-      {% if item.sender == "contact" %}
-        <div class="mb-3 d-flex justify-content-start">
-          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #6c757d;">
-            <div class="text-secondary fw-semibold mb-1">Chat</div>
-            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-            <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
-          </div>
+      <div class="message {{ sender_class }} message-chat">
+        <div class="message-content">
+           <div class="message-header">
+               <i class="fas fa-comments"></i>
+               <span class="message-type">Chat</span>
+           </div>
+          <p class="message-body mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="message-timestamp text-muted">{{ item.created_at|date:"H:i" }}</small>
         </div>
-      {% else %}
-        <div class="mb-3 d-flex justify-content-end">
-          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #f8f9fa; border-right: 4px solid #6c757d;">
-            <div class="text-secondary fw-semibold mb-1">Chat</div>
-            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-            <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
-          </div>
-        </div>
-      {% endif %}
+      </div>
     {% endif %}
   {% endif %}
-{% if forloop.last %}
-  </div> <!-- Закриваємо останній блок дня -->
-{% endif %}
-{% endfor %}
+  {% endwith %}
 
+{% if forloop.last %}
+  </div> {% endif %}
+{% endfor %}
+</div> {# Закриваємо chat-container #}
