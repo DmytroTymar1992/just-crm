@@ -1,152 +1,199 @@
-/* Стилі для Скролбарів та Поля Вводу (Без змін) */
-  #chat-log, #contacts-container {
-    background: #f8f9fa;
-  }
-  #chat-log::-webkit-scrollbar, #contacts-container::-webkit-scrollbar {
-    width: 6px;
-  }
-  #chat-log::-webkit-scrollbar-thumb, #contacts-container::-webkit-scrollbar-thumb {
-    background-color: #ced4da;
-    border-radius: 3px;
-  }
-  #chat-log::-webkit-scrollbar-track, #contacts-container::-webkit-scrollbar-track {
-    background: #e9ecef;
-  }
-  #chat-message-input {
-    resize: vertical;
-    min-height: 40px;
-    max-height: 150px;
-    overflow-y: auto;
+  .chat-container {
+    padding: 15px;
+    /* Можете додати фон для всього контейнера чату */
+    /* background-color: #f8f9fa; */
   }
 
-  /* --- Анімації Блимання (Без змін) --- */
-  @keyframes blink-red {
-      0%, 100% { background-color: rgba(220, 53, 69, 0.25); border-color: rgba(220, 53, 69, 0.45); }
-      50% { background-color: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.25); }
+  .chat-day-group .chat-date-separator {
+    text-align: center;
+    margin: 25px 0 15px;
   }
 
-  @keyframes blink-green {
-      0%, 100% { background-color: rgba(25, 135, 84, 0.2); border-color: rgba(25, 135, 84, 0.4); }
-      50% { background-color: rgba(25, 135, 84, 0.1); border-color: rgba(25, 135, 84, 0.25); }
+  .chat-date-separator span {
+    background-color: #e9ecef; /* Світло-сірий фон */
+    color: #6c757d;           /* Темно-сірий текст */
+    padding: 6px 18px;
+    border-radius: 15px;       /* Більш заокруглені краї */
+    font-size: 0.85em;
+    font-weight: 500;
   }
 
-  /* --- Стилізація Блоку Задачі (Оновлено) --- */
-  .task-display {
-      /* Зменшені відступи (Залишаємо) */
-      padding-top: 0.2rem !important;
-      padding-bottom: 0.2rem !important;
-      padding-left: 0.6rem !important;
-      padding-right: 0.6rem !important;
-
-      /* Базовий розмір шрифту (Залишаємо) */
-      font-size: 0.8rem;
-      /* line-height: 1.2; */ /* Закоментовано, використовуємо lh-sm в HTML або в .task-text-wrapper */
-
-      cursor: default;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-      max-width: 250px; /* Максимальна ширина всього блоку */
-      overflow: hidden; /* Ховаємо те, що виходить за межі */
-      vertical-align: middle; /* Для вирівнювання з сусідніми кнопками */
+  .message {
+    display: flex; /* Використовуємо flex для вирівнювання */
+    margin-bottom: 15px;
+    max-width: 75%; /* Трохи ширші повідомлення */
+    word-wrap: break-word; /* Перенос слів */
   }
 
-  /* Стилізація іконки всередині блоку задачі */
-  .task-display .task-icon {
-      display: inline-flex; /* Вирівнюємо вміст іконки */
-      align-items: center;  /* Центруємо по вертикалі */
-      align-self: center;   /* Центруємо саму іконку відносно батьківського flex-контейнера */
-      flex-shrink: 0;     /* Забороняємо стискатися */
-  }
-  .task-display .task-icon i {
-      /* font-size: 1em; */ /* Можна налаштувати розмір іконки, якщо потрібно */
-      line-height: 1;     /* Уникаємо зайвої висоти рядка від іконки */
-      vertical-align: middle; /* Додаткове вирівнювання */
+  .message-in {
+    justify-content: flex-start; /* Вхідні зліва */
   }
 
-  /* Новий блок для тексту (ціль + дата) */
-  .task-text-wrapper {
-     line-height: 1.15; /* Компактна висота рядка (альтернатива lh-sm в HTML) */
-     overflow: hidden;    /* Обрізаємо вміст, якщо виходить за межі */
-     /* margin-left: 0.2rem; /* Можна додати невеликий відступ від іконки */
+  .message-out {
+    justify-content: flex-end; /* Вихідні справа */
+    margin-left: auto; /* Важливо для правильного вирівнювання */
   }
 
-  /* Ціль задачі */
-  .task-display .task-target {
-      display: inline-block;  /* Дозволяє задати max-width */
-      max-width: 150px;       /* Обмежуємо ширину цілі (Налаштуйте!) */
-      /* vertical-align: middle; */ /* Не потрібний для flex-column */
-      white-space: nowrap;      /* Заборона переносу */
-      overflow: hidden;         /* Ховаємо те, що не влізло */
-      text-overflow: ellipsis;  /* Додаємо три крапки */
+  .message-content {
+    padding: 12px 18px;
+    border-radius: 18px; /* Заокруглені бульбашки */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Легка тінь */
+    position: relative; /* Для позиціонування часу */
   }
 
-  /* Дата задачі */
-  .task-display .task-date {
-      font-size: 0.85em; /* Робимо трохи меншим */
-      white-space: nowrap; /* Заборона переносу дати */
-      /* vertical-align: middle; */ /* Не потрібний для flex-column */
+  /* Стилі для ВХІДНИХ повідомлень */
+  .message-in .message-content {
+    background-color: #ffffff; /* Білий фон */
+    border: 1px solid #e9ecef; /* Тонка рамка */
+    border-bottom-left-radius: 5px; /* Гостріший кут біля "хвостика" */
   }
 
-  /* --- Стилі для Статусів Задач (Оновлено) --- */
-
-  /* Статус: Протермінована */
-  .task-overdue {
-      color: #a71d2a;
-      border: 1px solid rgba(220, 53, 69, 0.45) !important;
-      background-color: rgba(220, 53, 69, 0.25);
-      animation: blink-red 0.5s infinite;
+  /* Стилі для ВИХІДНИХ повідомлень */
+  .message-out .message-content {
+    /* Можна використовувати градієнт для "молодіжності" */
+    background-image: linear-gradient(to bottom right, #007bff, #0056b3);
+    color: #ffffff; /* Білий текст */
+    border-bottom-right-radius: 5px; /* Гостріший кут біля "хвостика" */
   }
-  .task-overdue .task-icon i { /* Колір іконки */
-      color: #dc3545;
+  .message-out .message-timestamp {
+     color: #e0e0e0; /* Світліший час для темного фону */
   }
-  .task-overdue .task-date { /* Колір дати */
-      color: #dc3545;
+   .message-out .message-type,
+   .message-out .message-subject strong,
+   .message-out .message-body,
+   .message-out .text-muted, /* Час теж */
+   .message-out .call-description p,
+   .message-out .edit-description,
+   .message-out .add-description,
+   .message-out strong /* Тема email */
+    {
+      color: #ffffff !important; /* Перевизначення кольору тексту для вихідних */
+   }
+  .message-out .message-subject {
+    background-color: rgba(255, 255, 255, 0.15); /* Напівпрозорий фон для теми */
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
   }
-  /* .task-overdue .border-start ... - Правило видалено */
-
-  /* Статус: Сьогодні */
-  .task-today {
-      color: #0a3622;
-      border: 1px solid rgba(25, 135, 84, 0.4) !important;
-      background-color: rgba(25, 135, 84, 0.2);
-      animation: blink-green 1.5s infinite;
-  }
-  .task-today .task-icon i { /* Колір іконки */
-      color: #198754;
-  }
-  .task-today .task-date { /* Колір дати */
-      color: #198754;
-  }
-  /* .task-today .border-start ... - Правило видалено */
-
-  /* Статус: Майбутня */
-  .task-future {
-      color: #664d03;
-      border: 1px solid rgba(255, 193, 7, 0.4) !important;
-      background-color: rgba(255, 193, 7, 0.15);
-  }
-  .task-future .task-icon i { /* Колір іконки */
-      color: #ffc107;
-  }
-  .task-future .task-date { /* Колір дати */
-      color: #ffc107;
-  }
-  /* .task-future .border-start ... - Правило видалено */
+   .message-out a, .message-out .btn-link { /* Посилання */
+      color: #cce5ff; /* Світло-блакитний для посилань */
+   }
+   .message-out .text-warning { /* Іконка редагування */
+      color: #ffc107 !important;
+   }
+   .message-out .text-success { /* Іконка додавання */
+       color: #9ef0bc !important; /* Світліший зелений */
+   }
 
 
-  /* --- Обрізання Інших Елементів (Без змін) --- */
-
-  /* Обрізання для назви компанії */
-  .contact-info > a > small.text-truncate {
-      display: inline-block;
-      max-width: 250px; /* Налаштуйте максимальну ширину компанії */
+  /* Стилізація типів повідомлень */
+  .message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+  .message-header i {
+      margin-right: 8px; /* Відступ для іконки */
+  }
+  .message-type {
+      font-weight: 600; /* Напівжирний */
   }
 
-  /* Загальний стиль для task-icon, якщо використовується поза .task-display (Без змін) */
-  /* Якщо .task-icon використовується тільки всередині .task-display, це правило можна видалити,
-     оскільки стилі вже визначені в `.task-display .task-icon` */
-  .task-icon {
-      display: inline-flex;
-      align-items: center;
+  /* Конкретні кольори та іконки для типів */
+  .message-email .message-header i { color: #28a745; } /* Зелений для email */
+  .message-email .message-type { color: #28a745; }
+  .message-out.message-email .message-content { background-image: linear-gradient(to bottom right, #28a745, #218838); } /* Зелений градієнт */
+
+  .message-telegram .message-header i { color: #007bff; } /* Синій для telegram */
+  .message-telegram .message-type { color: #007bff; }
+  .message-out.message-telegram .message-content { background-image: linear-gradient(to bottom right, #007bff, #0056b3); } /* Синій градієнт (за замовчуванням) */
+
+  .message-call .message-header i { color: #17a2b8; } /* Бірюзовий для дзвінків */
+  .message-call .message-type { color: #17a2b8; }
+  .message-out.message-call .message-content { background-image: linear-gradient(to bottom right, #17a2b8, #117a8b); } /* Бірюзовий градієнт */
+
+  .message-chat .message-header i { color: #6c757d; } /* Сірий для чату */
+  .message-chat .message-type { color: #6c757d; }
+  .message-out.message-chat .message-content { background-image: linear-gradient(to bottom right, #6c757d, #5a6268); } /* Сірий градієнт */
+
+  .message-subject {
+      background-color: #f8f9fa; /* Світлий фон для теми листа */
+      border-left: 3px solid #ffc107; /* Жовтий акцент */
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      font-size: 0.9em;
   }
 
-  /* Видалено дублююче/загальне правило для .task-target */
+  .message-body {
+    line-height: 1.5; /* Покращена читабельність */
+  }
+
+  .message-timestamp {
+    font-size: 0.75em; /* Менший розмір часу */
+    margin-top: 8px;
+    display: block;
+    text-align: right; /* Час справа */
+  }
+  .message-in .message-timestamp {
+    color: #6c757d; /* Сірий колір часу для вхідних */
+  }
+
+  /* Системні повідомлення */
+  .message-system {
+    justify-content: center; /* По центру */
+    margin: 20px 0;
+    max-width: 100%;
+  }
+  .message-system .message-content {
+    background-color: #fff3cd; /* Жовтуватий фон */
+    color: #856404;         /* Темно-жовтий текст */
+    border: 1px solid #ffeeba; /* Світло-жовта рамка */
+    border-radius: 8px;      /* Менш заокруглені */
+    text-align: center;
+    box-shadow: none;        /* Без тіні */
+    width: auto; /* Автоматична ширина */
+    max-width: 80%; /* Обмеження ширини */
+  }
+   .message-system .message-header i { color: #ffc107; } /* Жовта іконка */
+   .message-system .message-type { color: #856404; }
+   .message-system .message-body { font-weight: 500; }
+   .message-system .message-timestamp { text-align: center; font-size: 0.75em; margin-top: 5px; }
+
+   /* Стилізація опису дзвінків */
+   .call-description {
+     margin-top: 10px;
+     font-size: 0.9em;
+   }
+   .call-description p { margin-bottom: 5px; }
+   .edit-description, .add-description {
+     cursor: pointer;
+     margin-left: 5px;
+     font-size: 1.1em; /* Трохи більші іконки */
+     display: inline-block; /* Щоб margin працював */
+   }
+    .message-out .call-description .text-warning { color: #ffc107 !important; } /* Жовтий */
+    .message-out .call-description .text-success { color: #9ef0bc !important; } /* Світло-зелений */
+    .message-in .call-description .text-warning { color: #ffc107 !important; }
+    .message-in .call-description .text-success { color: #28a745 !important; }
+
+   .description-form {
+     margin-top: 10px;
+   }
+   .description-form textarea {
+     margin-bottom: 5px;
+     background-color: rgba(255, 255, 255, 0.9); /* Ледь прозорий фон для поля вводу */
+     color: #333; /* Темний текст у полі вводу */
+   }
+    .message-out .description-form textarea {
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #212529;
+    }
+   .description-form .btn {
+     margin-right: 5px;
+     font-size: 0.85em;
+     padding: 4px 8px;
+   }
