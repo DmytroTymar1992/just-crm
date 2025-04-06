@@ -17,11 +17,10 @@ class VisitorCreateAPIView(APIView):
             # Отримуємо first_url із запиту
             first_url = request.data.get('first_url', '')
 
-            # Додаємо префікс для порівняння
-            full_url = f"https://www.just-look.com.ua{first_url}"
+
 
             # Шукаємо збіги в ContactLink
-            matching_link = ContactLink.objects.filter(url=full_url).first()
+            matching_link = ContactLink.objects.filter(url=first_url).first()
             if matching_link:
                 # Оновлюємо відповідний контакт
                 contact = matching_link.contact
