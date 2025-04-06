@@ -164,6 +164,20 @@
 <script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Показати поле введення при натисканні на іконку
+    document.querySelectorAll('.edit-description, .add-description').forEach(icon => {
+        icon.addEventListener('click', function () {
+            const descriptionDiv = this.parentElement;
+            const form = descriptionDiv.querySelector('.description-form');
+            form.style.display = 'block';
+            this.style.display = 'none'; // Ховаємо іконку
+            if (descriptionDiv.querySelector('p')) {
+                descriptionDiv.querySelector('p').style.display = 'none'; // Ховаємо текст опису
+            }
+        });
+    });
+
+    // Зберегти опис
     document.querySelectorAll('.save-call-description').forEach(button => {
         button.addEventListener('click', function () {
             const interactionId = this.getAttribute('data-interaction-id');
@@ -181,12 +195,26 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 if (data.success) {
                     alert('Опис збережено!');
-                    location.reload(); // Оновити сторінку для відображення
+                    location.reload(); // Оновити сторінку
                 } else {
                     alert('Помилка: ' + data.error);
                 }
             })
             .catch(error => console.error('Помилка:', error));
+        });
+    });
+
+    // Скасувати редагування
+    document.querySelectorAll('.cancel-edit').forEach(button => {
+        button.addEventListener('click', function () {
+            const descriptionDiv = this.parentElement.parentElement;
+            const form = this.parentElement;
+            form.style.display = 'none';
+            const icon = descriptionDiv.querySelector('.edit-description, .add-description');
+            icon.style.display = 'inline';
+            if (descriptionDiv.querySelector('p')) {
+                descriptionDiv.querySelector('p').style.display = 'block';
+            }
         });
     });
 });
