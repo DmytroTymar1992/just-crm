@@ -11,6 +11,7 @@
         </span>
       </div>
   {% endifchanged %}
+
   {% if item.interaction_type == "email" %}
     {% if item.sender == "contact" %}
       <div class="mb-3 d-flex justify-content-start">
@@ -111,4 +112,7 @@
       {% endif %}
     {% endif %}
   {% endif %}
+{% if forloop.last %}
+  </div> <!-- Закриваємо останній блок дня -->
+{% endif %}
 {% endfor %}
