@@ -33,6 +33,7 @@ urlpatterns = [
     path("contacts/merge_confirm/<int:contact1_id>/<int:contact2_id>/", merge_contacts_confirm_view,
          name="merge_contacts_confirm"),
     path('api/phonet/call-events/', PhonetCallEventView.as_view(), name='phonet-call-events'),
+    path('update_call_description/<int:interaction_id>/', update_call_description, name='update_call_description'),
 
 
 

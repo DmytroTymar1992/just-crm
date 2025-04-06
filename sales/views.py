@@ -1070,3 +1070,15 @@ class PhonetCallEventView(APIView):
         })
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
+
+from django.views.decorators.csrf import csrf_protect
+@csrf_protect
+def update_call_description(request, interaction_id):
+    if request.method == 'POST':
+        interaction = get_object_or_404(Interaction, id=interaction_id, interaction_type='call')
+        data = json.loads(request.body)
+        description = data.get('description', '')
+        interaction.call_message.description = description
+        interaction.call_message.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)

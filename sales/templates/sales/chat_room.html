@@ -162,7 +162,35 @@
 <script src="{% static 'sales/js/kanban/csrfToken.js' %}"></script>
 
 <script src="{% static 'sales/js/kanban/editTaskLoad.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.save-call-description').forEach(button => {
+        button.addEventListener('click', function () {
+            const interactionId = this.getAttribute('data-interaction-id');
+            const description = this.previousElementSibling.value;
 
+            fetch(`/sales/update_call_description/${interactionId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ description: description })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Опис збережено!');
+                    location.reload(); // Оновити сторінку для відображення
+                } else {
+                    alert('Помилка: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Помилка:', error));
+        });
+    });
+});
+</script>
 
 {% include "sales/partials/message_templates.html" %}
 {% endblock %}
