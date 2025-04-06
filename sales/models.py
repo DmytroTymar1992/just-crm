@@ -240,6 +240,7 @@ class CallMessage(models.Model):
     bridge_at = models.DateTimeField(blank=True, null=True, verbose_name="Час підняття слухавки (call.bridge)")
     hangup_at = models.DateTimeField(blank=True, null=True, verbose_name="Час завершення дзвінка (call.hangup)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення запису")
+    description = models.TextField("Опис дзвінка", blank=True, null=True)
 
     def __str__(self):
         return f"CallMessage #{self.pk} (UUID={self.phonet_uuid})"
