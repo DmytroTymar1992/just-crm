@@ -37,7 +37,7 @@ class VisitorCreateAPIView(APIView):
                     interaction = Interaction.objects.create(
                         room=room,
                         interaction_type='chat',
-                        sender='user',  # Системне повідомлення від користувача (можна змінити на 'system', якщо додати до SENDER_CHOICES)
+                        sender='system',  # Системне повідомлення від користувача (можна змінити на 'system', якщо додати до SENDER_CHOICES)
                         is_read=False
                     )
                     # Додаємо текст повідомлення через окрему модель (якщо потрібно), або через поле content
