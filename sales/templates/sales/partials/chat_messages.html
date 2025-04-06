@@ -5,8 +5,8 @@
       </div> <!-- Закриваємо попередній блок дня -->
     {% endif %}
     <div class="chat-day-group">
-      <div class="text-center my-4">
-        <span class="badge bg-dark-subtle text-dark rounded-pill px-4 py-2 fw-medium" style="font-size: 0.9rem;">
+      <div class="text-center my-3">
+        <span class="badge bg-secondary rounded-pill px-3 py-2">
           {{ item.created_at|date:"d.m.Y" }}
         </span>
       </div>
@@ -14,127 +14,127 @@
 
   {% if item.interaction_type == "email" %}
     {% if item.sender == "contact" %}
-      <div class="mb-4 d-flex justify-content-start">
-        <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #ffffff, #f8f9fa); border-left: 5px solid #00cc66;">
-          <div class="text-success fw-semibold mb-2" style="font-size: 0.95rem;">Email</div>
-          <div class="bg-warning-subtle p-2 rounded-3 mb-2" style="font-size: 0.9rem;">
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #28a745;">
+          <div class="text-success fw-semibold mb-1">Email</div>
+          <div class="bg-warning-subtle p-2 rounded mb-2">
             <strong>Тема:</strong> {{ item.email_message.subject }}
           </div>
-          <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.email_message.body|linebreaks }}</p>
-          <small class="text-muted d-block text-end mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
+          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% else %}
-      <div class="mb-4 d-flex justify-content-end">
-        <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #e9f7ef, #d4edda); border-right: 5px solid #00cc66;">
-          <div class="text-success fw-semibold mb-2" style="font-size: 0.95rem;">Email</div>
-          <div class="bg-warning-subtle p-2 rounded-3 mb-2" style="font-size: 0.9rem;">
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e9f7ef; border-right: 4px solid #28a745;">
+          <div class="text-success fw-semibold mb-1">Email</div>
+          <div class="bg-warning-subtle p-2 rounded mb-2">
             <strong>Тема:</strong> {{ item.email_message.subject }}
           </div>
-          <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.email_message.body|linebreaks }}</p>
-          <small class="text-muted d-block mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+          <p class="text-dark mb-0">{{ item.email_message.body|linebreaks }}</p>
+          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% endif %}
   {% elif item.interaction_type == "telegram" %}
     {% if item.sender == "contact" %}
-      <div class="mb-4 d-flex justify-content-start">
-        <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #ffffff, #f1f3f5); border-left: 5px solid #3399ff;">
-          <div class="text-primary fw-semibold mb-2" style="font-size: 0.95rem;">Telegram</div>
-          <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.telegram_message.text|default_if_none:"(немає тексту)"|linebreaks }}</p>
-          <small class="text-muted d-block text-end mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #007bff;">
+          <div class="text-primary fw-semibold mb-1">Telegram</div>
+          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% else %}
-      <div class="mb-4 d-flex justify-content-end">
-        <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #e6f0fa, #d6e4f0); border-right: 5px solid #3399ff;">
-          <div class="text-primary fw-semibold mb-2" style="font-size: 0.95rem;">Telegram</div>
-          <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.telegram_message.text|default_if_none:"(немає тексту)"|linebreaks }}</p>
-          <small class="text-muted d-block mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #e6f0fa; border-right: 4px solid #007bff;">
+          <div class="text-primary fw-semibold mb-1">Telegram</div>
+          <p class="text-dark mb-0">{{ item.telegram_message.text|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% endif %}
   {% elif item.interaction_type == "call" %}
     {% if item.sender == "contact" %}
-      <div class="mb-4 d-flex justify-content-start">
-        <div class="p-3 rounded-4 shadow-sm bg-info-subtle text-dark" style="max-width: 70%;">
-          <div class="fw-semibold" style="font-size: 0.95rem;">
+      <div class="mb-3 d-flex justify-content-start">
+        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+          <div class="fw-semibold">
             {% if item.call_message.bridge_at %}
               Дзвінок тривав - {{ item.call_message.duration|floatformat:0 }} сек
             {% else %}
               Пропущено
             {% endif %}
           </div>
-          <div class="mt-2">
-            <div class="call-description mt-2" style="font-size: 0.9rem;">
+          <div class="mt-1">
+            <div class="call-description mt-2">
               {% if item.call_message.description %}
                 <p class="mb-0">{{ item.call_message.description|linebreaks }}</p>
-                <span class="edit-description text-warning cursor-pointer ms-2" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
+                <span class="edit-description text-warning cursor-pointer" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
               {% else %}
-                <span class="add-description text-success cursor-pointer ms-2" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
+                <span class="add-description text-success cursor-pointer" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
               {% endif %}
-              <div class="description-form mt-3" style="display: none;">
-                <textarea class="form-control rounded-3" rows="2" placeholder="Додати опис дзвінка" style="font-size: 0.9rem;">{{ item.call_message.description|default_if_none:"" }}</textarea>
-                <button class="btn btn-sm btn-primary mt-2 save-call-description rounded-pill px-3" data-interaction-id="{{ item.id }}">Зберегти</button>
-                <button class="btn btn-sm btn-outline-secondary mt-2 cancel-edit rounded-pill px-3">Скасувати</button>
+              <div class="description-form mt-2" style="display: none;">
+                <textarea class="form-control" rows="2" placeholder="Додати опис дзвінка">{{ item.call_message.description|default_if_none:"" }}</textarea>
+                <button class="btn btn-sm btn-primary mt-2 save-call-description" data-interaction-id="{{ item.id }}">Зберегти</button>
+                <button class="btn btn-sm btn-secondary mt-2 cancel-edit">Скасувати</button>
               </div>
             </div>
           </div>
-          <small class="d-block text-end mt-2 text-muted" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+          <small class="d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% else %}
-      <div class="mb-4 d-flex justify-content-end">
-        <div class="p-3 rounded-4 shadow-sm bg-info-subtle text-dark" style="max-width: 70%;">
-          <div class="fw-semibold" style="font-size: 0.95rem;">
+      <div class="mb-3 d-flex justify-content-end">
+        <div class="p-3 rounded-3 shadow-sm bg-info text-white" style="max-width: 70%;">
+          <div class="fw-semibold">
             {% if item.call_message.bridge_at %}
               Дзвінок тривав - {{ item.call_message.duration|floatformat:0 }} сек
             {% else %}
               Скасований виклик
             {% endif %}
           </div>
-          <div class="mt-2">
-            <div class="call-description mt-2" style="font-size: 0.9rem;">
+          <div class="mt-1">
+            <div class="call-description mt-2">
               {% if item.call_message.description %}
                 <p class="mb-0">{{ item.call_message.description|linebreaks }}</p>
-                <span class="edit-description text-warning cursor-pointer ms-2" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
+                <span class="edit-description text-warning cursor-pointer" data-interaction-id="{{ item.id }}" title="Редагувати опис">✏️</span>
               {% else %}
-                <span class="add-description text-success cursor-pointer ms-2" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
+                <span class="add-description text-success cursor-pointer" data-interaction-id="{{ item.id }}" title="Додати опис">+</span>
               {% endif %}
-              <div class="description-form mt-3" style="display: none;">
-                <textarea class="form-control rounded-3" rows="2" placeholder="Додати опис дзвінка" style="font-size: 0.9rem;">{{ item.call_message.description|default_if_none:"" }}</textarea>
-                <button class="btn btn-sm btn-primary mt-2 save-call-description rounded-pill px-3" data-interaction-id="{{ item.id }}">Зберегти</button>
-                <button class="btn btn-sm btn-outline-secondary mt-2 cancel-edit rounded-pill px-3">Скасувати</button>
+              <div class="description-form mt-2" style="display: none;">
+                <textarea class="form-control" rows="2" placeholder="Додати опис дзвінка">{{ item.call_message.description|default_if_none:"" }}</textarea>
+                <button class="btn btn-sm btn-primary mt-2 save-call-description" data-interaction-id="{{ item.id }}">Зберегти</button>
+                <button class="btn btn-sm btn-secondary mt-2 cancel-edit">Скасувати</button>
               </div>
             </div>
           </div>
-          <small class="d-block mt-2 text-muted" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+          <small class="d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% endif %}
   {% elif item.interaction_type == "chat" %}
-    {% if item.is_system %}
-      <div class="mb-4 d-flex justify-content-center">
-        <div class="p-2 rounded-4 shadow-sm text-center" style="max-width: 70%; background: #fff3cd; border: 2px solid #ffaa00; color: #704f18;">
-          <p class="mb-0 fw-semibold" style="font-size: 0.9rem;">{{ item.content|default_if_none:"(немає тексту)"|linebreaks }}</p>
-          <small class="d-block mt-1 text-muted" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+    {% if item.sender == "system" %}
+      <div class="mb-3 d-flex justify-content-center">
+        <div class="p-2 rounded-3 shadow-sm text-center" style="max-width: 70%; background: #fff3cd; border: 2px solid #ffc107; color: #856404;">
+          <p class="mb-0 fw-semibold">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="d-block mt-1">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
     {% else %}
       {% if item.sender == "contact" %}
-        <div class="mb-4 d-flex justify-content-start">
-          <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #ffffff, #f1f3f5); border-left: 5px solid #6c757d;">
-            <div class="text-secondary fw-semibold mb-2" style="font-size: 0.95rem;">Chat</div>
-            <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.content|default_if_none:"(немає тексту)"|linebreaks }}</p>
-            <small class="text-muted d-block text-end mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+        <div class="mb-3 d-flex justify-content-start">
+          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #6c757d;">
+            <div class="text-secondary fw-semibold mb-1">Chat</div>
+            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+            <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
           </div>
         </div>
       {% else %}
-        <div class="mb-4 d-flex justify-content-end">
-          <div class="p-3 rounded-4 shadow-sm" style="max-width: 70%; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-right: 5px solid #6c757d;">
-            <div class="text-secondary fw-semibold mb-2" style="font-size: 0.95rem;">Chat</div>
-            <p class="text-dark mb-0" style="font-size: 1rem; line-height: 1.5;">{{ item.content|default_if_none:"(немає тексту)"|linebreaks }}</p>
-            <small class="text-muted d-block mt-2" style="font-size: 0.8rem;">{{ item.created_at|date:"H:i" }}</small>
+        <div class="mb-3 d-flex justify-content-end">
+          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #f8f9fa; border-right: 4px solid #6c757d;">
+            <div class="text-secondary fw-semibold mb-1">Chat</div>
+            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+            <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
           </div>
         </div>
       {% endif %}
@@ -144,3 +144,4 @@
   </div> <!-- Закриваємо останній блок дня -->
 {% endif %}
 {% endfor %}
+
