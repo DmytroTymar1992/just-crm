@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Visitor
 from .serializers import VisitorSerializer, ContactSerializer, SeekerSerializer
-from sales.models import Contact, ContactLink
+from sales.models import Contact, ContactLink, Room, Interaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
@@ -17,7 +17,9 @@ class VisitorCreateAPIView(APIView):
             # Отримуємо first_url із запиту
             first_url = request.data.get('first_url', '')
 
-
+            # Перетворюємо відносний URL на повний, якщо потрібно
+            if first_url and not first_url.startswith(('http://', 'https://')):
+                first_url = f"https://www.just-look.com.ua{first_url}"
 
             # Шукаємо збіги в ContactLink
             matching_link = ContactLink.objects.filter(url=first_url).first()
@@ -26,6 +28,23 @@ class VisitorCreateAPIView(APIView):
                 contact = matching_link.contact
                 contact.has_visited_site = True
                 contact.save()
+                logger.info(f"Updated contact {contact.id}: has_visited_site=True")
+
+                # Знаходимо всі чати (Room), де є цей контакт
+                rooms = Room.objects.filter(contact=contact)
+                for room in rooms:
+                    # Створюємо системне повідомлення в кожному чаті
+                    interaction = Interaction.objects.create(
+                        room=room,
+                        interaction_type='chat',
+                        sender='user',  # Системне повідомлення від користувача (можна змінити на 'system', якщо додати до SENDER_CHOICES)
+                        is_read=False
+                    )
+                    # Додаємо текст повідомлення через окрему модель (якщо потрібно), або через поле content
+                    interaction.content = "Користувач відвідав сайт"
+                    interaction.is_system = True  # Позначаємо як системне
+                    interaction.save()
+                    logger.info(f"Sent system message to Room #{room.pk} for contact {contact.id}")
 
             return Response({"message": "Visitor created successfully", "data": serializer.data},
                             status=status.HTTP_201_CREATED)
