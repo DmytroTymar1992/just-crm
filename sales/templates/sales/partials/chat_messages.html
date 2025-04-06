@@ -1,5 +1,16 @@
 {# sales/partials/chat_messages.html #}
 {% for item in interactions %}
+  {% ifchanged item.created_at.date %}
+    {% if not forloop.first %}
+      </div> <!-- Закриваємо попередній блок дня -->
+    {% endif %}
+    <div class="chat-day-group">
+      <div class="text-center my-3">
+        <span class="badge bg-secondary rounded-pill px-3 py-2">
+          {{ item.created_at|date:"d.m.Y" }}
+        </span>
+      </div>
+  {% endifchanged %}
   {% if item.interaction_type == "email" %}
     {% if item.sender == "contact" %}
       <div class="mb-3 d-flex justify-content-start">
