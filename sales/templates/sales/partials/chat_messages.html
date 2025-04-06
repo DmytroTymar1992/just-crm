@@ -69,34 +69,34 @@
           <small class="d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
         </div>
       </div>
-    {% elif item.interaction_type == "chat" %}
-      {% if item.is_system %}
-        <!-- Системне повідомлення (наприклад, "Користувач відвідав сайт") -->
-        <div class="mb-3 d-flex justify-content-center">
-          <div class="p-2 rounded-3 shadow-sm bg-light text-muted" style="max-width: 70%; border: 1px solid #ddd;">
-            <p class="mb-0 text-center">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-            <small class="d-block text-center mt-1">{{ item.created_at|date:"H:i" }}</small>
+    {% endif %}
+  {% elif item.interaction_type == "chat" %}
+    {% if item.is_system %}
+      <!-- Системне повідомлення (наприклад, "Користувач відвідав сайт") -->
+      <div class="mb-3 d-flex justify-content-center">
+        <div class="p-2 rounded-3 shadow-sm bg-light text-muted" style="max-width: 70%; border: 1px solid #ddd;">
+          <p class="mb-0 text-center">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+          <small class="d-block text-center mt-1">{{ item.created_at|date:"H:i" }}</small>
+        </div>
+      </div>
+    {% else %}
+      <!-- Звичайне повідомлення в чаті -->
+      {% if item.sender == "contact" %}
+        <div class="mb-3 d-flex justify-content-start">
+          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #6c757d;">
+            <div class="text-secondary fw-semibold mb-1">Chat</div>
+            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+            <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
           </div>
         </div>
       {% else %}
-        <!-- Звичайне повідомлення в чаті (якщо буде) -->
-        {% if item.sender == "contact" %}
-          <div class="mb-3 d-flex justify-content-start">
-            <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #ffffff; border-left: 4px solid #6c757d;">
-              <div class="text-secondary fw-semibold mb-1">Chat</div>
-              <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-              <small class="text-muted d-block text-end mt-2">{{ item.created_at|date:"H:i" }}</small>
-            </div>
+        <div class="mb-3 d-flex justify-content-end">
+          <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #f8f9fa; border-right: 4px solid #6c757d;">
+            <div class="text-secondary fw-semibold mb-1">Chat</div>
+            <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
+            <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
           </div>
-        {% else %}
-          <div class="mb-3 d-flex justify-content-end">
-            <div class="p-3 rounded-3 shadow-sm" style="max-width: 70%; background: #f8f9fa; border-right: 4px solid #6c757d;">
-              <div class="text-secondary fw-semibold mb-1">Chat</div>
-              <p class="text-dark mb-0">{{ item.content|default_if_none:"(no text)"|linebreaks }}</p>
-              <small class="text-muted d-block mt-2">{{ item.created_at|date:"H:i" }}</small>
-            </div>
-          </div>
-        {% endif %}
+        </div>
       {% endif %}
     {% endif %}
   {% endif %}
