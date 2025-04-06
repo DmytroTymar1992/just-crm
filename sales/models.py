@@ -131,11 +131,13 @@ class Interaction(models.Model):
     SENDER_CHOICES = [
         ('user', 'User'),
         ('contact', 'Contact'),
+        ('system', 'System'),
     ]
 
     interaction_type = models.CharField(max_length=20, choices=INTERACTION_TYPES)
     created_at = models.DateTimeField(auto_now_add=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='interactions')
+    content = models.TextField("Текст повідомлення", blank=True, null=True)  # Додаємо поле для тексту
     sender = models.CharField(max_length=20, choices=SENDER_CHOICES)
     is_read = models.BooleanField("Прочитано", default=False)
 
