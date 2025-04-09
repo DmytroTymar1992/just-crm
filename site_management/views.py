@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from data_exchange.models import Visitor
 from django.db.models import Count
+from django.db.models.functions import TruncHour  # Для групування по годинах
 import plotly.express as px
 import pandas as pd
 import requests
@@ -20,7 +21,6 @@ def visitor_map_dashboard(request):
     except ValueError:
         start_date = end_date = date.today()
 
-    # Якщо end_date менша за start_date, міняємо їх місцями
     if end_date < start_date:
         start_date, end_date = end_date, start_date
 
@@ -38,18 +38,38 @@ def visitor_map_dashboard(request):
         country='Україна', is_bot=False, created_at__date__range=[start_date, end_date]
     ).count()
 
-    # Дані для графіка відвідувачів по днях
-    visitors_by_date = (
-        Visitor.objects
-        .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
-        .extra({'date': "date(created_at)"})
-        .values('date')
-        .annotate(count=Count('id'))
-        .order_by('date')
-    )
+    # Дані для графіка: по днях або по годинах, якщо один день
+    if start_date == end_date:
+        # Якщо вибрано один день, групуємо по годинах
+        visitors_by_time = (
+            Visitor.objects
+            .filter(country='Україна', is_bot=False, created_at__date=start_date)
+            .annotate(hour=TruncHour('created_at'))
+            .values('hour')
+            .annotate(count=Count('id'))
+            .order_by('hour')
+        )
+        time_data = pd.DataFrame(visitors_by_time)
+        time_data['hour'] = time_data['hour'].apply(lambda x: x.strftime('%Y-%m-%d %H:00'))
+        x_label = 'hour'
+        x_title = 'Година'
+    else:
+        # Якщо період, групуємо по днях
+        visitors_by_time = (
+            Visitor.objects
+            .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
+            .extra({'date': "date(created_at)"})
+            .values('date')
+            .annotate(count=Count('id'))
+            .order_by('date')
+        )
+        time_data = pd.DataFrame(visitors_by_time)
+        time_data['date'] = time_data['date'].astype(str)
+        x_label = 'date'
+        x_title = 'Дата'
 
     logger.info("Visitors by region: %s", list(visitors_by_region))
-    logger.info("Visitors by date: %s", list(visitors_by_date))
+    logger.info("Visitors by time: %s", list(visitors_by_time))
 
     # Перетворюємо в DataFrame для карти
     data = pd.DataFrame(visitors_by_region)
@@ -85,7 +105,6 @@ def visitor_map_dashboard(request):
         color_continuous_scale=['white', 'green'],
         range_color=[0, max_count],
     )
-
     fig_map.update_geos(
         fitbounds="locations",
         visible=False,
@@ -95,46 +114,46 @@ def visitor_map_dashboard(request):
         showlegend=False,
         dragmode=False,
         title=None,
+        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],
+        hovermode=False,
     )
     fig_map.update_traces(
         marker_line_width=1,
         marker_line_color='gray',
     )
-    fig_map.update_layout(
-        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],
-        hovermode=False,
-    )
-
     map_html = fig_map.to_html(full_html=False, config={'staticPlot': True})
 
-    # Перетворюємо дані для графіка у DataFrame
-    date_data = pd.DataFrame(visitors_by_date)
-    if date_data.empty:
-        date_data = pd.DataFrame({'date': [start_date], 'count': [0]})
+    # Доповнюємо дані для графіка
+    if time_data.empty:
+        time_data = pd.DataFrame({x_label: [start_date.strftime('%Y-%m-%d')], 'count': [0]})
+    else:
+        # Доповнюємо всі дати або години у періоді
+        if x_label == 'date':
+            date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+            all_times = pd.DataFrame({x_label: [d.strftime('%Y-%m-%d') for d in date_range]})
+        else:
+            hour_range = [datetime.combine(start_date, datetime.min.time()) + timedelta(hours=x) for x in range(24)]
+            all_times = pd.DataFrame({x_label: [h.strftime('%Y-%m-%d %H:00') for h in hour_range]})
+        time_data = all_times.merge(time_data, on=x_label, how='left').fillna({'count': 0})
 
-    # Доповнюємо всі дати у вибраному періоді
-    date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
-    all_dates = pd.DataFrame({'date': [d.strftime('%Y-%m-%d') for d in date_range]})
-    date_data['date'] = date_data['date'].astype(str)
-    date_data = all_dates.merge(date_data, on='date', how='left').fillna({'count': 0})
-
-    # Створюємо графік відвідувачів по днях
+    # Створюємо статичний графік
     fig_line = px.line(
-        date_data,
-        x='date',
+        time_data,
+        x=x_label,
         y='count',
         title='Відвідувачі за період',
-        labels={'date': 'Дата', 'count': 'Кількість відвідувачів'},
+        labels={x_label: x_title, 'count': 'Кількість відвідувачів'},
     )
     fig_line.update_layout(
         margin={"r": 0, "t": 50, "l": 0, "b": 0},
         title_font_size=16,
         title_x=0.5,
         showlegend=False,
+        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],
+        hovermode=False,
     )
-    fig_line.update_traces(line_color='#00ff00')  # Зелена лінія
-
-    line_chart_html = fig_line.to_html(full_html=False)
+    fig_line.update_traces(line_color='#00ff00')
+    line_chart_html = fig_line.to_html(full_html=False, config={'staticPlot': True})
 
     # Контекст для шаблону
     context = {
