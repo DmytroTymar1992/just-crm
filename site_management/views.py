@@ -25,9 +25,6 @@ def visitor_map_dashboard(request):
         logger.warning("No visitors found for Ukraine.")
         data = pd.DataFrame({'region': [], 'count': []})
 
-    # Нормалізація: "Київ" → "Київська область"
-    data['region'] = data['region'].replace('Київ', 'Київська область')
-
     # GeoJSON для карти України
     geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
 
@@ -36,7 +33,7 @@ def visitor_map_dashboard(request):
         data,
         geojson=geojson_url,
         locations='region',
-        featureidkey="properties.name:uk",  # Використовуємо правильний ключ із GeoJSON
+        featureidkey="properties.name:uk",  # Ключ із GeoJSON
         color='count',
         color_continuous_scale=['white', 'green'],
         range_color=[0, data['count'].max() if not data.empty else 1],
