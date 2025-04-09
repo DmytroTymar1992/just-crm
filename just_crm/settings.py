@@ -167,13 +167,15 @@ USE_TZ = True
 
 # Шлях до статичних файлів у вашому проєкті (де лежать ваші файли, наприклад, static/main/images)
 
-# Куди Django збереже зібрані статичні файли після виконання collectstatic
+# Static files (CSS, JavaScript, Images)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
-# URL, за яким статичні файли будуть доступні в браузері
 STATIC_URL = "/main/static/"
 
-# (Опціонально) Якщо у вас є додаткові джерела статичних файлів (наприклад, від бібліотек)
+# Додаємо STATICFILES_DIRS
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
