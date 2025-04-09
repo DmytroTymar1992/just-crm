@@ -168,13 +168,14 @@ USE_TZ = True
 # Шлях до статичних файлів у вашому проєкті (де лежать ваші файли, наприклад, static/main/images)
 
 # Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "/main/static/"
 
-# Додаємо STATICFILES_DIRS
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
+# Прибираємо STATICFILES_DIRS, якщо немає додаткових папок
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "site_management", "static"),
+# ]
 
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",

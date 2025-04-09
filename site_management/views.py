@@ -78,11 +78,10 @@ def visitor_map_dashboard(request):
         data = pd.DataFrame({'region': [], 'count': []})
 
     # Завантажуємо GeoJSON із локального файлу
-    # У продакшені використовуємо STATIC_ROOT, у розробці — BASE_DIR/static
     if settings.DEBUG:
-        geojson_path = os.path.join(settings.BASE_DIR, 'static', 'geojson', 'ukraine_regions.geojson')
+        geojson_path = os.path.join(settings.BASE_DIR, 'site_management', 'static', 'geojson', 'ukraine_regions.geojson')
     else:
-        geojson_path = os.path.join(settings.STATIC_ROOT, 'geojson', 'ukraine_regions.geojson')
+        geojson_path = os.path.join(settings.STATIC_ROOT, 'site_management', 'geojson', 'ukraine_regions.geojson')
 
     try:
         with open(geojson_path, 'r', encoding='utf-8') as f:
