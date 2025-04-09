@@ -7,12 +7,43 @@ from sales.models import Contact, ContactLink, Room, Interaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
+from twoip import TwoIP
+
 
 class VisitorCreateAPIView(APIView):
+    def get_geolocation(self, ip_address):
+        try:
+            # Ініціалізація TwoIP (додайте key='ВАШ_КЛЮЧ', якщо є)
+            twoip = TwoIP(key='16c5fd1380a1db89')
+            geo_data = twoip.geo(ip=ip_address)
+
+            # Отримуємо країну та регіон
+            country = geo_data.get('country_ua', geo_data.get('country', '')).strip()
+            region = geo_data.get('region_ua', geo_data.get('region', '')).strip() if country == 'Україна' else None
+
+            # Визначаємо, чи бот: якщо не з України, то True
+            is_bot = country != 'Україна'
+
+            return country, region, is_bot
+        except Exception as e:
+            logger.error(f"Failed to get geolocation for IP {ip_address}: {e}")
+            # Якщо геодані не вдалося отримати, повертаємо порожні країну та регіон, а is_bot = True
+            return None, None, True
+
     def post(self, request, *args, **kwargs):
         serializer = VisitorSerializer(data=request.data)
         if serializer.is_valid():
-            visitor = serializer.save()  # Зберігаємо відвідувача
+            # Зберігаємо відвідувача спочатку без геолокації
+            visitor = serializer.save()
+
+            # Отримуємо геолокаційні дані за IP
+            country, region, is_bot = self.get_geolocation(visitor.ip_address)
+
+            # Оновлюємо модель відвідувача з отриманими даними
+            visitor.country = country
+            visitor.region = region
+            visitor.is_bot = is_bot
+            visitor.save()
 
             # Отримуємо first_url із запиту
             first_url = request.data.get('first_url', '')
@@ -37,15 +68,16 @@ class VisitorCreateAPIView(APIView):
                     interaction = Interaction.objects.create(
                         room=room,
                         interaction_type='chat',
-                        sender='system',  # Системне повідомлення від користувача (можна змінити на 'system', якщо додати до SENDER_CHOICES)
+                        sender='system',
                         is_read=False
                     )
-                    # Додаємо текст повідомлення через окрему модель (якщо потрібно), або через поле content
                     interaction.content = "Користувач відвідав сайт"
-                    interaction.is_system = True  # Позначаємо як системне
+                    interaction.is_system = True
                     interaction.save()
                     logger.info(f"Sent system message to Room #{room.pk} for contact {contact.id}")
 
+            # Повертаємо оновлені дані відвідувача
+            serializer = VisitorSerializer(visitor)
             return Response({"message": "Visitor created successfully", "data": serializer.data},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

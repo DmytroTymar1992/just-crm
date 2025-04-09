@@ -6,7 +6,7 @@ from site_management.models import Seeker
 class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
-        fields = ['visitor_id', 'ip_address', 'first_url', 'created_at']
+        fields = ['visitor_id', 'ip_address', 'first_url', 'created_at', 'country', 'region', 'is_bot']
         read_only_fields = ['created_at']
 
 class ContactSerializer(serializers.ModelSerializer):
