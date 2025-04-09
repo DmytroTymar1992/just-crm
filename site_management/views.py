@@ -41,8 +41,17 @@ def visitor_map_dashboard(request):
     geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
     geojson_data = requests.get(geojson_url).json()
 
-    # Отримуємо всі регіони з GeoJSON
-    all_regions = [feature['properties']['NAME_1'] for feature in geojson_data['features']]
+    # Перевіряємо структуру GeoJSON і знаходимо правильний ключ
+    first_feature = geojson_data['features'][0]['properties']
+    logger.info("GeoJSON properties sample: %s", first_feature)
+    region_key = 'NAME_1'  # За замовчуванням
+    for possible_key in ['NAME_1', 'name', 'name:uk', 'region']:  # Можливі ключі
+        if possible_key in first_feature:
+            region_key = possible_key
+            break
+
+    # Отримуємо всі регіони з GeoJSON із правильним ключем
+    all_regions = [feature['properties'][region_key] for feature in geojson_data['features']]
 
     # Доповнюємо дані регіонами з 0 відвідувачів
     existing_regions = set(data['region'])
@@ -55,7 +64,7 @@ def visitor_map_dashboard(request):
         data,
         geojson=geojson_data,
         locations='region',
-        featureidkey="properties.NAME_1",
+        featureidkey=f"properties.{region_key}",  # Використовуємо знайдений ключ
         color='count',
         color_continuous_scale=['white', 'green'],
         range_color=[0, data['count'].max() if not data.empty else 1],
@@ -69,6 +78,12 @@ def visitor_map_dashboard(request):
     )
     fig.update_layout(
         margin={"r": 0, "t": 50, "l": 0, "b": 0},
+    )
+
+    # Додаємо контури для всіх регіонів
+    fig.update_traces(
+        marker_line_width=1,
+        marker_line_color='gray',
     )
 
     map_html = fig.to_html(full_html=False)
