@@ -3,6 +3,7 @@ from data_exchange.models import Visitor
 from django.db.models import Count
 import plotly.express as px
 import pandas as pd
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,26 @@ def visitor_map_dashboard(request):
         logger.warning("No visitors found for Ukraine.")
         data = pd.DataFrame({'region': [], 'count': []})
 
-    # GeoJSON для карти України
+    # Завантажуємо GeoJSON
     geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
+    geojson_data = requests.get(geojson_url).json()
+
+    # Отримуємо всі регіони з GeoJSON
+    all_regions = [feature['properties']['name:uk'] for feature in geojson_data['features']]
+    logger.info("All regions from GeoJSON: %s", all_regions)
+
+    # Доповнюємо дані регіонами з 0 відвідувачів
+    existing_regions = set(data['region'])
+    missing_regions = [r for r in all_regions if r not in existing_regions]
+    missing_data = pd.DataFrame({'region': missing_regions, 'count': [0] * len(missing_regions)})
+    data = pd.concat([data, missing_data], ignore_index=True)
 
     # Створюємо хороплет-карту
     fig = px.choropleth(
         data,
-        geojson=geojson_url,
+        geojson=geojson_data,
         locations='region',
-        featureidkey="properties.name:uk",  # Ключ із GeoJSON
+        featureidkey="properties.name:uk",
         color='count',
         color_continuous_scale=['white', 'green'],
         range_color=[0, data['count'].max() if not data.empty else 1],
