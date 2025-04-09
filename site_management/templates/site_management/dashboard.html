@@ -4,10 +4,16 @@
 
 {% block extra_css %}
   <style>
+    .dashboard-header {
+      margin: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .dashboard-container {
       display: flex;
-      height: calc(100vh - 100px);
-      margin: 20px;
+      height: calc(100vh - 140px); /* Висота з урахуванням заголовка та відступів */
+      margin: 0 20px 20px 20px;
     }
     .map-container {
       width: 66%;
@@ -41,6 +47,18 @@
 {% endblock %}
 
 {% block content %}
+  <!-- Заголовок і фільтр -->
+  <div class="dashboard-header">
+    <h1 style="font-size: 1.5rem; color: #2c3e50;">Дашборд</h1>
+    <div>
+      <label for="date-filter">Дата: </label>
+      <input type="date" id="date-filter" name="date" value="{{ selected_date }}"
+             onchange="this.form.submit()" style="margin-right: 10px;">
+      <span>Відвідувачів: {{ total_visitors }}</span>
+    </div>
+  </div>
+
+  <!-- Основний вміст -->
   <div class="dashboard-container">
     <!-- Карта зліва -->
     <div class="map-container">

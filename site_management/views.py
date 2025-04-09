@@ -4,26 +4,37 @@ from django.db.models import Count
 import plotly.express as px
 import pandas as pd
 import requests
+from datetime import datetime, date
 import logging
 
 logger = logging.getLogger(__name__)
 
 def visitor_map_dashboard(request):
-    # Отримуємо дані про відвідувачів із України
+    # Отримуємо параметри дати з запиту
+    date_str = request.GET.get('date', date.today().isoformat())  # За замовчуванням сьогодні
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        selected_date = date.today()
+
+    # Фільтруємо відвідувачів за датою (не боти)
     visitors_by_region = (
         Visitor.objects
-        .filter(country='Україна')
+        .filter(country='Україна', is_bot=False, created_at__date=selected_date)
         .values('region')
         .annotate(count=Count('id'))
         .order_by('region')
     )
+
+    # Загальна кількість відвідувачів (не ботів) за вибрану дату
+    total_visitors = Visitor.objects.filter(country='Україна', is_bot=False, created_at__date=selected_date).count()
 
     logger.info("Visitors by region: %s", list(visitors_by_region))
 
     # Перетворюємо в DataFrame
     data = pd.DataFrame(visitors_by_region)
     if data.empty:
-        logger.warning("No visitors found for Ukraine.")
+        logger.warning("No visitors found for Ukraine on %s", selected_date)
         data = pd.DataFrame({'region': [], 'count': []})
 
     # Завантажуємо GeoJSON
@@ -42,7 +53,7 @@ def visitor_map_dashboard(request):
     # Сортуємо для топ-10 і додаємо відсотки
     max_count = data['count'].max() if not data.empty else 1
     top_10_data = data.sort_values(by='count', ascending=False).head(10)
-    top_10_data['percentage'] = (top_10_data['count'] / max_count * 100).round(2)  # Обчислюємо відсотки
+    top_10_data['percentage'] = (top_10_data['count'] / max_count * 100).round(2)
 
     # Створюємо статичну карту
     fig = px.choropleth(
@@ -77,10 +88,12 @@ def visitor_map_dashboard(request):
 
     map_html = fig.to_html(full_html=False, config={'staticPlot': True})
 
-    # Передаємо дані в шаблон
+    # Контекст для шаблону
     context = {
         'map_html': map_html,
-        'top_regions': top_10_data.to_dict('records'),  # Топ-10 регіонів із відсотками
+        'top_regions': top_10_data.to_dict('records'),
         'max_count': max_count,
+        'total_visitors': total_visitors,
+        'selected_date': selected_date.isoformat(),  # Для відображення у формі
     }
     return render(request, 'site_management/dashboard.html', context)
