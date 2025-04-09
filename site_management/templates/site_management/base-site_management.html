@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just CRM | {% block title %}Управління сайтом{% endblock %}</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Кастомні стилі -->
+  <link rel="stylesheet" href="{% static 'main/css/site_management.css' %}">
+
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- Українська локалізація -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/uk.js"></script>
+
+  <style>
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: #f5f6f8;
+    }
+    .container-fluid {
+      height: 100%;
+      padding: 0;
+    }
+    .sidebar {
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 70px;
+      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+      z-index: 1000;
+    }
+    .sidebar .nav-link {
+      color: #bdc3c7;
+      padding: 15px 0;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .sidebar .nav-link:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sidebar .nav-link img {
+      width: 28px;
+      height: 28px;
+      filter: invert(80%);
+    }
+    .sidebar .nav-link:hover img {
+      filter: invert(100%);
+    }
+    .sidebar .nav-link div {
+      display: none;
+      margin-top: 5px;
+      font-size: 0.85rem;
+    }
+    .main-content {
+      margin-left: 70px;
+      height: 100vh;
+      max-width: calc(100vw - 70px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      transition: margin-left 0.3s ease, max-width 0.3s ease;
+    }
+    .sidebar:hover ~ .main-content {
+      margin-left: 70px;
+      max-width: calc(100vw - 70px);
+    }
+
+    /* Стилі для сповіщень знизу */
+    #notification-container .notification .notification-link {
+      color: white;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #notification-container .notification .notification-link:hover {
+      color: #ddd;
+    }
+    #notification-container .notification {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      max-width: 300px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      position: relative;
+    }
+    #notification-container .notification.show {
+      opacity: 1;
+    }
+    #notification-container .notification.telegram {
+      border-left: 4px solid #007bff;
+    }
+    #notification-container .notification.email {
+      border-left: 4px solid #28a745;
+    }
+    #notification-container .notification.call {
+      border-left: 4px solid #17a2b8;
+    }
+    #notification-container .notification .message-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+    #notification-container .notification .close-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    #notification-container .notification .close-btn:hover {
+      color: #ccc;
+    }
+
+    /* Стилі для зелених сповіщень зверху */
+    #task-notification-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1050;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #task-notification-container .task-notification {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      margin-bottom: 10px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      min-width: 250px;
+      text-align: center;
+    }
+    #task-notification-container .task-notification.show {
+      opacity: 1;
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="container-fluid">
+    {% csrf_token %}
+    <div class="row g-0">
+      <!-- Бокове меню -->
+      <nav class="sidebar">
+        <div class="position-sticky pt-4">
+          <ul class="nav flex-column text-center">
+            <!-- Дашборд -->
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="{% url 'visitor_map' %}" title="Дашборд">
+                <svg height="28" width="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#ffffff" d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/>
+                </svg>
+                <div>Дашборд</div>
+              </a>
+            </li>
+            <!-- Можна додати інші пункти меню -->
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="#" title="Відвідувачі">
+                <svg height="28" width="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#ffffff" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <div>Відвідувачі</div>
+              </a>
+            </li>
+            <li class="nav-item mb-4">
+              <a class="nav-link" href="#" title="Аналітика">
+                <img src="{% static 'main/images/analytics.png' %}" alt="Аналітика">
+                <div>Аналітика</div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Основний контент -->
+      <main class="main-content">
+        <!-- Контейнер для зелених сповіщень зверху -->
+        <div id="task-notification-container"></div>
+        <!-- Контейнер для сповіщень знизу -->
+        <div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"></div>
+
+        {% block content %}
+        <!-- Тут розміщується вміст конкретної сторінки -->
+        {% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    function showNotification(type, content) {
+      const notificationContainer = document.getElementById('notification-container');
+      const notification = document.createElement('div');
+      notification.classList.add('notification', type);
+
+      notification.innerHTML = `
+        <a href="#" class="notification-link">
+          ${content}
+        </a>
+        <button class="close-btn">×</button>
+      `;
+
+      notificationContainer.appendChild(notification);
+      setTimeout(() => notification.classList.add('show'), 10);
+
+      const timeoutId = setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 500);
+      }, 10000);
+
+      notification.querySelector('.close-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearTimeout(timeoutId);
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 500);
+      });
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

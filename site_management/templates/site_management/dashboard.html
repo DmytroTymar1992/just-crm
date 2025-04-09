@@ -1,0 +1,25 @@
+{% extends 'site_management/base-site_management.html' %}
+
+{% block title %}Карта відвідувачів{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .map-container {
+      width: 100%;
+      height: calc(100vh - 100px); /* Висота з урахуванням заголовка та відступів */
+      margin-top: 20px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 20px;
+      color: #2c3e50;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <h1>Карта відвідувачів сайту за регіонами України</h1>
+  <div class="map-container">
+    {{ map_html|safe }}
+  </div>
+{% endblock %}

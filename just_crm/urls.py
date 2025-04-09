@@ -13,8 +13,9 @@ urlpatterns = [
     #path('chat/', include('chat.urls')),
     path('sales_analytics/', include('sales_analytics.urls')),
 
-    path('sales/', include('sales.urls')),
+
     path('data-exchange/', include('data_exchange.urls')),
+    path('site/', include('site_management.urls')),
 ]# Додаємо обробку статичних файлів (тільки для розробки)
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
