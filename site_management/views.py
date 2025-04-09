@@ -78,9 +78,13 @@ def visitor_map_dashboard(request):
         data = pd.DataFrame({'region': [], 'count': []})
 
     # Завантажуємо GeoJSON із локального файлу
-    geojson_path = os.path.join(settings.STATICFILES_DIRS[0], 'geojson', 'ukraine_regions.geojson')
-    with open(geojson_path, 'r', encoding='utf-8') as f:
-        geojson_data = json.load(f)
+    geojson_path = os.path.join(settings.BASE_DIR, 'static', 'geojson', 'ukraine_regions.geojson')
+    try:
+        with open(geojson_path, 'r', encoding='utf-8') as f:
+            geojson_data = json.load(f)
+    except FileNotFoundError:
+        logger.error(f"GeoJSON file not found at {geojson_path}")
+        geojson_data = {'features': []}  # Порожній GeoJSON у разі помилки
 
     # Отримуємо всі регіони з GeoJSON
     all_regions = [feature['properties']['name:uk'] for feature in geojson_data['features']]
