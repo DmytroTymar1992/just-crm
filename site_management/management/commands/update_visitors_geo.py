@@ -1,49 +1,59 @@
-from django.core.management.base import BaseCommand
+from django.shortcuts import render
 from data_exchange.models import Visitor
-from twoip import TwoIP
+from django.db.models import Count
+import plotly.express as px
+import pandas as pd
 import logging
-import time  # Додаємо для затримки між запитами
 
 logger = logging.getLogger(__name__)
 
-class Command(BaseCommand):
-    help = 'Update country, region, and is_bot fields for all visitors based on their IP addresses.'
+def visitor_map_dashboard(request):
+    # Отримуємо дані про відвідувачів із України
+    visitors_by_region = (
+        Visitor.objects
+        .filter(country='Україна')
+        .values('region')
+        .annotate(count=Count('id'))
+        .order_by('region')
+    )
 
-    def get_geolocation(self, ip_address):
-        try:
-            twoip = TwoIP(key='16c5fd1380a1db89')  # Ваш ключ
-            geo_data = twoip.geo(ip=ip_address)
-            logger.info(f"Geo data for IP {ip_address}: {geo_data}")  # Логуємо сирі дані від API
+    logger.info("Visitors by region: %s", list(visitors_by_region))
 
-            country = geo_data.get('country_ua', geo_data.get('country', '')).strip()
-            region = geo_data.get('region_ua', geo_data.get('region', '')).strip() if country == 'Україна' else None
-            is_bot = country != 'Україна'
+    # Перетворюємо в DataFrame
+    data = pd.DataFrame(visitors_by_region)
+    if data.empty:
+        logger.warning("No visitors found for Ukraine.")
+        data = pd.DataFrame({'region': [], 'count': []})
 
-            return country, region, is_bot
-        except Exception as e:
-            logger.error(f"Failed to get geolocation for IP {ip_address}: {e}")
-            return None, None, True  # Якщо геодані не вдалося отримати, вважаємо ботом
+    # GeoJSON для карти України
+    geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
 
-    def handle(self, *args, **kwargs):
-        # Отримуємо всіх відвідувачів без фільтра
-        visitors = Visitor.objects.all()
+    # Створюємо хороплет-карту
+    fig = px.choropleth(
+        data,
+        geojson=geojson_url,
+        locations='region',
+        featureidkey="properties.name:uk",  # Ключ із GeoJSON
+        color='count',
+        color_continuous_scale=['white', 'green'],
+        range_color=[0, data['count'].max() if not data.empty else 1],
+        title='Відвідувачі сайту за регіонами України',
+        labels={'count': 'Кількість відвідувачів'},
+    )
 
-        total = visitors.count()
-        self.stdout.write(f"Found {total} visitors to update.")
+    fig.update_geos(
+        fitbounds="locations",
+        visible=False,
+    )
+    fig.update_layout(
+        margin={"r": 0, "t": 50, "l": 0, "b": 0},
+    )
 
-        updated_count = 0
-        for visitor in visitors:
-            country, region, is_bot = self.get_geolocation(visitor.ip_address)
+    # Додаємо контури для всіх регіонів
+    fig.update_traces(
+        marker_line_width=1,
+        marker_line_color='gray',
+    )
 
-            # Оновлюємо завжди, щоб перезаписати попередні значення
-            visitor.country = country
-            visitor.region = region
-            visitor.is_bot = is_bot
-            visitor.save()
-            updated_count += 1
-            self.stdout.write(
-                f"Updated visitor {visitor.visitor_id}: country={country}, region={region}, is_bot={is_bot}"
-            )
-            time.sleep(1)  # Затримка 1 секунда між запитами, щоб уникнути блокування API
-
-        self.stdout.write(self.style.SUCCESS(f"Successfully updated {updated_count} out of {total} visitors."))
+    map_html = fig.to_html(full_html=False)
+    return render(request, 'site_management/dashboard.html', {'map_html': map_html})
