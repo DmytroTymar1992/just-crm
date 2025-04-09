@@ -4,7 +4,7 @@ from django.db.models import Count
 import plotly.express as px
 import pandas as pd
 import requests
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def visitor_map_dashboard(request):
     if end_date < start_date:
         start_date, end_date = end_date, start_date
 
-    # Фільтруємо відвідувачів за періодом (не боти)
+    # Фільтруємо відвідувачів за періодом для карти (не боти)
     visitors_by_region = (
         Visitor.objects
         .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
@@ -38,9 +38,20 @@ def visitor_map_dashboard(request):
         country='Україна', is_bot=False, created_at__date__range=[start_date, end_date]
     ).count()
 
-    logger.info("Visitors by region: %s", list(visitors_by_region))
+    # Дані для графіка відвідувачів по днях
+    visitors_by_date = (
+        Visitor.objects
+        .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
+        .extra({'date': "date(created_at)"})
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
 
-    # Перетворюємо в DataFrame
+    logger.info("Visitors by region: %s", list(visitors_by_region))
+    logger.info("Visitors by date: %s", list(visitors_by_date))
+
+    # Перетворюємо в DataFrame для карти
     data = pd.DataFrame(visitors_by_region)
     if data.empty:
         logger.warning("No visitors found for Ukraine between %s and %s", start_date, end_date)
@@ -65,7 +76,7 @@ def visitor_map_dashboard(request):
     top_10_data['percentage'] = (top_10_data['count'] / max_count * 100).round(2)
 
     # Створюємо статичну карту
-    fig = px.choropleth(
+    fig_map = px.choropleth(
         data,
         geojson=geojson_data,
         locations='region',
@@ -75,31 +86,60 @@ def visitor_map_dashboard(request):
         range_color=[0, max_count],
     )
 
-    fig.update_geos(
+    fig_map.update_geos(
         fitbounds="locations",
         visible=False,
     )
-    fig.update_layout(
+    fig_map.update_layout(
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         showlegend=False,
         dragmode=False,
         title=None,
     )
-
-    fig.update_traces(
+    fig_map.update_traces(
         marker_line_width=1,
         marker_line_color='gray',
     )
-    fig.update_layout(
+    fig_map.update_layout(
         modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],
         hovermode=False,
     )
 
-    map_html = fig.to_html(full_html=False, config={'staticPlot': True})
+    map_html = fig_map.to_html(full_html=False, config={'staticPlot': True})
+
+    # Перетворюємо дані для графіка у DataFrame
+    date_data = pd.DataFrame(visitors_by_date)
+    if date_data.empty:
+        date_data = pd.DataFrame({'date': [start_date], 'count': [0]})
+
+    # Доповнюємо всі дати у вибраному періоді
+    date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    all_dates = pd.DataFrame({'date': [d.strftime('%Y-%m-%d') for d in date_range]})
+    date_data['date'] = date_data['date'].astype(str)
+    date_data = all_dates.merge(date_data, on='date', how='left').fillna({'count': 0})
+
+    # Створюємо графік відвідувачів по днях
+    fig_line = px.line(
+        date_data,
+        x='date',
+        y='count',
+        title='Відвідувачі за період',
+        labels={'date': 'Дата', 'count': 'Кількість відвідувачів'},
+    )
+    fig_line.update_layout(
+        margin={"r": 0, "t": 50, "l": 0, "b": 0},
+        title_font_size=16,
+        title_x=0.5,
+        showlegend=False,
+    )
+    fig_line.update_traces(line_color='#00ff00')  # Зелена лінія
+
+    line_chart_html = fig_line.to_html(full_html=False)
 
     # Контекст для шаблону
     context = {
         'map_html': map_html,
+        'line_chart_html': line_chart_html,
         'top_regions': top_10_data.to_dict('records'),
         'max_count': max_count,
         'total_visitors': total_visitors,
