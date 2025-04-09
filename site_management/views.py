@@ -10,31 +10,40 @@ import logging
 logger = logging.getLogger(__name__)
 
 def visitor_map_dashboard(request):
-    # Отримуємо параметри дати з запиту
-    date_str = request.GET.get('date', date.today().isoformat())  # За замовчуванням сьогодні
-    try:
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        selected_date = date.today()
+    # Отримуємо параметри дат з запиту
+    start_date_str = request.GET.get('start_date', date.today().isoformat())
+    end_date_str = request.GET.get('end_date', date.today().isoformat())
 
-    # Фільтруємо відвідувачів за датою (не боти)
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        start_date = end_date = date.today()
+
+    # Якщо end_date менша за start_date, міняємо їх місцями
+    if end_date < start_date:
+        start_date, end_date = end_date, start_date
+
+    # Фільтруємо відвідувачів за періодом (не боти)
     visitors_by_region = (
         Visitor.objects
-        .filter(country='Україна', is_bot=False, created_at__date=selected_date)
+        .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
         .values('region')
         .annotate(count=Count('id'))
         .order_by('region')
     )
 
-    # Загальна кількість відвідувачів (не ботів) за вибрану дату
-    total_visitors = Visitor.objects.filter(country='Україна', is_bot=False, created_at__date=selected_date).count()
+    # Загальна кількість відвідувачів (не ботів) за період
+    total_visitors = Visitor.objects.filter(
+        country='Україна', is_bot=False, created_at__date__range=[start_date, end_date]
+    ).count()
 
     logger.info("Visitors by region: %s", list(visitors_by_region))
 
     # Перетворюємо в DataFrame
     data = pd.DataFrame(visitors_by_region)
     if data.empty:
-        logger.warning("No visitors found for Ukraine on %s", selected_date)
+        logger.warning("No visitors found for Ukraine between %s and %s", start_date, end_date)
         data = pd.DataFrame({'region': [], 'count': []})
 
     # Завантажуємо GeoJSON
@@ -94,6 +103,7 @@ def visitor_map_dashboard(request):
         'top_regions': top_10_data.to_dict('records'),
         'max_count': max_count,
         'total_visitors': total_visitors,
-        'selected_date': selected_date.isoformat(),  # Для відображення у формі
+        'start_date': start_date.isoformat(),
+        'end_date': end_date.isoformat(),
     }
     return render(request, 'site_management/dashboard.html', context)
