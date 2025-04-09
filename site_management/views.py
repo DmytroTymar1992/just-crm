@@ -22,7 +22,7 @@ def visitor_map_dashboard(request):
     # Завантажуємо GeoJSON для карти України з регіонами
     # Ви можете знайти GeoJSON України з регіонами онлайн, наприклад, на GitHub
     # Приклад: https://github.com/vshymanskyy/Ukraine-geojson/blob/master/regions.geojson
-    geojson_url = "https://raw.githubusercontent.com/vshymanskyy/Ukraine-geojson/master/regions.geojson"
+    geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
 
     # Створюємо хороплет-карту з Plotly
     fig = px.choropleth(
