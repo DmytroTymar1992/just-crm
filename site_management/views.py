@@ -79,9 +79,9 @@ def visitor_map_dashboard(request):
 
     # Завантажуємо GeoJSON із локального файлу
     if settings.DEBUG:
-        geojson_path = os.path.join(settings.BASE_DIR, 'site_management', 'static', 'geojson', 'ukraine_regions.geojson')
+        geojson_path = os.path.join(settings.BASE_DIR, 'site_management', 'static', 'site_management', 'ukraine_regions.geojson')
     else:
-        geojson_path = os.path.join(settings.STATIC_ROOT, 'site_management', 'geojson', 'ukraine_regions.geojson')
+        geojson_path = os.path.join(settings.STATIC_ROOT, 'site_management', 'ukraine_regions.geojson')
 
     try:
         with open(geojson_path, 'r', encoding='utf-8') as f:
