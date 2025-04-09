@@ -3,7 +3,6 @@ from data_exchange.models import Visitor
 from django.db.models import Count
 import plotly.express as px
 import pandas as pd
-import requests
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,45 +25,18 @@ def visitor_map_dashboard(request):
         logger.warning("No visitors found for Ukraine.")
         data = pd.DataFrame({'region': [], 'count': []})
 
-    # Нормалізація назв регіонів
-    region_mapping = {
-        'Київ': 'Kyiv',
-        'Київська область': 'Kyivska',
-        'Львівська область': 'Lvivska',
-        'Черкаська область': 'Cherkaska',
-        'Одеська область': 'Odeska',
-        # Додайте інші регіони
-    }
-    data['region'] = data['region'].map(lambda x: region_mapping.get(x, x))
+    # Нормалізація: "Київ" → "Київська область"
+    data['region'] = data['region'].replace('Київ', 'Київська область')
 
-    # Завантажуємо GeoJSON
+    # GeoJSON для карти України
     geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
-    geojson_data = requests.get(geojson_url).json()
-
-    # Перевіряємо структуру GeoJSON і знаходимо правильний ключ
-    first_feature = geojson_data['features'][0]['properties']
-    logger.info("GeoJSON properties sample: %s", first_feature)
-    region_key = 'NAME_1'  # За замовчуванням
-    for possible_key in ['NAME_1', 'name', 'name:uk', 'region']:  # Можливі ключі
-        if possible_key in first_feature:
-            region_key = possible_key
-            break
-
-    # Отримуємо всі регіони з GeoJSON із правильним ключем
-    all_regions = [feature['properties'][region_key] for feature in geojson_data['features']]
-
-    # Доповнюємо дані регіонами з 0 відвідувачів
-    existing_regions = set(data['region'])
-    missing_regions = [r for r in all_regions if r not in existing_regions]
-    missing_data = pd.DataFrame({'region': missing_regions, 'count': [0] * len(missing_regions)})
-    data = pd.concat([data, missing_data], ignore_index=True)
 
     # Створюємо хороплет-карту
     fig = px.choropleth(
         data,
-        geojson=geojson_data,
+        geojson=geojson_url,
         locations='region',
-        featureidkey=f"properties.{region_key}",  # Використовуємо знайдений ключ
+        featureidkey="properties.name:uk",  # Використовуємо правильний ключ із GeoJSON
         color='count',
         color_continuous_scale=['white', 'green'],
         range_color=[0, data['count'].max() if not data.empty else 1],
