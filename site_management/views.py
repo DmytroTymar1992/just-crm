@@ -2,6 +2,7 @@ from django.shortcuts import render
 from data_exchange.models import Visitor
 from django.db.models import Count
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 import requests
 import logging
@@ -32,7 +33,6 @@ def visitor_map_dashboard(request):
 
     # Отримуємо всі регіони з GeoJSON
     all_regions = [feature['properties']['name:uk'] for feature in geojson_data['features']]
-    logger.info("All regions from GeoJSON: %s", all_regions)
 
     # Доповнюємо дані регіонами з 0 відвідувачів
     existing_regions = set(data['region'])
@@ -40,7 +40,10 @@ def visitor_map_dashboard(request):
     missing_data = pd.DataFrame({'region': missing_regions, 'count': [0] * len(missing_regions)})
     data = pd.concat([data, missing_data], ignore_index=True)
 
-    # Створюємо хороплет-карту
+    # Сортуємо для топ-10
+    top_10_data = data.sort_values(by='count', ascending=False).head(10)
+
+    # Створюємо статичну карту
     fig = px.choropleth(
         data,
         geojson=geojson_data,
@@ -49,8 +52,6 @@ def visitor_map_dashboard(request):
         color='count',
         color_continuous_scale=['white', 'green'],
         range_color=[0, data['count'].max() if not data.empty else 1],
-        title='Відвідувачі сайту за регіонами України',
-        labels={'count': 'Кількість відвідувачів'},
     )
 
     fig.update_geos(
@@ -58,14 +59,28 @@ def visitor_map_dashboard(request):
         visible=False,
     )
     fig.update_layout(
-        margin={"r": 0, "t": 50, "l": 0, "b": 0},
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},  # Прибираємо відступи
+        showlegend=False,  # Прибираємо легенду
+        dragmode=False,  # Вимикаємо перетягування
+        title=None,  # Прибираємо заголовок
     )
 
-    # Додаємо контури для всіх регіонів
+    # Вимикаємо інтерактивність і верхнє меню
     fig.update_traces(
         marker_line_width=1,
         marker_line_color='gray',
     )
+    fig.update_layout(
+        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],  # Прибираємо кнопки
+        hovermode=False,  # Вимикаємо спливаючі підказки
+    )
 
-    map_html = fig.to_html(full_html=False)
-    return render(request, 'site_management/dashboard.html', {'map_html': map_html})
+    map_html = fig.to_html(full_html=False, config={'staticPlot': True})  # Статична карта
+
+    # Передаємо дані в шаблон
+    context = {
+        'map_html': map_html,
+        'top_regions': top_10_data.to_dict('records'),  # Топ-10 регіонів
+        'max_count': data['count'].max() if not data.empty else 1,  # Максимальне значення для шкали
+    }
+    return render(request, 'site_management/dashboard.html', context)
