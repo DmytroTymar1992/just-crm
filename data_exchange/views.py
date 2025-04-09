@@ -13,13 +13,18 @@ from twoip import TwoIP
 class VisitorCreateAPIView(APIView):
     def get_geolocation(self, ip_address):
         try:
-            # Ініціалізація TwoIP (додайте key='ВАШ_КЛЮЧ', якщо є)
+            # Ініціалізація TwoIP із вашим ключем
             twoip = TwoIP(key='16c5fd1380a1db89')
             geo_data = twoip.geo(ip=ip_address)
+            logger.info(f"Geo data for IP {ip_address}: {geo_data}")  # Логуємо для дебагінгу
 
             # Отримуємо країну та регіон
             country = geo_data.get('country_ua', geo_data.get('country', '')).strip()
             region = geo_data.get('region_ua', geo_data.get('region', '')).strip() if country == 'Україна' else None
+
+            # Якщо регіон "Київ", замінюємо на "Київська область"
+            if region == 'Київ':
+                region = 'Київська область'
 
             # Визначаємо, чи бот: якщо не з України, то True
             is_bot = country != 'Україна'
@@ -27,7 +32,7 @@ class VisitorCreateAPIView(APIView):
             return country, region, is_bot
         except Exception as e:
             logger.error(f"Failed to get geolocation for IP {ip_address}: {e}")
-            # Якщо геодані не вдалося отримати, повертаємо порожні країну та регіон, а is_bot = True
+            # У разі помилки повертаємо None для країни та регіону, is_bot = True
             return None, None, True
 
     def post(self, request, *args, **kwargs):
