@@ -1,6 +1,6 @@
 {% extends 'site_management/base-site_management.html' %}
 
-{% block title %}Карта відвідувачів{% endblock %}
+{% block title %}Дашборд відвідувачів{% endblock %} {# Змінив title, бо карти вже нема #}
 
 {% block extra_css %}
   <style>
@@ -12,8 +12,9 @@
     }
     .dashboard-container {
       display: flex;
-      height: calc(100vh - 140px);
-      margin: 0 20px 0 20px;
+      /* Висота тепер трохи інша, бо немає карти */
+      height: calc(100vh - 140px); /* Можна залишити як було або налаштувати */
+      margin: 0 20px 20px 20px; /* Додав відступ знизу */
     }
     .left-column {
       width: 66%;
@@ -22,19 +23,26 @@
       display: flex;
       flex-direction: column;
     }
-    .map-container {
+    /* --- Контейнер карти закоментовано --- */
+    /* .map-container {
       width: 100%;
       height: 60%;
       margin-bottom: 20px;
-    }
+      border: 1px dashed #ccc; /* Додав рамку, щоб бачити місце */
+    /* } */
     .line-chart-container {
       width: 100%;
-      height: 40%;
+      /* Збільшимо висоту графіку, щоб заповнити місце від карти */
+      height: 95%; /* Або 100%, якщо не потрібен відступ */
+      border: 1px dashed #ccc; /* Додав рамку, щоб бачити місце */
     }
     .top-regions-container {
       width: 33%;
       height: 100%;
       overflow-y: auto;
+      border: 1px solid #eee; /* Невелика рамка для візуального розділення */
+      padding: 15px;
+      box-sizing: border-box;
     }
     .region-item {
       margin-bottom: 15px;
@@ -42,13 +50,25 @@
     .region-name {
       font-size: 1rem;
       margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .progress {
       height: 20px;
-      background-color: #ffffff;
+      background-color: #e9ecef; /* Зробив фон прогрес-бару видимим */
+      border-radius: .25rem;
     }
     .progress-bar {
-      background: linear-gradient(to right, #ffffff, #00ff00);
+      /* Замінив градієнт на простий колір для наочності */
+      background-color: #28a745; /* Зелений */
+      /* background: linear-gradient(to right, #ffffff, #00ff00); */
+      display: flex; /* Для можливого показу тексту всередині */
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.8rem;
+       border-radius: .25rem;
     }
     .date-filter {
       display: flex;
@@ -57,67 +77,83 @@
     }
     .date-filter input[type="date"] {
       padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     .date-filter button {
-      padding: 5px 15px;
+      padding: 6px 15px; /* Трохи збільшив */
       background-color: #2c3e50;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.2s ease;
     }
     .date-filter button:hover {
       background-color: #1a252f;
+    }
+    .total-visitors-span {
+        margin-left: 15px;
+        font-weight: bold;
+        color: #333;
     }
   </style>
 {% endblock %}
 
 {% block extra_js %}
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  {# <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> #}
+  {# Поки карта закоментована, можна і скрипт Plotly закоментувати, якщо він використовується ТІЛЬКИ для карти #}
+  {# Якщо лінійний графік теж його використовує, то залишаємо #}
+   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 {% endblock %}
 
 {% block content %}
-  <!-- Заголовок і фільтр -->
   <div class="dashboard-header">
-    <h1 style="font-size: 1.5rem; color: #2c3e50;">Дашборд</h1>
+    <h1 style="font-size: 1.5rem; color: #2c3e50;">Дашборд Відвідувачів</h1>
     <form method="get" class="date-filter">
       <label for="start_date">З: </label>
       <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
       <label for="end_date">По: </label>
       <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
       <button type="submit">Фільтрувати</button>
-      <span>Відвідувачів: {{ total_visitors }}</span>
+      <span class="total-visitors-span">Відвідувачів: {{ total_visitors }}</span> {# Додав клас для стилізації #}
     </form>
   </div>
 
-  <!-- Основний вміст -->
   <div class="dashboard-container">
-    <!-- Ліва колонка: карта і графік -->
     <div class="left-column">
-      <div class="map-container">
-        {{ map_html|safe }}
-      </div>
+      {# --- Контейнер карти закоментовано --- #}
+      {# <div class="map-container"> #}
+        {# {{ map_html|safe }} #}
+        {# <div>Карта тимчасово вимкнена</div> #}
+      {# </div> #}
+
       <div class="line-chart-container">
         {{ line_chart_html|safe }}
       </div>
     </div>
 
-    <!-- Топ-10 регіонів справа -->
     <div class="top-regions-container">
       <h2 style="font-size: 1.2rem; margin-bottom: 20px;">Топ-10 регіонів</h2>
-      {% for region in top_regions %}
-        <div class="region-item">
-          <div class="region-name">{{ region.region }} ({{ region.count }})</div>
-          <div class="progress">
-            <div class="progress-bar" role="progressbar"
-                 style="width: {{ region.percentage }}%;"
-                 aria-valuenow="{{ region.count }}"
-                 aria-valuemin="0"
-                 aria-valuemax="{{ max_count }}">
+      {% if top_regions %}
+          {% for region in top_regions %}
+            <div class="region-item">
+              <div class="region-name" title="{{ region.region }}">{{ region.region }} ({{ region.count }})</div>
+              <div class="progress">
+                <div class="progress-bar" role="progressbar"
+                     style="width: {{ region.percentage }}%;"
+                     aria-valuenow="{{ region.count }}"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ max_count }}">
+                     {# Можна додати {{ region.percentage }}% всередину #}
+                     {# {{ region.percentage }}% #}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      {% endfor %}
+          {% endfor %}
+      {% else %}
+          <p>Немає даних по регіонах за вибраний період.</p>
+      {% endif %}
     </div>
   </div>
 {% endblock %}
