@@ -2,7 +2,6 @@ from django.shortcuts import render
 from data_exchange.models import Visitor
 from django.db.models import Count
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
 import requests
 import logging
@@ -40,8 +39,10 @@ def visitor_map_dashboard(request):
     missing_data = pd.DataFrame({'region': missing_regions, 'count': [0] * len(missing_regions)})
     data = pd.concat([data, missing_data], ignore_index=True)
 
-    # Сортуємо для топ-10
+    # Сортуємо для топ-10 і додаємо відсотки
+    max_count = data['count'].max() if not data.empty else 1
     top_10_data = data.sort_values(by='count', ascending=False).head(10)
+    top_10_data['percentage'] = (top_10_data['count'] / max_count * 100).round(2)  # Обчислюємо відсотки
 
     # Створюємо статичну карту
     fig = px.choropleth(
@@ -51,7 +52,7 @@ def visitor_map_dashboard(request):
         featureidkey="properties.name:uk",
         color='count',
         color_continuous_scale=['white', 'green'],
-        range_color=[0, data['count'].max() if not data.empty else 1],
+        range_color=[0, max_count],
     )
 
     fig.update_geos(
@@ -59,28 +60,27 @@ def visitor_map_dashboard(request):
         visible=False,
     )
     fig.update_layout(
-        margin={"r": 0, "t": 0, "l": 0, "b": 0},  # Прибираємо відступи
-        showlegend=False,  # Прибираємо легенду
-        dragmode=False,  # Вимикаємо перетягування
-        title=None,  # Прибираємо заголовок
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        showlegend=False,
+        dragmode=False,
+        title=None,
     )
 
-    # Вимикаємо інтерактивність і верхнє меню
     fig.update_traces(
         marker_line_width=1,
         marker_line_color='gray',
     )
     fig.update_layout(
-        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],  # Прибираємо кнопки
-        hovermode=False,  # Вимикаємо спливаючі підказки
+        modebar_remove=['zoom', 'pan', 'select', 'lasso', 'zoomin', 'zoomout', 'reset'],
+        hovermode=False,
     )
 
-    map_html = fig.to_html(full_html=False, config={'staticPlot': True})  # Статична карта
+    map_html = fig.to_html(full_html=False, config={'staticPlot': True})
 
     # Передаємо дані в шаблон
     context = {
         'map_html': map_html,
-        'top_regions': top_10_data.to_dict('records'),  # Топ-10 регіонів
-        'max_count': data['count'].max() if not data.empty else 1,  # Максимальне значення для шкали
+        'top_regions': top_10_data.to_dict('records'),  # Топ-10 регіонів із відсотками
+        'max_count': max_count,
     }
     return render(request, 'site_management/dashboard.html', context)
