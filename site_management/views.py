@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from data_exchange.models import Visitor
 from django.db.models import Count
-from django.db.models.functions import TruncHour  # Для групування по годинах
+from django.db.models.functions import TruncHour
 import plotly.express as px
 import pandas as pd
-import requests
 from datetime import datetime, date, timedelta
+import json
+import os
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,7 +42,6 @@ def visitor_map_dashboard(request):
 
     # Дані для графіка: по днях або по годинах, якщо один день
     if start_date == end_date:
-        # Якщо вибрано один день, групуємо по годинах
         visitors_by_time = (
             Visitor.objects
             .filter(country='Україна', is_bot=False, created_at__date=start_date)
@@ -54,7 +55,6 @@ def visitor_map_dashboard(request):
         x_label = 'hour'
         x_title = 'Година'
     else:
-        # Якщо період, групуємо по днях
         visitors_by_time = (
             Visitor.objects
             .filter(country='Україна', is_bot=False, created_at__date__range=[start_date, end_date])
@@ -77,9 +77,10 @@ def visitor_map_dashboard(request):
         logger.warning("No visitors found for Ukraine between %s and %s", start_date, end_date)
         data = pd.DataFrame({'region': [], 'count': []})
 
-    # Завантажуємо GeoJSON
-    geojson_url = "https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson"
-    geojson_data = requests.get(geojson_url).json()
+    # Завантажуємо GeoJSON із локального файлу
+    geojson_path = os.path.join(settings.STATICFILES_DIRS[0], 'geojson', 'ukraine_regions.geojson')
+    with open(geojson_path, 'r', encoding='utf-8') as f:
+        geojson_data = json.load(f)
 
     # Отримуємо всі регіони з GeoJSON
     all_regions = [feature['properties']['name:uk'] for feature in geojson_data['features']]
@@ -127,7 +128,6 @@ def visitor_map_dashboard(request):
     if time_data.empty:
         time_data = pd.DataFrame({x_label: [start_date.strftime('%Y-%m-%d')], 'count': [0]})
     else:
-        # Доповнюємо всі дати або години у періоді
         if x_label == 'date':
             date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
             all_times = pd.DataFrame({x_label: [d.strftime('%Y-%m-%d') for d in date_range]})
