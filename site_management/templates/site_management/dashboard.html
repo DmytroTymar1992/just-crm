@@ -6,6 +6,14 @@
   <style>
     /* ... (стилі для .dashboard-header, .dashboard-container, .top-regions-container, .date-filter etc. залишаються як були в попередньому варіанті) ... */
 
+    .dashboard-container {
+      display: flex;
+      /* ЗАДАЙТЕ ВИСОТУ! Наприклад: */
+      height: 600px; /* або height: 80vh; */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .left-column {
       width: 66%; /* Повертаємо ширину */
       height: 100%;
@@ -47,24 +55,23 @@
         padding-top: 10px;
     }
 
-    .timeline-bar-item { /* Обгортка для одного стовпчика і підпису */
+    .timeline-bar-item {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Центруємо стовпчик і підпис */
-        height: 100%; /* Висота обгортки = висоті зони стовпчиків */
-        position: relative; /* Для позиціонування підпису */
-        margin: 0 2px; /* Невеликий відступ між стовпчиками */
+        align-items: center;
+        /* height: 100%; */ /* <<< СПРОБУЙТЕ ПРИБРАТИ */
+        position: relative;
+        margin: 0 2px;
     }
 
-    .timeline-bar { /* Сам стовпчик */
-        /* Ширину краще задавати фіксовано або через flex-basis */
-        width: 15px; /* Наприклад, фіксована ширина */
-        /* Або width: auto; flex-grow: 1; якщо їх мало і треба розтягнути */
-        background-color: #28a745; /* Зелений колір */
-        border-radius: 3px 3px 0 0; /* Легке заокруглення зверху */
-        margin-top: auto; /* Притискає стовпчик до низу (до align-items: flex-end) */
-        transition: height 0.3s ease-out; /* Плавна анімація висоти */
-        position: relative; /* Для відображення кількості при наведенні */
+    .timeline-bar {
+        width: 15px;
+        background-color: #28a745;
+        border-radius: 3px 3px 0 0;
+        /* margin-top: auto; */ /* <<< СПРОБУЙТЕ ПРИБРАТИ */
+        transition: height 0.3s ease-out;
+        position: relative;
+        /* Висота задається інлайново через style */
     }
      .timeline-bar:hover::after { /* Показуємо кількість при наведенні */
         content: attr(data-count); /* Беремо значення з data-count атрибуту */
