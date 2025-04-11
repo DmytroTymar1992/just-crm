@@ -97,7 +97,7 @@
   <div class="p-3 bg-white border-top shadow-sm flex-shrink-0">
     <div class="input-group">
         <!-- Додаємо кнопку для Telegram -->
-        <a href="https://t.me/+{{ room.contact.phone|default:'' }}"
+        <a href="https://t.me/{{ room.contact.phone|default:'' }}"
            class="btn btn-outline-primary"
            title="Відкрити Telegram"
            target="_blank">
