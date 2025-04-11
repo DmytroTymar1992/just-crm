@@ -95,12 +95,27 @@
   </div>
 
   <div class="p-3 bg-white border-top shadow-sm flex-shrink-0">
-      <div class="input-group">
-          <textarea id="chat-message-input" class="form-control" placeholder="Введіть текст (Telegram)..." rows="1" style="resize: none;"></textarea> <button id="chat-message-submit" class="btn btn-primary" type="button">
-              <i class="bi bi-send"></i>
-              <span class="d-none d-sm-inline ms-1">Надіслати</span> </button>
-      </div>
-  </div>
+    <div class="input-group">
+        <!-- Додаємо кнопку для Telegram -->
+        <a href="https://t.me/+{{ room.contact.phone|default:'' }}"
+           class="btn btn-outline-primary"
+           title="Відкрити Telegram"
+           target="_blank">
+            <i class="bi bi-plus"></i>
+        </a>
+        <textarea id="chat-message-input"
+                  class="form-control"
+                  placeholder="Введіть текст (Telegram)..."
+                  rows="1"
+                  style="resize: none;"></textarea>
+        <button id="chat-message-submit"
+                class="btn btn-primary"
+                type="button">
+            <i class="bi bi-send"></i>
+            <span class="d-none d-sm-inline ms-1">Надіслати</span>
+        </button>
+    </div>
+</div>
 
 </div>
 
