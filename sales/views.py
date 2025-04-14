@@ -192,6 +192,7 @@ def company_list(request):
 def contact_list(request):
     contacts = Contact.objects.all().select_related('company')
     query = request.GET.get('q', '').strip()
+    unprocessed = request.GET.get('unprocessed') == 'on'
 
     if query:
         contacts = contacts.filter(
@@ -200,6 +201,9 @@ def contact_list(request):
             Q(phone__icontains=query) |
             Q(company__name__icontains=query)
         )
+
+    if unprocessed:
+        contacts = contacts.filter(is_processed=False)
 
     paginator = Paginator(contacts, 36)  # 36 контактів на сторінку
     page_number = request.GET.get('page')
@@ -235,6 +239,7 @@ def contact_list(request):
         'contacts': contacts_with_chat_info,  # Передаємо список із додатковою інформацією
         'page_obj': page_obj,
         'companies': companies,
+        'unprocessed': unprocessed,
     })
 
 @login_required

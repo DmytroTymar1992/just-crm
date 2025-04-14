@@ -16,6 +16,11 @@
         </span>
         <input type="text" id="contact-search" class="form-control border-start-0" placeholder="Пошук за ім'ям, прізвищем, телефоном чи компанією">
       </div>
+      <div class="form-check ms-3">
+          <input class="form-check-input" type="checkbox" id="unprocessed-filter"
+                 name="unprocessed" {% if request.GET.unprocessed == 'on' %}checked{% endif %}>
+          <label class="form-check-label" for="unprocessed-filter">Необроблені контакти</label>
+        </div>
       <a href="#" class="btn btn-primary shadow-sm" id="add-contact-btn" data-contact-id="0">
         <i class="bi bi-person-plus-fill me-1"></i> Додати контакт
       </a>
@@ -38,4 +43,16 @@
   <script src="{% static 'sales/js/contacts-main.js' %}"></script>
   <script src="{% static 'sales/js/contacts-search.js' %}"></script>
   <script src="{% static 'sales/js/edit.js' %}"></script>
+    <script>
+    document.getElementById('unprocessed-filter').addEventListener('change', function() {
+      const url = new URL(window.location);
+      if (this.checked) {
+        url.searchParams.set('unprocessed', 'on');
+      } else {
+        url.searchParams.delete('unprocessed');
+      }
+      url.searchParams.set('page', '1'); // Скидаємо на першу сторінку при зміні фільтра
+      window.location = url;
+    });
+  </script>
 {% endblock %}
