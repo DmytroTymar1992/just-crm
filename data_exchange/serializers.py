@@ -22,7 +22,7 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = ['first_name', 'last_name', 'phone', 'email', 'company_id', 'is_from_site',
                   'is_processed', 'user_id', 'is_registered', 'has_visited_site', 'created_at']
-        read_only_fields = ['created_at', 'is_from_site', 'is_processed', 'is_registered', 'has_visited_site']
+        read_only_fields = ['created_at']
 
 class SeekerSerializer(serializers.ModelSerializer):
     class Meta:
