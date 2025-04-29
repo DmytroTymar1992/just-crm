@@ -1,4 +1,4 @@
-{% extends 'sales/base-sales.html' %}
+{% extends 'sales/base-social.html' %}
 {% load static %}
 
 {% block title %}
@@ -48,6 +48,51 @@
         <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#mergeContactModal">
           <i class="bi bi-link-45deg me-1"></i> Об'єднати з іншим контактом
         </button>
+      </div>
+
+      <!-- Секція для відображення всіх взаємодій -->
+      <div class="mt-5">
+        <h3 class="mb-4">Переписка з контактом</h3>
+        {% if interactions %}
+          <div class="interaction-list">
+            {% for interaction in interactions %}
+              <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <strong>{{ interaction.interaction_type|title }}</strong>
+                      (Чат з користувачем: {{ interaction.room.user.username }})
+                    </div>
+                    <small class="text-muted">{{ interaction.created_at|date:"d.m.Y H:i" }}</small>
+                  </div>
+                  <div>
+                    {% if interaction.interaction_type == 'telegram' and interaction.telegram_message %}
+                      <p><strong>Повідомлення:</strong> {{ interaction.telegram_message.text|default:"(немає тексту)" }}</p>
+                    {% elif interaction.interaction_type == 'email' and interaction.email_message %}
+                      <p><strong>Тема:</strong> {{ interaction.email_message.subject }}</p>
+                      <p><strong>Текст:</strong> {{ interaction.email_message.body|default:"(немає тексту)" }}</p>
+                    {% elif interaction.interaction_type == 'call' and interaction.call_message %}
+                      <p><strong>Напрямок:</strong> {{ interaction.call_message.direction|default:"невідомо" }}</p>
+                      <p><strong>Номер клієнта:</strong> {{ interaction.call_message.client_phone|default:"невідомо" }}</p>
+                      <p><strong>Тривалість:</strong> {{ interaction.call_message.duration|floatformat:0 }} сек</p>
+                      {% if interaction.call_message.description %}
+                        <p><strong>Опис:</strong> {{ interaction.call_message.description }}</p>
+                      {% endif %}
+                    {% elif interaction.interaction_type == 'chat' %}
+                      <p><strong>Повідомлення:</strong> {{ interaction.content|default:"(немає тексту)" }}</p>
+                    {% else %}
+                      <p>Немає деталей для цього типу взаємодії.</p>
+                    {% endif %}
+                    <p><strong>Відправник:</strong> {{ interaction.sender|title }}</p>
+                    <p><strong>Прочитано:</strong> {{ interaction.is_read|yesno:"Так,Ні" }}</p>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Немає переписок із цим контактом.</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -105,6 +150,11 @@
   .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+  .interaction-list .card {
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e9ecef;
   }
 </style>
 {% endblock %}

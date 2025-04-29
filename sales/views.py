@@ -866,9 +866,20 @@ def merge_contacts_confirm_view(request, contact1_id, contact2_id):
 def contact_detail_view(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
     other_contacts = Contact.objects.exclude(id=contact_id)
+
+    # Отримуємо всі чати для контакту
+    rooms = Room.objects.filter(contact=contact).select_related('user')
+
+    # Отримуємо всі взаємодії для цих чатів, сортуємо за датою створення
+    interactions = Interaction.objects.filter(room__in=rooms).select_related(
+        'room', 'call_message', 'telegram_message', 'email_message'
+    ).order_by('created_at')
+
     return render(request, "sales/contact_detail.html", {
         "contact": contact,
         "other_contacts": other_contacts,
+        "rooms": rooms,
+        "interactions": interactions,
     })
 
 
