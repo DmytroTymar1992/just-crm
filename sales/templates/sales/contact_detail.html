@@ -26,7 +26,7 @@
             <p><strong>Посада:</strong> {{ contact.position }}</p>
           {% endif %}
           {% if contact.company %}
-              <a href="{% url 'company_detail' company.id %}">
+              <a href="{% url 'company_detail' company_id = contact.company_id %}">
                 <p><strong>Компанія:</strong> <a href="#">{{ contact.company.name }}</a></p>
               </a>
           {% endif %}
