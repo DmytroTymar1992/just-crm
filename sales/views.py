@@ -863,22 +863,43 @@ def merge_contacts_confirm_view(request, contact1_id, contact2_id):
     })
 
 
+@login_required
 def contact_detail_view(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
     other_contacts = Contact.objects.exclude(id=contact_id)
 
     # Отримуємо всі чати для контакту
-    rooms = Room.objects.filter(contact=contact).select_related('user')
+    rooms = Room.objects.filter(contact=contact).select_related('user').annotate(
+        latest_interaction=Max('interactions__created_at'),
+        unread_count=Count(
+            'interactions',
+            filter=Q(interactions__is_read=False, interactions__sender='contact')
+        )
+    ).order_by('-latest_interaction')
 
-    # Отримуємо всі взаємодії для цих чатів, сортуємо за датою створення
-    interactions = Interaction.objects.filter(room__in=rooms).select_related(
-        'room', 'call_message', 'telegram_message', 'email_message'
-    ).order_by('created_at')
+    # Отримуємо ID активного чату з GET-параметра або беремо перший чат
+    selected_room_id = request.GET.get('room_id')
+    selected_room = None
+    interactions = []
+
+    if rooms.exists():
+        # Якщо room_id вказано і чат існує, вибираємо його
+        if selected_room_id and rooms.filter(id=selected_room_id).exists():
+            selected_room = rooms.get(id=selected_room_id)
+        else:
+            # Інакше вибираємо перший чат
+            selected_room = rooms.first()
+
+        # Отримуємо взаємодії для вибраного чату
+        interactions = Interaction.objects.filter(room=selected_room).select_related(
+            'room', 'call_message', 'telegram_message', 'email_message'
+        ).order_by('created_at')
 
     return render(request, "sales/contact_detail.html", {
         "contact": contact,
         "other_contacts": other_contacts,
         "rooms": rooms,
+        "selected_room": selected_room,
         "interactions": interactions,
     })
 

@@ -6,93 +6,130 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="card shadow-sm modern-contact-card">
-    <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
-      <div class="avatar-circle me-3">
-        <i class="bi bi-person-fill text-primary"></i>
-      </div>
-      <h2 class="mb-0 fw-semibold">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</h2>
-      <div class="ms-auto">
-        <a href="{% url 'edit_contact' contact.id %}" class="btn btn-link text-muted" title="Редагувати">
-          <i class="bi bi-pencil-fill"></i>
-        </a>
-      </div>
-    </div>
-    <div class="card-body p-4">
-      <div class="row">
-        <div class="col-md-6">
-          {% if contact.position %}
-            <p><strong>Посада:</strong> {{ contact.position }}</p>
-          {% endif %}
-          {% if contact.company %}
-            <p><strong>Компанія:</strong> <a href="{% url 'company_detail' company_id=contact.company_id %}">{{ contact.company.name }}</a></p>
-          {% endif %}
-          {% if contact.phone %}
-            <p><strong>Телефон:</strong> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
-          {% endif %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- Ліва колонка: Інформація про контакт і список чатів -->
+    <div class="col-md-4">
+      <div class="card shadow-sm modern-contact-card mb-4">
+        <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
+          <div class="avatar-circle me-3">
+            <i class="bi bi-person-fill text-primary"></i>
+          </div>
+          <h2 class="mb-0 fw-semibold">{{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</h2>
+          <div class="ms-auto">
+            <a href="{% url 'edit_contact' contact.id %}" class="btn btn-link text-muted" title="Редагувати">
+              <i class="bi bi-pencil-fill"></i>
+            </a>
+          </div>
         </div>
-        <div class="col-md-6">
-          {% if contact.email %}
-            <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
-          {% endif %}
-          {% if contact.telegram_username %}
-            <p><strong>Telegram:</strong> <a href="https://t.me/{{ contact.telegram_username }}" target="_blank">@{{ contact.telegram_username }}</a></p>
-          {% elif contact.telegram_id %}
-            <p><strong>Telegram ID:</strong> {{ contact.telegram_id }}</p>
-          {% endif %}
-          <p><strong>Створено:</strong> {{ contact.created_at }}</p>
+        <div class="card-body p-4">
+          <div class="row">
+            <div class="col-12">
+              {% if contact.position %}
+                <p><strong>Посада:</strong> {{ contact.position }}</p>
+              {% endif %}
+              {% if contact.company %}
+                <p><strong>Компанія:</strong> <a href="{% url 'company_detail' company_id=contact.company_id %}">{{ contact.company.name }}</a></p>
+              {% endif %}
+              {% if contact.phone %}
+                <p><strong>Телефон:</strong> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
+              {% endif %}
+              {% if contact.email %}
+                <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+              {% endif %}
+              {% if contact.telegram_username %}
+                <p><strong>Telegram:</strong> <a href="https://t.me/{{ contact.telegram_username }}" target="_blank">@{{ contact.telegram_username }}</a></p>
+              {% elif contact.telegram_id %}
+                <p><strong>Telegram ID:</strong> {{ contact.telegram_id }}</p>
+              {% endif %}
+              <p><strong>Створено:</strong> {{ contact.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#mergeContactModal">
+              <i class="bi bi-link-45deg me-1"></i> Об'єднати з іншим контактом
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="mt-4">
-        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#mergeContactModal">
-          <i class="bi bi-link-45deg me-1"></i> Об'єднати з іншим контактом
-        </button>
       </div>
 
-      <!-- Секція для відображення всіх взаємодій -->
-      <div class="mt-5">
-        <h3 class="mb-4">Переписка з контактом</h3>
-        {% if interactions %}
-          <div class="interaction-list">
-            {% for interaction in interactions %}
-              <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div>
-                      <strong>{{ interaction.interaction_type|title }}</strong>
-                      (Чат з користувачем: {{ interaction.room.user.username }})
-                    </div>
-                    <small class="text-muted">{{ interaction.created_at|date:"d.m.Y H:i" }}</small>
-                  </div>
-                  <div>
+      <!-- Список чатів -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Чати з контактом</h5>
+        </div>
+        <ul class="list-group list-group-flush" id="room-list">
+          {% for r in rooms %}
+            <a href="?room_id={{ r.id }}" class="text-decoration-none">
+              <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-bottom {% if r.id == selected_room.id %}bg-primary-subtle{% endif %}">
+                <div class="text-decoration-none text-dark d-flex flex-column">
+                  {% if r.contact.company %}
+                    <small class="text-muted">{{ r.contact.company.name }}</small>
+                  {% endif %}
+                  <span class="{% if r.id == selected_room.id %}fw-semibold{% endif %}">
+                    {{ r.contact.first_name }}
+                    {% if r.contact.last_name %}
+                      {{ r.contact.last_name }}
+                    {% endif %}
+                  </span>
+                  <small class="text-muted">Користувач: {{ r.user.username }}</small>
+                </div>
+                {% if r.unread_count > 0 %}
+                  <span class="badge bg-primary rounded-pill">{{ r.unread_count }}</span>
+                {% endif %}
+              </li>
+            </a>
+          {% empty %}
+            <li class="list-group-item text-muted text-center py-3 border-0">Немає чатів</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Права колонка: Взаємодії вибраного чату -->
+    <div class="col-md-8">
+      <div class="card shadow-sm modern-chat-card">
+        <div class="card-header bg-light d-flex align-items-center">
+          <h5 class="mb-0">
+            {% if selected_room %}
+              Чат з {{ contact.first_name }} (Користувач: {{ selected_room.user.username }})
+            {% else %}
+              Виберіть чат
+            {% endif %}
+          </h5>
+        </div>
+        <div class="card-body chat-body p-4">
+          {% if selected_room and interactions %}
+            <div class="chat-messages">
+              {% for interaction in interactions %}
+                <div class="message {% if interaction.sender == 'user' %}message-sent{% else %}message-received{% endif %} mb-3">
+                  <div class="message-content p-3 rounded">
                     {% if interaction.interaction_type == 'telegram' and interaction.telegram_message %}
-                      <p><strong>Повідомлення:</strong> {{ interaction.telegram_message.text|default:"(немає тексту)" }}</p>
+                      <p>{{ interaction.telegram_message.text|default:"(немає тексту)" }}</p>
                     {% elif interaction.interaction_type == 'email' and interaction.email_message %}
                       <p><strong>Тема:</strong> {{ interaction.email_message.subject }}</p>
-                      <p><strong>Текст:</strong> {{ interaction.email_message.body|default:"(немає тексту)" }}</p>
+                      <p>{{ interaction.email_message.body|default:"(немає тексту)" }}</p>
                     {% elif interaction.interaction_type == 'call' and interaction.call_message %}
-                      <p><strong>Напрямок:</strong> {{ interaction.call_message.direction|default:"невідомо" }}</p>
-                      <p><strong>Номер клієнта:</strong> {{ interaction.call_message.client_phone|default:"невідомо" }}</p>
-                      <p><strong>Тривалість:</strong> {{ interaction.call_message.duration|floatformat:0 }} сек</p>
+                      <p><strong>Дзвінок</strong></p>
+                      <p>Напрямок: {{ interaction.call_message.direction_display }}</p>
+                      <p>Тривалість: {{ interaction.call_message.duration|floatformat:0 }} сек</p>
                       {% if interaction.call_message.description %}
-                        <p><strong>Опис:</strong> {{ interaction.call_message.description }}</p>
+                        <p>Опис: {{ interaction.call_message.description }}</p>
                       {% endif %}
                     {% elif interaction.interaction_type == 'chat' %}
-                      <p><strong>Повідомлення:</strong> {{ interaction.content|default:"(немає тексту)" }}</p>
+                      <p>{{ interaction.content|default:"(немає тексту)" }}</p>
                     {% else %}
                       <p>Немає деталей для цього типу взаємодії.</p>
                     {% endif %}
-                    <p><strong>Відправник:</strong> {{ interaction.sender|title }}</p>
-                    <p><strong>Прочитано:</strong> {{ interaction.is_read|yesno:"Так,Ні" }}</p>
+                    <small class="text-muted d-block mt-1">{{ interaction.created_at|date:"d.m.Y H:i" }}</small>
                   </div>
                 </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-muted">Немає переписок із цим контактом.</p>
-        {% endif %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center">Виберіть чат або немає повідомлень.</p>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
@@ -127,7 +164,7 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
 <style>
-  .modern-contact-card {
+  .modern-contact-card, .modern-chat-card {
     border-radius: 12px;
     background: #f9fbfd;
     border: 1px solid #d8dee5;
@@ -151,10 +188,34 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
   }
-  .interaction-list .card {
-    border-radius: 8px;
-    background: #fff;
-    border: 1px solid #e9ecef;
+  .chat-body {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+  }
+  .message {
+    max-width: 70%;
+  }
+  .message-sent {
+    align-self: flex-end;
+  }
+  .message-received {
+    align-self: flex-start;
+  }
+  .message-content {
+    background: #007bff;
+    color: white;
+    border-radius: 15px;
+  }
+  .message-received .message-content {
+    background: #e9ecef;
+    color: #333;
+  }
+  .message-content p {
+    margin: 0;
   }
 </style>
 {% endblock %}
@@ -188,6 +249,12 @@
         window.location.href = `/sales/contacts/merge_confirm/${contactId}/${selectedContactId}/`;
       }
     });
+
+    // Автоматичне прокручування донизу чату
+    const chatBody = document.querySelector('.chat-body');
+    if (chatBody) {
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
   });
 </script>
 {% endblock %}
