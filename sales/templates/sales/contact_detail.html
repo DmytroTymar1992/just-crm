@@ -8,7 +8,7 @@
 {% block content %}
 <div class="container-fluid py-4">
   <div class="row">
-    <!-- Ліва колонка: Інформація про контакт і список чатів -->
+    <!-- Ліва колонка: Інформація про контакт -->
     <div class="col-md-4">
       <div class="card shadow-sm modern-contact-card mb-4">
         <div class="card-header bg-light border-bottom d-flex align-items-center p-3">
@@ -35,7 +35,7 @@
                 <p><strong>Телефон:</strong> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
               {% endif %}
               {% if contact.email %}
-                <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+                <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</p>
               {% endif %}
               {% if contact.telegram_username %}
                 <p><strong>Telegram:</strong> <a href="https://t.me/{{ contact.telegram_username }}" target="_blank">@{{ contact.telegram_username }}</a></p>
@@ -52,35 +52,37 @@
           </div>
         </div>
       </div>
-    <!-- Права колонка: Взаємодії вибраного чату -->
+    </div>
+
+    <!-- Права колонка: Всі взаємодії -->
     <div class="col-md-8">
       <div class="card shadow-sm modern-chat-card">
         <div class="card-header bg-light d-flex align-items-center">
-          <h5 class="mb-0">
-            {% if selected_room %}
-              Чат з {{ contact.first_name }} (Користувач: {{ selected_room.user.username }})
-            {% else %}
-              Виберіть чат
-            {% endif %}
-          </h5>
+          <h5 class="mb-0">Переписка з {{ contact.first_name }} {{ contact.last_name|default_if_none:"" }}</h5>
         </div>
         <div class="card-body chat-body p-4">
-          {% if selected_room and interactions %}
+          {% if interactions %}
             <div class="chat-messages">
               {% for interaction in interactions %}
                 <div class="message {% if interaction.sender == 'user' %}message-sent{% else %}message-received{% endif %} mb-3">
                   <div class="message-content p-3 rounded">
+                    <div class="message-header mb-1">
+                      {% if interaction.sender == 'user' %}
+                        <small class="text-muted">Від {{ interaction.room.user.username }}</small>
+                      {% else %}
+                        <small class="text-muted">Від {{ contact.first_name }}</small>
+                      {% endif %}
+                    </div>
                     {% if interaction.interaction_type == 'telegram' and interaction.telegram_message %}
                       <p>{{ interaction.telegram_message.text|default:"(немає тексту)" }}</p>
                     {% elif interaction.interaction_type == 'email' and interaction.email_message %}
                       <p><strong>Тема:</strong> {{ interaction.email_message.subject }}</p>
-                      <p>{{ interaction.email_message.body|default:"(немає тексту)" }}</p>
+                      <p>{{ interaction.email_message.body|default:"(немає тексту)"|truncatewords:50 }}</p>
                     {% elif interaction.interaction_type == 'call' and interaction.call_message %}
-                      <p><strong>Дзвінок</strong></p>
-                      <p>Напрямок: {{ interaction.call_message.direction_display }}</p>
+                      <p><strong>Дзвінок</strong> ({{ interaction.call_message.direction_display }})</p>
                       <p>Тривалість: {{ interaction.call_message.duration|floatformat:0 }} сек</p>
                       {% if interaction.call_message.description %}
-                        <p>Опис: {{ interaction.call_message.description }}</p>
+                        <p>Опис: {{ interaction.call_message.description|truncatewords:50 }}</p>
                       {% endif %}
                     {% elif interaction.interaction_type == 'chat' %}
                       <p>{{ interaction.content|default:"(немає тексту)" }}</p>
@@ -92,8 +94,26 @@
                 </div>
               {% endfor %}
             </div>
+            <!-- Пагінація -->
+            {% if page_obj.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-3">
+                <ul class="pagination justify-content-center">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Попередня</a></li>
+                  {% endif %}
+                  {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                  {% endfor %}
+                  {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Наступна</a></li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
           {% else %}
-            <p class="text-muted text-center">Виберіть чат або немає повідомлень.</p>
+            <p class="text-muted text-center">Немає переписок із цим контактом.</p>
           {% endif %}
         </div>
       </div>
@@ -132,9 +152,9 @@
 <style>
   .modern-contact-card, .modern-chat-card {
     border-radius: 12px;
-    background: #f9fbfd;
-    border: 1px solid #d8dee5;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    background: #fff;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   .avatar-circle {
     width: 50px;
@@ -149,21 +169,27 @@
   .btn-primary {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     border: none;
+    transition: all 0.2s;
   }
   .btn-primary:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
   }
   .chat-body {
     max-height: 600px;
     overflow-y: auto;
+    background: #f8f9fa;
+    border-radius: 8px;
   }
   .chat-messages {
     display: flex;
     flex-direction: column;
+    gap: 10px;
   }
   .message {
     max-width: 70%;
+    margin-bottom: 10px;
+    animation: fadeIn 0.3s ease-in;
   }
   .message-sent {
     align-self: flex-end;
@@ -174,14 +200,41 @@
   .message-content {
     background: #007bff;
     color: white;
-    border-radius: 15px;
+    border-radius: 18px 18px 18px 4px;
+    padding: 10px 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   .message-received .message-content {
-    background: #e9ecef;
+    background: #ffffff;
     color: #333;
+    border-radius: 18px 18px 4px 18px;
+    border: 1px solid #e9ecef;
   }
   .message-content p {
     margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .message-header {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+  .text-muted {
+    font-size: 0.8rem;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* Стилі для пагінації */
+  .pagination .page-link {
+    border-radius: 8px;
+    margin: 0 3px;
+    color: #007bff;
+  }
+  .pagination .page-item.active .page-link {
+    background: #007bff;
+    border-color: #007bff;
   }
 </style>
 {% endblock %}
