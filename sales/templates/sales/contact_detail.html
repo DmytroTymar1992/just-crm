@@ -52,40 +52,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Список чатів -->
-      <div class="card shadow-sm">
-        <div class="card-header bg-light">
-          <h5 class="mb-0">Чати з контактом</h5>
-        </div>
-        <ul class="list-group list-group-flush" id="room-list">
-          {% for r in rooms %}
-            <a href="?room_id={{ r.id }}" class="text-decoration-none">
-              <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-bottom {% if r.id == selected_room.id %}bg-primary-subtle{% endif %}">
-                <div class="text-decoration-none text-dark d-flex flex-column">
-                  {% if r.contact.company %}
-                    <small class="text-muted">{{ r.contact.company.name }}</small>
-                  {% endif %}
-                  <span class="{% if r.id == selected_room.id %}fw-semibold{% endif %}">
-                    {{ r.contact.first_name }}
-                    {% if r.contact.last_name %}
-                      {{ r.contact.last_name }}
-                    {% endif %}
-                  </span>
-                  <small class="text-muted">Користувач: {{ r.user.username }}</small>
-                </div>
-                {% if r.unread_count > 0 %}
-                  <span class="badge bg-primary rounded-pill">{{ r.unread_count }}</span>
-                {% endif %}
-              </li>
-            </a>
-          {% empty %}
-            <li class="list-group-item text-muted text-center py-3 border-0">Немає чатів</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-
     <!-- Права колонка: Взаємодії вибраного чату -->
     <div class="col-md-8">
       <div class="card shadow-sm modern-chat-card">
